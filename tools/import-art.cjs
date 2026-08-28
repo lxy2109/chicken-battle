@@ -1,14 +1,21 @@
 /**
  * 把设计图拆件拷进 bundle，并写好 sprite-frame .meta。
- * 源图：Cursor 会话资源目录（GenerateImage 产出）。
+ *
+ * 用法: node tools/import-art.cjs <生图输出目录>
+ * 生图输出目录即 Cursor 会话资源目录（GenerateImage 产出）。
  */
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
+const png = require("./png.cjs");
+const { knock } = require("./knock-alpha.cjs");
 const uuids = require("./art-uuids.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
-const SRC = "C:/Users/TU/.cursor/projects/c-Users-TU-AANewAllStructure-chicken-battle/assets";
+const SRC = process.argv[2];
+if (!SRC) {
+    console.error("用法: node tools/import-art.cjs <生图输出目录>");
+    process.exit(1);
+}
 
 const FILES = [
     ["part_body.png", "assets/bundle/game/texture/chicken/body.png", uuids.body, false],
@@ -142,12 +149,12 @@ for (const [srcName, rel, uuid, sliced] of FILES) {
     console.log(rel, w + "x" + h);
 }
 
-const knockList = FILES
-    .filter((row) => row[1].indexOf("/bg/") < 0)
-    .map((row) => path.join(ROOT, row[1]));
-const knock = spawnSync("python", [path.join(__dirname, "knock-alpha.py")].concat(knockList), { stdio: "inherit" });
-if (knock.status !== 0) {
-    console.error("knock-alpha failed");
-    process.exit(knock.status || 1);
+// 背景是整屏不透明图，抠底只会误伤天空，跳过。
+for (const [, rel] of FILES.filter((row) => row[1].indexOf("/bg/") < 0)) {
+    const file = path.join(ROOT, rel);
+    const img = png.decode(file);
+    const cleared = knock(img);
+    png.encode(file, img);
+    console.log(`抠底 ${path.basename(rel)} 清除 ${(100 * cleared / (img.width * img.height)).toFixed(1)}%`);
 }
 console.log("art imported", FILES.length);
