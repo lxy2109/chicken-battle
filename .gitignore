@@ -1,17 +1,20 @@
 #///////////////////////////
 # Cocos Creator 3D Project
 #///////////////////////////
-oops-plugin-framework/
-oops-plugin-framework-tools/
-oops-plugin-hot-update/
-oops-plugin-excel-to-json/
-oops_framework_remote/
 library/
 temp/
 local/
 build/
 profiles/
 native
+
+#//////////////////////////
+# Cocos 扩展插件
+# 插件源码随仓库走，否则 clone 后 db://oops-framework 挂载不上，全项目报错。
+# 依赖与离线文档不入库，依赖由 npm install 生成。
+#//////////////////////////
+extensions/*/node_modules/
+extensions/*/docs/
 #//////////////////////////
 # NPM
 #//////////////////////////
