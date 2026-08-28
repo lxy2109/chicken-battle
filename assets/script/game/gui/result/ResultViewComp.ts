@@ -4,9 +4,10 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
+import { TEX } from "../../core/Catalog";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
-import { bindClick, setLabel } from "../UiUtil";
+import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
@@ -19,14 +20,21 @@ export class ResultViewComp extends CCView<ChickenRun> {
         const run = this.ent.run;
         const win = run.lastWin;
         const warmup = run.phase === "warmup";
-        setLabel(this, "LabTitle", win ? "战胜！" : (warmup ? "热身落败" : "败北"));
-        setLabel(this, "LabGold", `+${run.lastGoldGain}   现有 ${run.gold}`);
-        let hint = "点击继续";
-        if (!win && !warmup && run.phase !== "boss") hint = "正式赛失败，本局重来";
-        if (!win && warmup) hint = "热身可败，仍可进入正式赛";
-        if (win && run.phase === "boss") hint = "鸡王已败！";
+
+        setLabel(this, "LabTitle", win ? "胜利" : (warmup ? "热身落败" : "败北"));
+        setLabel(this, "LabGold", `+${run.lastGoldGain}`);
+        setLabel(this, "LabDesc", `现有金币 ${run.gold}`);
+
+        // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
+        let hint: string;
+        if (run.phase === "boss") hint = win ? "鸡王已败，村口从此姓你" : "再练练，鸡王还在村口等你";
+        else if (warmup) hint = win ? "热身拿下，接着去鸡市逛逛" : "热身可败，仍能进正式赛";
+        else hint = win ? "正式赛拿下，挑一份奖励带走" : "正式赛失败，本局从热身赛重来";
         setLabel(this, "LabHint", hint);
-        await spawnChicken(this, "ChickenSlot", run.playerFighter().appearance, 0.85);
+
+        setNodeActive(this, "Confetti", win);
+        await setNodeSprite(this, "Burst", TEX.ui(win ? "burst_win" : "burst_lose"));
+        await spawnChicken(this, "ChickenSlot", run.playerFighter().appearance, 0.72);
         bindClick(this, "BtnNext", this.onNext.bind(this));
     }
 

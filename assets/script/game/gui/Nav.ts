@@ -17,6 +17,8 @@ export async function goScreen(from: CCView<ChickenRun>, screen?: RunScreen) {
         return;
     }
     const ent = from.ent;
-    from.remove();
+    // 先把新界面开出来盖住旧的再撤旧界面。反过来做的话，加载新预制体的这段时间
+    // 屏幕上什么都没有，跳转就会闪一下黑。
     await openRunView(ent, ctor);
+    from.remove();
 }

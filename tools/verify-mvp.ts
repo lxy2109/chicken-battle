@@ -1,15 +1,27 @@
 import fs from "fs";
 import path from "path";
-import { decideAction, decide } from "../assets/script/game/core/BattleAI";
+import { BattleBrain } from "../assets/script/game/battle/BattleBrain";
+import { AiFighter, decideAction, decide } from "../assets/script/game/core/BattleAI";
 import { BattleSession } from "../assets/script/game/core/BattleSession";
 import { getItems, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
-import { buildStats, setPrice } from "../assets/script/game/core/EquipMath";
+import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
 import { RunState } from "../assets/script/game/core/RunState";
-import { Appearance, defaultAppearance } from "../assets/script/game/core/Types";
+import { Appearance, StagePhase, defaultAppearance } from "../assets/script/game/core/Types";
+
+/** 直接跑源码时在脚本旁边，编译到 temp 再跑时只能从工作目录找。 */
+function tableDir(): string {
+    const tries = [
+        path.resolve(__dirname, "../assets/bundle/config/game"),
+        path.resolve(process.cwd(), "assets/bundle/config/game")
+    ];
+    const hit = tries.find(p => fs.existsSync(p));
+    if (!hit) throw new Error("找不到配表目录 assets/bundle/config/game");
+    return hit;
+}
 
 function loadTables() {
-    const dir = path.resolve(__dirname, "../assets/bundle/config/game");
+    const dir = tableDir();
     const names = ["Player", "Stage", "Enemy", "Item", "Set", "Part", "Reward"];
     const all: Record<string, any> = {};
     for (const name of names) {
@@ -66,7 +78,9 @@ function run() {
     ok("正式赛失败整局重来", () => {
         const run = new RunState(3);
         run.confirmAppearance(defaultAppearance());
-        run.phase = "official";
+        // 标注成 StagePhase，直接写字面量会让 TS 把 run.phase 窄化，
+        // 后面断言它变回 warmup 就成了"永远不成立"的比较。
+        run.phase = "official" as StagePhase;
         run.stage = 2;
         run.settle(false);
         run.afterResult();
@@ -97,7 +111,7 @@ function run() {
         const run = new RunState(4);
         run.confirmAppearance(defaultAppearance());
         run.stage = 5;
-        run.phase = "official";
+        run.phase = "official" as StagePhase;
         run.settle(true);
         run.afterResult();
         run.skipReward();
@@ -142,17 +156,116 @@ function run() {
         const run = new RunState(8);
         run.confirmAppearance(defaultAppearance());
         const session = new BattleSession(run.playerFighter(), run.enemyFighter(), 8, false);
-        session.step();
-        while (!session.done && !session.hasPending) session.step();
-        if (session.hasPending) session.whiff();
+        session.intro();
+        session.beginCombat();
+        let guard = 0;
+        while (!session.done && !session.striking("player") && guard++ < 1000) session.tick(0.05);
+        session.resolveStrike("player", false);
         assert(session.events.some(e => e.type === "miss"), "没撞上不应结算伤害");
+    });
+
+    ok("即时战斗按速度决定出手频率", () => {
+        const run = new RunState(9);
+        run.confirmAppearance(defaultAppearance());
+        const slow = run.enemyFighter();
+        const fast = run.enemyFighter();
+        fast.stats = { ...fast.stats, spd: slow.stats.spd + 30 };
+        const session = new BattleSession(fast, slow, 9, false);
+        session.intro();
+        session.beginCombat();
+        const count = { player: 0, enemy: 0 };
+        let guard = 0;
+        while (!session.done && guard++ < 4000) {
+            for (const ev of session.tick(0.05)) {
+                if (ev.type === "action") count[ev.side] += 1;
+            }
+            for (const side of ["player", "enemy"] as const) {
+                if (session.striking(side)) session.resolveStrike(side, true);
+            }
+        }
+        assert(count.player > count.enemy, "速度高的一方出手次数应更多");
+        assert(count.player + count.enemy > 20, "即时制一场应打满几十刀，不是几回合");
+    });
+
+    ok("行为树与默认决策结论一致", () => {
+        // 游戏里出招由行为树定，无界面验证跑的是 decide。两边判据同源但组合方式不同，
+        // 这里把状态空间铺开对一遍，谁改歪了都会在这里露出来。
+        const brain = new BattleBrain();
+        let n = 0;
+        for (const myHp of [0.1, 0.34, 0.36, 0.6, 1]) {
+            for (const foeHp of [0.2, 0.31, 0.9]) {
+                for (const healPerTurn of [0, 6]) {
+                    for (const healCd of [0, 2]) {
+                        for (const skillCd of [0, 3]) {
+                            for (const spd of [8, 15]) {
+                                for (const atk of [10, 19, 26]) {
+                                    const self: AiFighter = {
+                                        hp: 100 * myHp, maxHp: 100, atk, def: 8, spd, crit: 0.1,
+                                        healPerTurn, healCd, skillCd
+                                    };
+                                    const foe: AiFighter = {
+                                        hp: 100 * foeHp, maxHp: 100, atk: 18, def: 14, spd: 12, crit: 0.1,
+                                        healPerTurn: 0, healCd: 1, skillCd: 1
+                                    };
+                                    const want = decide(self, foe);
+                                    const got = brain.think(self, foe);
+                                    assert(
+                                        want.kind === got.kind && want.style === got.style,
+                                        `血${myHp} 敌血${foeHp} 技能cd${skillCd} 速${spd} 攻${atk}: `
+                                        + `期望 ${want.kind}/${want.style}，行为树给了 ${got.kind}/${got.style}`
+                                    );
+                                    n += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert(n >= 500, `样本只有 ${n} 组，覆盖不够`);
+    });
+
+    ok("战力排序与实际强弱一致", () => {
+        const bare = buildStats([], {});
+        const gale = buildStats(["gale_wing", "gale_tail", "gale_leg", "gale_body"], {});
+        const iron = buildStats(["iron_comb", "iron_head", "iron_body", "iron_wing"], {});
+        assert(combatPower(gale) > combatPower(bare), "疾风套加速度，战力应高于裸装");
+        // 实测铁喙套能打穿第五关而纯疾风套打不动，战力排序不能反过来误导玩家。
+        assert(combatPower(iron) > combatPower(gale), "铁喙套更能打，战力应更高");
+    });
+
+    ok("战斗时长落在可观赏区间", () => {
+        const seconds = (player: any, enemy: any, boss: boolean) => {
+            const s = new BattleSession(player, enemy, 11, boss);
+            s.intro();
+            s.beginCombat();
+            let t = 0;
+            let guard = 0;
+            while (!s.done && guard++ < 20000) {
+                s.tick(0.05);
+                for (const side of ["player", "enemy"] as const) {
+                    if (s.striking(side)) s.resolveStrike(side, true);
+                }
+                t += 0.05;
+            }
+            return t;
+        };
+        const run = new RunState(11);
+        run.confirmAppearance(defaultAppearance());
+        const first = seconds(run.playerFighter(), run.enemyFighter(), false);
+        assert(first > 8 && first < 40, `首战 ${first.toFixed(1)}s 不该这么${first <= 8 ? "快" : "慢"}`);
+        // 能走到鸡王的玩家必然凑齐了套装，拿裸装去打只会被秒，测不出节奏。
+        run.phase = "boss";
+        run.ownedIds = ["iron_comb", "iron_head", "iron_body", "iron_wing", "stone_comb", "stone_head", "stone_body", "stone_leg"];
+        const boss = seconds(run.playerFighter(), run.enemyFighter(), true);
+        assert(boss > 10 && boss < 50, `鸡王战 ${boss.toFixed(1)}s 超出预期`);
     });
 
     if (fail.length) {
         console.log("\nFAILED", fail.length);
         process.exit(1);
     }
-    console.log("\nALL PASS", 10);
+    console.log("\nALL PASS", 14);
 }
 
 run();

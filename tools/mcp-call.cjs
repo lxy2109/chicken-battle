@@ -29,8 +29,30 @@ async function tool(name, args) {
     return call("tools/call", { name, arguments: args });
 }
 
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
 (async () => {
     const action = process.argv[2];
+    if (action === "tools") {
+        const res = await call("tools/list", {});
+        for (const t of res.result.tools) console.log(t.name);
+        return;
+    }
+    if (action === "schema") {
+        const res = await call("tools/list", {});
+        const t = res.result.tools.find(v => v.name === process.argv[3]);
+        console.log(t ? JSON.stringify(t.inputSchema, null, 2) : "未找到该工具");
+        return;
+    }
+    if (action === "call") {
+        // 用法: node tools/mcp-call.cjs call <工具名> '<json 参数>'
+        const res = await tool(process.argv[3], JSON.parse(process.argv[4] || "{}"));
+        const text = res.result && res.result.content && res.result.content[0] && res.result.content[0].text;
+        console.log(text || JSON.stringify(res, null, 2));
+        return;
+    }
     if (action === "logs") {
         console.log(JSON.stringify(await tool("debug_debug_console", { action: "get_logs", limit: 80, filter: "error" }), null, 2));
         return;
@@ -51,6 +73,7 @@ async function tool(name, args) {
         const items = [
             ["db://assets/bundle/gui/customize/customize.prefab", "customize", "db://assets/script/game/gui/customize/CustomizeViewComp.ts"],
             ["db://assets/bundle/gui/map/map.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/character/character.prefab", "character", "db://assets/script/game/gui/character/CharacterViewComp.ts"],
             ["db://assets/bundle/gui/prebattle/prebattle.prefab", "prebattle", "db://assets/script/game/gui/prebattle/PreBattleViewComp.ts"],
             ["db://assets/bundle/gui/battle/battle.prefab", "battle", "db://assets/script/game/gui/battle/BattleViewComp.ts"],
             ["db://assets/bundle/gui/result/result.prefab", "result", "db://assets/script/game/gui/result/ResultViewComp.ts"],
@@ -59,6 +82,11 @@ async function tool(name, args) {
             ["db://assets/bundle/gui/ending/ending.prefab", "ending", "db://assets/script/game/gui/ending/EndingViewComp.ts"]
         ];
         for (const [prefabPath, rootName, scriptPath] of items) {
+            // 编辑器可能还缓存着上一版预制体，直接 enter/save 会把旧内容原样写回，
+            // 把 gen-prefabs 刚改的东西悄悄覆盖掉。所以逐个重新导入并等它落地。
+            // 目录级 reimport 不会刷新已缓存的单个资源，必须一个个来。
+            await tool("assetAdvanced_asset_operations", { action: "reimport", url: prefabPath });
+            await sleep(2500);
             await tool("prefab_prefab_edit", { action: "enter", prefabPath });
             const found = await tool("node_node_query", { action: "find_by_name", name: rootName });
             const text = found.result && found.result.content && found.result.content[0] ? found.result.content[0].text : JSON.stringify(found);

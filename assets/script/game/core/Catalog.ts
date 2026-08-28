@@ -13,6 +13,15 @@ export const PREFAB_PATH = {
     statRow: "game/prefab/stat_row"
 };
 
+/** bundle 内贴图路径，供 GameComponent.setSprite 运行时换图。 */
+export const TEX = {
+    /** 装备图标文件名与 Item.json 的 id 一致。 */
+    equip: (itemId: string) => `game/texture/equip/${itemId}/spriteFrame`,
+    icon: (name: string) => `game/texture/icon/${name}/spriteFrame`,
+    mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
+    ui: (name: string) => `game/texture/ui/${name}/spriteFrame`
+};
+
 export const PART_NODE: Record<PartId, string> = {
     comb: "Comb",
     head: "Head",

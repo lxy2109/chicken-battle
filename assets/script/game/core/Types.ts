@@ -92,9 +92,11 @@ export type BattleEvent =
 
 export type StagePhase = "warmup" | "official" | "boss";
 
+/** character 是从地图进出的查看界面，不参与 RunState 的流程推进。 */
 export type RunScreen =
     | "customize"
     | "map"
+    | "character"
     | "shop"
     | "prebattle"
     | "battle"

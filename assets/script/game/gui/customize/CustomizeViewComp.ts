@@ -5,7 +5,7 @@ import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { getColorPalette, getFaceList } from "../../core/Catalog";
-import { formatStats } from "../../core/EquipMath";
+import { combatPower, formatStatsLine } from "../../core/EquipMath";
 import { Appearance, FaceId, PART_TEXT, PartId, defaultAppearance } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -54,10 +54,11 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     }
 
     private async refresh() {
+        const stats = this.ent.run.playerFighter().stats;
         setLabel(this, "LabTitle", "开局一只鸡");
         setLabel(this, "LabPart", `正在染：${PART_TEXT[this.part]}`);
-        setLabel(this, "LabStats", formatStats(this.ent.run.playerFighter().stats));
-        await spawnChicken(this, "ChickenSlot", this.draft, 1);
+        setLabel(this, "LabStats", `战力 ${combatPower(stats)}\n${formatStatsLine(stats)}`);
+        await spawnChicken(this, "ChickenSlot", this.draft, 0.86);
     }
 
     private async onEnter() {

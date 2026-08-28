@@ -88,7 +88,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "xO5mDUbsJ0hyP6nEVctK1i"
+    "fileId": "HYfwN4lCTarIZgxO5mDUbs"
   },
   {
     "__type__": "cc.Sprite",
@@ -132,7 +132,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "EVctK1izQ7oFWduL2jAR8p"
+    "fileId": "O5mDUbsJ0hyP6nEVctK1iz"
   },
   {
     "__type__": "cc.Node",
@@ -209,7 +209,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "L2jAR8pGXevM3kBS9qHYfw"
+    "fileId": "VctK1izQ7oFWduL2jAR8pG"
   },
   {
     "__type__": "cc.Label",
@@ -229,8 +229,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 248,
-      "b": 230,
+      "g": 250,
+      "b": 236,
       "a": 255
     },
     "_string": "技能",
@@ -240,7 +240,7 @@
     "_fontSize": 26,
     "_fontFamily": "Arial",
     "_lineHeight": 31,
-    "_overflow": 0,
+    "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
@@ -253,9 +253,9 @@
     "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
-      "r": 40,
-      "g": 24,
-      "b": 8,
+      "r": 58,
+      "g": 34,
+      "b": 12,
       "a": 255
     },
     "_outlineWidth": 3,
@@ -276,7 +276,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "S9qHYfwN4lCTarIZgxO5mD"
+    "fileId": "2jAR8pGXevM3kBS9qHYfwN"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -286,7 +286,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "ZgxO5mDUbsJ0hyP6nEVctK",
+    "fileId": "9qHYfwN4lCTarIZgxO5mDU",
     "instance": null,
     "targetOverrides": null
   },
@@ -298,7 +298,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "6nEVctK1izQ7oFWduL2jAR",
+    "fileId": "gxO5mDUbsJ0hyP6nEVctK1",
     "instance": null,
     "targetOverrides": null
   }

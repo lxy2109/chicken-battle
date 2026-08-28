@@ -88,7 +88,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "TarIZgxO5mDUbsJ0hyP6nE"
+    "fileId": "3kBS9qHYfwN4lCTarIZgxO"
   },
   {
     "__type__": "cc.Sprite",
@@ -132,7 +132,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "0hyP6nEVctK1izQ7oFWduL"
+    "fileId": "arIZgxO5mDUbsJ0hyP6nEV"
   },
   {
     "__type__": "cc.Node",
@@ -209,7 +209,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "7oFWduL2jAR8pGXevM3kBS"
+    "fileId": "hyP6nEVctK1izQ7oFWduL2"
   },
   {
     "__type__": "cc.Label",
@@ -229,8 +229,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 248,
-      "b": 230,
+      "g": 250,
+      "b": 236,
       "a": 255
     },
     "_string": "开战！",
@@ -240,7 +240,7 @@
     "_fontSize": 26,
     "_fontFamily": "Arial",
     "_lineHeight": 31,
-    "_overflow": 0,
+    "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
@@ -253,9 +253,9 @@
     "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
-      "r": 40,
-      "g": 24,
-      "b": 8,
+      "r": 58,
+      "g": 34,
+      "b": 12,
       "a": 255
     },
     "_outlineWidth": 3,
@@ -276,7 +276,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "evM3kBS9qHYfwN4lCTarIZ"
+    "fileId": "oFWduL2jAR8pGXevM3kBS9"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -286,7 +286,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "lCTarIZgxO5mDUbsJ0hyP6",
+    "fileId": "vM3kBS9qHYfwN4lCTarIZg",
     "instance": null,
     "targetOverrides": null
   },
@@ -298,7 +298,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "sJ0hyP6nEVctK1izQ7oFWd",
+    "fileId": "CTarIZgxO5mDUbsJ0hyP6n",
     "instance": null,
     "targetOverrides": null
   }

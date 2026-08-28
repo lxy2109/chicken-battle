@@ -11,34 +11,25 @@ const { knock } = require("./knock-alpha.cjs");
 const uuids = require("./art-uuids.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
-const SRC = process.argv[2];
-if (!SRC) {
-    console.error("用法: node tools/import-art.cjs <生图输出目录>");
-    process.exit(1);
+const TEX = "assets/bundle/game/texture/";
+const g = uuids.groups;
+
+/** [源文件名, bundle 相对路径, uuid, 是否九宫格]，源文件统一取 <名字>.png。 */
+function rows(names, dir, sliced, strip) {
+    return names.map((name) => {
+        const short = strip ? name.slice(strip.length) : name;
+        return [name + ".png", TEX + dir + "/" + short + ".png", uuids[name], sliced];
+    });
 }
 
-const FILES = [
-    ["part_body.png", "assets/bundle/game/texture/chicken/body.png", uuids.body, false],
-    ["part_head_base.png", "assets/bundle/game/texture/chicken/head.png", uuids.head, false],
-    ["part_neck.png", "assets/bundle/game/texture/chicken/neck.png", uuids.neck, false],
-    ["part_comb.png", "assets/bundle/game/texture/chicken/comb.png", uuids.comb, false],
-    ["part_wing.png", "assets/bundle/game/texture/chicken/wing.png", uuids.wing, false],
-    ["part_tail.png", "assets/bundle/game/texture/chicken/tail.png", uuids.tail, false],
-    ["part_leg.png", "assets/bundle/game/texture/chicken/leg.png", uuids.leg, false],
-    ["part_beak.png", "assets/bundle/game/texture/chicken/beak.png", uuids.beak, false],
-    ["part_eyes.png", "assets/bundle/game/texture/chicken/eyes.png", uuids.eyes, false],
-    ["part_shadow.png", "assets/bundle/game/texture/chicken/shadow.png", uuids.shadow, false],
-    ["ui_panel.png", "assets/bundle/game/texture/ui/panel.png", uuids.panel, true],
-    ["ui_btn_wood.png", "assets/bundle/game/texture/ui/btn_wood.png", uuids.btn_wood, true],
-    ["ui_btn_green.png", "assets/bundle/game/texture/ui/btn_green.png", uuids.btn_green, true],
-    ["ui_btn_red.png", "assets/bundle/game/texture/ui/btn_red.png", uuids.btn_red, true],
-    ["ui_btn_dark.png", "assets/bundle/game/texture/ui/btn_dark.png", uuids.btn_dark, true],
-    ["ui_coin.png", "assets/bundle/game/texture/ui/coin.png", uuids.coin, false],
-    ["ui_bubble.png", "assets/bundle/game/texture/ui/bubble.png", uuids.bubble, true],
-    ["ui_hp_frame.png", "assets/bundle/game/texture/ui/hp_frame.png", uuids.hp_frame, true],
-    ["bg_village.png", "assets/bundle/game/texture/bg/village.png", uuids.village, false],
-    ["bg_battle.png", "assets/bundle/game/texture/bg/battle.png", uuids.battle, false]
-];
+const FILES = [].concat(
+    rows(g.UI_SLICED, "ui", true),
+    rows(g.UI_PLAIN, "ui", false),
+    rows(g.ICONS, "icon", false, "icon_"),
+    rows(g.NODES, "map", false, "node_"),
+    rows(g.EQUIPS, "equip", false, "eq_"),
+    rows(g.BGS, "bg", false, "bg_")
+);
 
 function pngSize(file) {
     const buf = fs.readFileSync(file);
@@ -134,27 +125,39 @@ function spriteMeta(uuid, name, w, h, sliced) {
     };
 }
 
-for (const [srcName, rel, uuid, sliced] of FILES) {
-    const src = path.join(SRC, srcName);
-    if (!fs.existsSync(src)) {
-        console.error("missing", src);
+function main() {
+    const SRC = process.argv[2];
+    if (!SRC) {
+        console.error("用法: node tools/import-art.cjs <生图输出目录>");
         process.exit(1);
     }
-    const dest = path.join(ROOT, rel);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(src, dest);
-    const { w, h } = pngSize(dest);
-    const name = path.basename(rel, ".png");
-    fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, name, w, h, sliced), null, 2) + "\n");
-    console.log(rel, w + "x" + h);
+
+    for (const [srcName, rel, uuid, sliced] of FILES) {
+        const src = path.join(SRC, srcName);
+        if (!fs.existsSync(src)) {
+            console.error("missing", src);
+            process.exit(1);
+        }
+        const dest = path.join(ROOT, rel);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(src, dest);
+        const { w, h } = pngSize(dest);
+        const name = path.basename(rel, ".png");
+        fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, name, w, h, sliced), null, 2) + "\n");
+        console.log(rel, w + "x" + h);
+    }
+
+    // 背景是整屏不透明图，抠底只会误伤天空，跳过。
+    for (const [, rel] of FILES.filter((row) => row[1].indexOf("/bg/") < 0)) {
+        const file = path.join(ROOT, rel);
+        const img = png.decode(file);
+        const cleared = knock(img);
+        png.encode(file, img);
+        console.log(`抠底 ${path.basename(rel)} 清除 ${(100 * cleared / (img.width * img.height)).toFixed(1)}%`);
+    }
+    console.log("art imported", FILES.length);
 }
 
-// 背景是整屏不透明图，抠底只会误伤天空，跳过。
-for (const [, rel] of FILES.filter((row) => row[1].indexOf("/bg/") < 0)) {
-    const file = path.join(ROOT, rel);
-    const img = png.decode(file);
-    const cleared = knock(img);
-    png.encode(file, img);
-    console.log(`抠底 ${path.basename(rel)} 清除 ${(100 * cleared / (img.width * img.height)).toFixed(1)}%`);
-}
-console.log("art imported", FILES.length);
+module.exports = { FILES };
+
+if (require.main === module) main();

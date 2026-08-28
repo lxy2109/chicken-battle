@@ -20,7 +20,8 @@ export class EndingViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabTitle", "村口鸡王");
         setLabel(this, "LabGold", `${this.ent.run.gold}`);
         setLabel(this, "LabDesc", "你打败了坤坤。村口从今以后，你说了算。");
-        await spawnChicken(this, "ChickenSlot", this.ent.run.playerFighter().appearance, 0.9);
+        setLabel(this, "LabHint", `共走过 ${this.ent.run.stage} 关`);
+        await spawnChicken(this, "ChickenSlot", this.ent.run.playerFighter().appearance, 0.72);
         bindClick(this, "BtnRestart", this.onRestart.bind(this));
     }
 

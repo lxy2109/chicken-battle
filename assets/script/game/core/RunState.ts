@@ -1,5 +1,5 @@
-import { enemyToFighter, getPlayer, getStage, maxStage, playerTaunts } from "./Catalog";
-import { applySkinAppearance, buildStats, healFull, itemById, setById, setPrice, shopStock } from "./EquipMath";
+import { enemyToFighter, getPlayer, getStage, itemById, maxStage, playerTaunts, setById } from "./Catalog";
+import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
 import { rollRewards } from "./RewardGen";
 import { Rng } from "./Rng";
 import {

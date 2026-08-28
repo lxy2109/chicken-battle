@@ -1,5 +1,6 @@
 import "./customize/CustomizeViewComp";
 import "./map/MapViewComp";
+import "./character/CharacterViewComp";
 import "./prebattle/PreBattleViewComp";
 import "./battle/BattleViewComp";
 import "./result/ResultViewComp";

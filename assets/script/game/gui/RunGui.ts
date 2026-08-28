@@ -8,7 +8,7 @@ import { CCEntity, ECSCtor, ECSView } from "db://oops-framework/module/common/CC
 export async function openRunView<T extends ECSView>(entity: CCEntity, ctor: ECSCtor<T>): Promise<Node> {
     const key = gui.internal.getKey(ctor);
     const node = await oops.gui.open(key, { preload: true });
-    let comp = node.getComponent(ctor as any) as ecs.Comp;
+    let comp = node.getComponent(ctor as any) as unknown as ecs.Comp;
     if (!comp) {
         comp = node.addComponent(ctor as any) as unknown as ecs.Comp;
     }
