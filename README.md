@@ -9,17 +9,33 @@
 git clone https://gitee.com/dgflash/oops-game-kit.git
 ```
 
-2. 框架插件
+2. 编辑器插件
 
-`extensions/` 下的三个插件源码已随本仓库提交，clone 下来即可直接用，无需再执行安装脚本。
+`extensions/` 下的插件源码已随本仓库提交，clone 下来即可直接用，无需再执行安装脚本。
 
-只有插件目录意外丢失、或需要重装依赖时，才执行对应脚本（windows 用 `.bat`，mac 用 `.sh`）：
+| 插件 | 作用 | 来源 |
+| --- | --- | --- |
+| `oops-plugin-framework` | 框架本体，提供 `db://oops-framework` | gitee dgflash |
+| `oops-plugin-hot-update` | 热更新 | gitee dgflash |
+| `cocos-mcp-server` | 编辑器 MCP 服务，供 AI 直接操作场景与预制体 | github DaxianLee |
 
-- `update-oops-plugin-framework` 框架插件
-- `update-oops-plugin-hot-update` 热更新插件
-- `update-oops-plugin-excel-to-json` Excel 转 Json 插件
+插件目录意外丢失时，前两个执行对应脚本重装（windows 用 `.bat`，mac 用 `.sh`），要升级版本则先手动删掉目录再执行：
 
-要升级插件版本，先手动删掉 `extensions/` 下对应目录，再执行脚本重新克隆。
+- `update-oops-plugin-framework`
+- `update-oops-plugin-hot-update`
+- `update-oops-plugin-excel-to-json`（转表插件，本项目转表实际走 `tools/excel-kit.cjs`，不装也可以）
+
+`cocos-mcp-server` 没有安装脚本，重装方式：
+
+```
+git clone --depth 1 https://github.com/DaxianLee/cocos-mcp-server.git extensions/cocos-mcp-server
+rmdir /s /q extensions\cocos-mcp-server\.git
+cd extensions\cocos-mcp-server && npm install
+```
+
+装完在编辑器里启用插件并重启，然后从 `扩展 > Cocos MCP Server` 打开面板启动服务。注意插件默认端口是 3000，而 `.cursor/mcp.json` 与 `tools/mcp-call.cjs` 用的是 3100，两边要对齐。
+
+所有插件的 `node_modules` 都不入库，由 `npm install` 生成。
 
 ### 为什么插件源码要入库
 
