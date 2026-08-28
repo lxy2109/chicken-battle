@@ -1,0 +1,74 @@
+{
+    "gold": {
+        "id": "gold",
+        "title": "一袋铜钱",
+        "desc": "立刻获得金币",
+        "goldPerStage": 30,
+        "maxHp": 0,
+        "atk": 0,
+        "def": 0,
+        "spd": 0,
+        "crit": 0,
+        "randomPart": 0
+    },
+    "atk": {
+        "id": "atk",
+        "title": "锐喙",
+        "desc": "随机部位 攻击+3",
+        "goldPerStage": 0,
+        "maxHp": 0,
+        "atk": 3,
+        "def": 0,
+        "spd": 0,
+        "crit": 0,
+        "randomPart": 1
+    },
+    "hp": {
+        "id": "hp",
+        "title": "壮体",
+        "desc": "随机部位 生命+20",
+        "goldPerStage": 0,
+        "maxHp": 20,
+        "atk": 0,
+        "def": 0,
+        "spd": 0,
+        "crit": 0,
+        "randomPart": 1
+    },
+    "def": {
+        "id": "def",
+        "title": "硬羽",
+        "desc": "随机部位 防御+2",
+        "goldPerStage": 0,
+        "maxHp": 0,
+        "atk": 0,
+        "def": 2,
+        "spd": 0,
+        "crit": 0,
+        "randomPart": 1
+    },
+    "spd": {
+        "id": "spd",
+        "title": "疾步",
+        "desc": "随机部位 速度+2",
+        "goldPerStage": 0,
+        "maxHp": 0,
+        "atk": 0,
+        "def": 0,
+        "spd": 2,
+        "crit": 0,
+        "randomPart": 1
+    },
+    "crit": {
+        "id": "crit",
+        "title": "凶眼",
+        "desc": "随机部位 暴击+6%",
+        "goldPerStage": 0,
+        "maxHp": 0,
+        "atk": 0,
+        "def": 0,
+        "spd": 0,
+        "crit": 0.06,
+        "randomPart": 1
+    }
+}

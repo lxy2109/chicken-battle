@@ -1,0 +1,17 @@
+{
+    "1": {
+        "id": 1,
+        "name": "村口鸡",
+        "maxHp": 120,
+        "atk": 18,
+        "def": 6,
+        "spd": 10,
+        "crit": 0.12,
+        "bossEnemyId": "kun_boss",
+        "bossGoldWin": 200,
+        "hintBoss": "五局已毕，鸡王坤坤在村口等你。",
+        "taunt1": "今儿个让你见识村口一霸！",
+        "taunt2": "你这只鸡，看着就嫩。",
+        "taunt3": "热身都站不稳？正式赛更别来。"
+    }
+}

@@ -1,0 +1,57 @@
+{
+    "1": {
+        "id": 1,
+        "name": "东篱",
+        "warmupEnemyId": "s1_warmup",
+        "officialEnemyId": "s1_official",
+        "warmupGoldWin": 20,
+        "warmupGoldLose": 8,
+        "officialGoldWin": 50,
+        "hintWarmup": "第1局热身赛：可败，败了仍可进正式赛。",
+        "hintOfficial": "第1局正式赛：失败则本局重来。"
+    },
+    "2": {
+        "id": 2,
+        "name": "麦场",
+        "warmupEnemyId": "s2_warmup",
+        "officialEnemyId": "s2_official",
+        "warmupGoldWin": 40,
+        "warmupGoldLose": 16,
+        "officialGoldWin": 100,
+        "hintWarmup": "第2局热身赛：可败，败了仍可进正式赛。",
+        "hintOfficial": "第2局正式赛：失败则本局重来。"
+    },
+    "3": {
+        "id": 3,
+        "name": "祠堂",
+        "warmupEnemyId": "s3_warmup",
+        "officialEnemyId": "s3_official",
+        "warmupGoldWin": 60,
+        "warmupGoldLose": 24,
+        "officialGoldWin": 150,
+        "hintWarmup": "第3局热身赛：可败，败了仍可进正式赛。",
+        "hintOfficial": "第3局正式赛：失败则本局重来。"
+    },
+    "4": {
+        "id": 4,
+        "name": "河滩",
+        "warmupEnemyId": "s4_warmup",
+        "officialEnemyId": "s4_official",
+        "warmupGoldWin": 80,
+        "warmupGoldLose": 32,
+        "officialGoldWin": 200,
+        "hintWarmup": "第4局热身赛：可败，败了仍可进正式赛。",
+        "hintOfficial": "第4局正式赛：失败则本局重来。"
+    },
+    "5": {
+        "id": 5,
+        "name": "校场",
+        "warmupEnemyId": "s5_warmup",
+        "officialEnemyId": "s5_official",
+        "warmupGoldWin": 100,
+        "warmupGoldLose": 40,
+        "officialGoldWin": 250,
+        "hintWarmup": "第5局热身赛：可败，败了仍可进正式赛。",
+        "hintOfficial": "第5局正式赛：失败则本局重来。"
+    }
+}

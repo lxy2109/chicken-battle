@@ -10,8 +10,11 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { oops } from "db://oops-framework/core/Oops";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCViewVM } from "db://oops-framework/module/common/CCViewVM";
-import { DemoViewComp } from "../../account/view/DemoViewComp";
+import { CustomizeViewComp } from "../../gui/customize/CustomizeViewComp";
+import { openRunView } from "../../gui/RunGui";
+import "../../gui/Views";
 import { smc } from "../../common/SingletonModuleComp";
+import { loadGameTables } from "../../core/LoadTables";
 import { Initialize } from "../Initialize";
 
 const { ccclass, property } = _decorator;
@@ -51,9 +54,9 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     }
 
     /** 加载游戏本地JSON数据（自定义内容） */
-    private loadCustom() {
-        // 加载游戏本地JSON数据的多语言提示文本
+    private async loadCustom() {
         this.data.prompt = oops.language.getLangByID("loading_load_json");
+        await loadGameTables();
     }
 
     /** 加载初始游戏内容资源 */
@@ -79,7 +82,7 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     private async onCompleteCallback() {
         // 获取用户信息的多语言提示文本
         this.data.prompt = oops.language.getLangByID("loading_load_player");
-        await smc.account.addUi(DemoViewComp);
+        await openRunView(smc.chickenRun, CustomizeViewComp);
         this.remove();
     }
 

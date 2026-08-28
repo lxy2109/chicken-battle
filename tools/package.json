@@ -1,0 +1,7 @@
+{
+  "name": "chicken-battle-tools",
+  "private": true,
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}

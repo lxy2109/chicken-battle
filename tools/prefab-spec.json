@@ -1,0 +1,34 @@
+{
+  "comment": "供 cocos-mcp 对照的预制体清单。节点树已由 tools/gen-prefabs.cjs 生成。",
+  "gui": [
+    "db://assets/bundle/gui/customize/customize.prefab",
+    "db://assets/bundle/gui/map/map.prefab",
+    "db://assets/bundle/gui/prebattle/prebattle.prefab",
+    "db://assets/bundle/gui/battle/battle.prefab",
+    "db://assets/bundle/gui/result/result.prefab",
+    "db://assets/bundle/gui/reward/reward.prefab",
+    "db://assets/bundle/gui/shop/shop.prefab",
+    "db://assets/bundle/gui/ending/ending.prefab"
+  ],
+  "game": [
+    "db://assets/bundle/game/prefab/chicken.prefab",
+    "db://assets/bundle/game/prefab/fx_hit.prefab",
+    "db://assets/bundle/game/prefab/fx_skill.prefab",
+    "db://assets/bundle/game/prefab/fx_heal.prefab",
+    "db://assets/bundle/game/prefab/fx_start.prefab",
+    "db://assets/bundle/game/prefab/taunt_bubble.prefab",
+    "db://assets/bundle/game/prefab/shop_item.prefab",
+    "db://assets/bundle/game/prefab/reward_card.prefab",
+    "db://assets/bundle/game/prefab/stat_row.prefab"
+  ],
+  "scripts": {
+    "gui/customize/customize": "CustomizeViewComp",
+    "gui/map/map": "MapViewComp",
+    "gui/prebattle/prebattle": "PreBattleViewComp",
+    "gui/battle/battle": "BattleViewComp",
+    "gui/result/result": "ResultViewComp",
+    "gui/reward/reward": "RewardViewComp",
+    "gui/shop/shop": "ShopViewComp",
+    "gui/ending/ending": "EndingViewComp"
+  }
+}

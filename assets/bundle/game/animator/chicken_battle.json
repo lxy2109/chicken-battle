@@ -1,0 +1,70 @@
+{
+  "parameters": [
+    { "param": "toTaunt", "type": 3, "init": 0 },
+    { "param": "toStart", "type": 3, "init": 0 },
+    { "param": "toCombat", "type": 3, "init": 0 },
+    { "param": "toWin", "type": 3, "init": 0 },
+    { "param": "toLose", "type": 3, "init": 0 }
+  ],
+  "anyState": {
+    "state": "any",
+    "motion": "",
+    "loop": false,
+    "speed": 1,
+    "transitions": []
+  },
+  "defaultState": "idle",
+  "states": [
+    {
+      "state": "idle",
+      "motion": "idle",
+      "loop": true,
+      "speed": 1,
+      "transitions": [
+        { "toState": "taunt", "hasExitTime": false, "conditions": [{ "param": "toTaunt", "value": 1, "logic": 0 }] }
+      ]
+    },
+    {
+      "state": "taunt",
+      "motion": "taunt",
+      "loop": false,
+      "speed": 1,
+      "transitions": [
+        { "toState": "start", "hasExitTime": false, "conditions": [{ "param": "toStart", "value": 1, "logic": 0 }] }
+      ]
+    },
+    {
+      "state": "start",
+      "motion": "start",
+      "loop": false,
+      "speed": 1,
+      "transitions": [
+        { "toState": "combat", "hasExitTime": false, "conditions": [{ "param": "toCombat", "value": 1, "logic": 0 }] }
+      ]
+    },
+    {
+      "state": "combat",
+      "motion": "attack",
+      "loop": true,
+      "speed": 1,
+      "transitions": [
+        { "toState": "win", "hasExitTime": false, "conditions": [{ "param": "toWin", "value": 1, "logic": 0 }] },
+        { "toState": "lose", "hasExitTime": false, "conditions": [{ "param": "toLose", "value": 1, "logic": 0 }] }
+      ]
+    },
+    {
+      "state": "win",
+      "motion": "win",
+      "loop": false,
+      "speed": 1,
+      "transitions": []
+    },
+    {
+      "state": "lose",
+      "motion": "lose",
+      "loop": false,
+      "speed": 1,
+      "transitions": []
+    }
+  ]
+}

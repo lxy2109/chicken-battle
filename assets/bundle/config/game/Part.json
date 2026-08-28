@@ -1,0 +1,100 @@
+{
+    "color_0": {
+        "id": "color_0",
+        "type": "color",
+        "name": "色1",
+        "value": "#E23B3B",
+        "order": 0
+    },
+    "color_1": {
+        "id": "color_1",
+        "type": "color",
+        "name": "色2",
+        "value": "#F4D35E",
+        "order": 1
+    },
+    "color_2": {
+        "id": "color_2",
+        "type": "color",
+        "name": "色3",
+        "value": "#EE964B",
+        "order": 2
+    },
+    "color_3": {
+        "id": "color_3",
+        "type": "color",
+        "name": "色4",
+        "value": "#7B4B2A",
+        "order": 3
+    },
+    "color_4": {
+        "id": "color_4",
+        "type": "color",
+        "name": "色5",
+        "value": "#2A9D8F",
+        "order": 4
+    },
+    "color_5": {
+        "id": "color_5",
+        "type": "color",
+        "name": "色6",
+        "value": "#264653",
+        "order": 5
+    },
+    "color_6": {
+        "id": "color_6",
+        "type": "color",
+        "name": "色7",
+        "value": "#E76F51",
+        "order": 6
+    },
+    "color_7": {
+        "id": "color_7",
+        "type": "color",
+        "name": "色8",
+        "value": "#FFFFFF",
+        "order": 7
+    },
+    "color_8": {
+        "id": "color_8",
+        "type": "color",
+        "name": "色9",
+        "value": "#8E44AD",
+        "order": 8
+    },
+    "color_9": {
+        "id": "color_9",
+        "type": "color",
+        "name": "色10",
+        "value": "#3498DB",
+        "order": 9
+    },
+    "face_fierce": {
+        "id": "face_fierce",
+        "type": "face",
+        "name": "凶",
+        "value": "fierce",
+        "order": 0
+    },
+    "face_dumb": {
+        "id": "face_dumb",
+        "type": "face",
+        "name": "呆",
+        "value": "dumb",
+        "order": 1
+    },
+    "face_proud": {
+        "id": "face_proud",
+        "type": "face",
+        "name": "傲",
+        "value": "proud",
+        "order": 2
+    },
+    "face_cute": {
+        "id": "face_cute",
+        "type": "face",
+        "name": "萌",
+        "value": "cute",
+        "order": 3
+    }
+}

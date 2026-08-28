@@ -7,6 +7,7 @@
 
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { Account } from "../account/Account";
+import { ChickenRun } from "../chicken/ChickenRun";
 import { Initialize } from "../initialize/Initialize";
 
 /** 游戏单例业务模块 */
@@ -16,6 +17,8 @@ export class SingletonModuleComp extends ecs.Comp {
     initialize: Initialize = null!;
     /** 游戏账号模块 */
     account: Account = null!;
+    /** 斗鸡局内流程 */
+    chickenRun: ChickenRun = null!;
 
     reset() { }
 }

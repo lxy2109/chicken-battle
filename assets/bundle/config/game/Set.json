@@ -1,0 +1,102 @@
+{
+    "iron_beak": {
+        "id": "iron_beak",
+        "name": "铁喙套",
+        "pieceIds": [
+            "iron_comb",
+            "iron_head",
+            "iron_body",
+            "iron_wing"
+        ],
+        "discount": 0.8,
+        "b2maxHp": 0,
+        "b2atk": 4,
+        "b2def": 0,
+        "b2spd": 0,
+        "b2crit": 0,
+        "b2healPerTurn": 0,
+        "b4maxHp": 0,
+        "b4atk": 8,
+        "b4def": 0,
+        "b4spd": 0,
+        "b4crit": 0.08,
+        "b4healPerTurn": 0,
+        "b4revive": 0,
+        "b4lockHp": 0
+    },
+    "stone_crown": {
+        "id": "stone_crown",
+        "name": "石冠套",
+        "pieceIds": [
+            "stone_comb",
+            "stone_head",
+            "stone_body",
+            "stone_leg"
+        ],
+        "discount": 0.8,
+        "b2maxHp": 20,
+        "b2atk": 0,
+        "b2def": 3,
+        "b2spd": 0,
+        "b2crit": 0,
+        "b2healPerTurn": 0,
+        "b4maxHp": 40,
+        "b4atk": 0,
+        "b4def": 6,
+        "b4spd": 0,
+        "b4crit": 0,
+        "b4healPerTurn": 0,
+        "b4revive": 0,
+        "b4lockHp": 0
+    },
+    "gale": {
+        "id": "gale",
+        "name": "疾风套",
+        "pieceIds": [
+            "gale_wing",
+            "gale_tail",
+            "gale_leg",
+            "gale_body"
+        ],
+        "discount": 0.8,
+        "b2maxHp": 0,
+        "b2atk": 0,
+        "b2def": 0,
+        "b2spd": 4,
+        "b2crit": 0,
+        "b2healPerTurn": 0,
+        "b4maxHp": 0,
+        "b4atk": 0,
+        "b4def": 0,
+        "b4spd": 8,
+        "b4crit": 0.1,
+        "b4healPerTurn": 0,
+        "b4revive": 0,
+        "b4lockHp": 0
+    },
+    "kunkun": {
+        "id": "kunkun",
+        "name": "鸡王外观",
+        "pieceIds": [
+            "kun_face",
+            "kun_comb",
+            "kun_body",
+            "kun_tail"
+        ],
+        "discount": 0.75,
+        "b2maxHp": 0,
+        "b2atk": 0,
+        "b2def": 0,
+        "b2spd": 0,
+        "b2crit": 0,
+        "b2healPerTurn": 6,
+        "b4maxHp": 0,
+        "b4atk": 0,
+        "b4def": 0,
+        "b4spd": 0,
+        "b4crit": 0,
+        "b4healPerTurn": 10,
+        "b4revive": 1,
+        "b4lockHp": 1
+    }
+}
