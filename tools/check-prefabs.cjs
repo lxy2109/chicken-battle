@@ -15,7 +15,8 @@ const uuids = require("./art-uuids.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const DESIGN = { w: 720, h: 1280 };
-const WHITE = "56a0bfc3-686d-4e85-bb26-5f5a6855ae06@f9941";
+/** 编辑器内置纯白图，见 gen-prefabs 里同名常量的说明。 */
+const WHITE = "7d8f9b89-4fd1-4c9f-a3ab-38ec7cded7ca@f9941";
 
 /** 生成脚本产出的预制体，编辑器手搓的那几个不在校验范围内。 */
 const TARGETS = [

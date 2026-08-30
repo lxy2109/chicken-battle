@@ -11,7 +11,12 @@ const zlib = require("zlib");
 const uuids = require("./art-uuids.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
-const WHITE = "56a0bfc3-686d-4e85-bb26-5f5a6855ae06@f9941";
+/**
+ * 编辑器内置的纯白图，给需要靠 _color 染色的方块和特效底用。
+ * 别写成 56a0bfc3-…ae06：那是框架模板 common/texture/btn_ok.png 的 uuid，
+ * 拿它当白底的话所有染色块都会顶着一张按钮图。
+ */
+const WHITE = "7d8f9b89-4fd1-4c9f-a3ab-38ec7cded7ca@f9941";
 
 /** 素材名直接取自 art-uuids，两边命名一致就不用再维护映射表。 */
 const SF = {};
