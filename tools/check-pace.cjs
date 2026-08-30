@@ -99,12 +99,33 @@ function tally(seed, out) {
             if (ev.type !== "action") continue;
             out[ev.style] = (out[ev.style] || 0) + 1;
         }
-        run.settle(true);
-        run.afterResult();
-        if (run.screen === "reward") run.skipReward();
-        if (run.screen === "shop") run.leaveShop();
+        advance(run);
         if (run.screen === "ending") break;
     }
+}
+
+/**
+ * 打赢一场并挑掉两组三选一（先奖励再强化），走到下一场。
+ * 挑而不是跳过，是因为真实玩家不会白放着免费的不拿，
+ * 一路练下来后面几关会明显变快，跳过就量不到这件事。
+ */
+function advance(run) {
+    run.settle(true);
+    run.afterResult();
+    let guard = 0;
+    while (run.screen === "reward" && guard++ < 4) {
+        const cards = run.rewards.length > 0 ? run.rewards : run.upgrades;
+        run.pickReward(cards[0].id);
+    }
+    if (run.screen === "shop") run.leaveShop();
+}
+
+/** 一路打赢并且每次都挑强化，拿到刚走到鸡王时的真实状态。 */
+function growToBoss(seed) {
+    const run = fresh(seed);
+    let guard = 0;
+    while (run.phase !== "boss" && guard++ < 40) advance(run);
+    return run;
 }
 
 const bad = [];
@@ -140,10 +161,18 @@ const cases = [];
     fast.stats = Object.assign({}, fast.stats, { spd: 45 });
     cases.push(["堆满速度", fast, swift.enemyFighter(), false, 8, 25]);
 
+    const GEAR = ["iron_comb", "iron_head", "iron_body", "iron_wing", "stone_comb", "stone_head", "stone_body", "stone_leg"];
+
     const kun = fresh(11);
     kun.phase = "boss";
-    kun.ownedIds = ["iron_comb", "iron_head", "iron_body", "iron_wing", "stone_comb", "stone_head", "stone_body", "stone_leg"];
+    kun.ownedIds = GEAR;
     cases.push(["鸡王战", kun.playerFighter(), kun.enemyFighter(), true, 20, 45]);
+
+    // 真实走到鸡王的玩家吃过十次三选一，比上面那只强不少。
+    // 强化把这一场压得太短的话，通关就没有紧张感了，所以单独盯一遍。
+    const grown = growToBoss(11);
+    grown.ownedIds = GEAR;
+    cases.push(["鸡王战·练过", grown.playerFighter(), grown.enemyFighter(), true, 18, 45]);
 }
 for (const [label, p, e, boss, lo, hi] of cases) {
     const bare = play(p, e, boss, false);

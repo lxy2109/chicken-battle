@@ -6,6 +6,8 @@ import { BattleSession } from "../assets/script/game/core/BattleSession";
 import { getItems, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
 import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
+import { upgradeOf } from "../assets/script/game/core/PartUpgrade";
+import { rollUpgrades } from "../assets/script/game/core/RewardGen";
 import { RunState } from "../assets/script/game/core/RunState";
 import { Appearance, StagePhase, defaultAppearance } from "../assets/script/game/core/Types";
 
@@ -38,7 +40,9 @@ function assert(cond: boolean, msg: string) {
 function run() {
     loadTables();
     const fail: string[] = [];
+    let total = 0;
     const ok = (name: string, fn: () => void) => {
+        total += 1;
         try {
             fn();
             console.log("PASS", name);
@@ -69,7 +73,9 @@ function run() {
         run.enterFight();
         run.settle(false);
         run.afterResult();
-        assert(run.screen === "shop", "热身后应进商店");
+        assert(run.screen === "reward", "热身打完也该给三选一");
+        run.skipReward();
+        assert(run.screen === "shop", "挑完强化进商店");
         run.leaveShop();
         assert(run.phase === "official", "应进入正式赛");
         assert(run.gold > 0, "热身失败也应给少量金币");
@@ -84,6 +90,8 @@ function run() {
         run.stage = 2;
         run.settle(false);
         run.afterResult();
+        assert(run.screen === "reward", "输了也给三选一");
+        run.skipReward();
         assert(run.phase === "warmup", "应回到热身");
         assert(run.stage === 2, "局数不变");
         assert(run.screen === "map", "回到村口");
@@ -121,6 +129,58 @@ function run() {
         run.settle(true);
         run.afterResult();
         assert(run.screen === "ending", "打败鸡王应胜利");
+        assert(run.rewards.length === 0 && run.upgrades.length === 0, "赢了鸡王直接通关，不该再发牌");
+    });
+
+    ok("金币照给且不占强化的名额", () => {
+        const run = new RunState(11);
+        run.confirmAppearance(defaultAppearance());
+        run.enterFight();
+        run.settle(true);
+        // 战后奖励就是结算这笔金币，不用挑；三选一是另一件事，只抽部位强化。
+        assert(run.lastGoldGain > 0, "打完该给金币");
+        assert(run.gold === run.lastGoldGain, "金币该进账");
+        assert(run.rewards.length === 0, "金币不该占掉三选一的名额");
+        run.afterResult();
+        assert(run.screen === "reward", "热身赢了也要发强化牌");
+        assert(run.upgrades.length === 3, "应摇出三张");
+        assert(run.upgrades.every(r => !!r.part), "三张都该是部位强化");
+        assert(new Set(run.upgrades.map(r => r.part)).size === 3, "三张不能落在同一部位");
+    });
+
+    ok("挑完强化即离开三选一", () => {
+        const run = new RunState(14);
+        run.confirmAppearance(defaultAppearance());
+        run.enterFight();
+        run.settle(true);
+        run.afterResult();
+        const up = run.upgrades[0];
+        run.pickReward(up.id);
+        assert(run.partLevels[up.part!] === 1, "强化应记上等级");
+        assert(run.screen !== "reward", "挑完就该走");
+    });
+
+    ok("强化只加一份属性并撑大部位", () => {
+        const run = new RunState(12);
+        run.confirmAppearance(defaultAppearance());
+        const before = run.playerFighter();
+        const step = upgradeOf("head")!.stats.atk!;
+        run.levelUp("head");
+        const after = run.playerFighter();
+        // 等级和 bonus 各加一次就会变成双倍，这条断言专门盯这个。
+        assert(after.stats.atk === before.stats.atk + step, "练一级只该加一份攻击");
+        assert((after.appearance.partScale?.head ?? 1) > 1, "练过的部位要变大");
+        assert((after.appearance.partScale?.wing ?? 1) === 1, "没练的部位不该变大");
+        assert(combatPower(after.stats) > combatPower(before.stats), "强化应体现在战力上");
+    });
+
+    ok("部位练满后不再发牌", () => {
+        const run = new RunState(13);
+        const def = upgradeOf("head")!;
+        for (let i = 0; i < def.maxLevel + 3; i++) run.levelUp("head");
+        assert(run.partLevels.head === def.maxLevel, "等级不该超过配表上限");
+        const cards = rollUpgrades(1, 99, run.partLevels);
+        assert(cards.every(c => c.part !== "head"), "练满的部位不该再出现");
     });
 
     ok("自动战斗可分出胜负", () => {
@@ -305,7 +365,7 @@ function run() {
         console.log("\nFAILED", fail.length);
         process.exit(1);
     }
-    console.log("\nALL PASS", 16);
+    console.log("\nALL PASS", total);
 }
 
 run();
