@@ -10,6 +10,8 @@ export interface AiFighter {
     healPerTurn: number;
     healCd: number;
     skillCd: number;
+    /** 这是本方第几次出手，只用来轮换招式动作，不参与任何数值判断。 */
+    beat?: number;
 }
 
 export interface BattleDecision {
@@ -51,29 +53,59 @@ export const AI_RULE = {
     canPierce: (s, f) => n(s.atk) > n(f.def)
 } satisfies Record<string, AiRule>;
 
-export const HEAL_UP: BattleDecision = { kind: "heal", style: "peck" };
-export const SKILL_DIVE: BattleDecision = { kind: "skill", style: "dive" };
-export const ATK_JUMP: BattleDecision = { kind: "attack", style: "jump" };
-export const ATK_DIVE: BattleDecision = { kind: "attack", style: "dive" };
-export const ATK_PECK: BattleDecision = { kind: "attack", style: "peck" };
+/**
+ * 每种局势下可用的招式动作。
+ *
+ * 招式一定要跟局势对得上，但**不能跟局势一一绑死**：数值在一场里几乎不变，
+ * 判据的结论也就不变，招式若只由判据决定，一整场就只看得见一两个动作
+ * ——之前兜底那一支占了全部出招的四成，通场都在飞扑，就是这么来的。
+ * 所以每种局势给一个动作池，按出手序号轮着来，局势对味，动作还换着花样。
+ */
+const STYLE_POOL = {
+    /** 回血是低头理毛，不冲出去 */
+    heal: ["peck"],
+    /** 技能要有排面。腾空下砸只留给技能，砸下来就知道这一下是大招 */
+    skill: ["leap", "charge", "dive"],
+    /** 比对面快，靠出手快占便宜 */
+    fast: ["jump", "combo", "feint"],
+    /** 打不过又落后，只能搏命往前撞 */
+    losing: ["charge", "dive", "jump"],
+    /** 攻能穿防，贴上去阴 */
+    pierce: ["peck", "combo", "tail"],
+    /** 势均力敌时的常规交手，这一支触发得最多，动作也给得最杂 */
+    hold: ["dive", "jump", "tail", "feint"]
+} satisfies Record<string, StrikeStyle[]>;
+
+export type StylePool = keyof typeof STYLE_POOL;
+
+/** 在局势对应的动作池里按出手序号取一个，同一局势连着触发也不会重样。 */
+export function pickStyle(pool: StylePool, beat: number): StrikeStyle {
+    const list = STYLE_POOL[pool];
+    return list[Math.abs(Math.floor(beat)) % list.length];
+}
+
+/** 定下这一支的结论：出什么招由 kind 决定，摆什么动作由局势和出手序号决定。 */
+export function act(kind: BattleActionKind, pool: StylePool, self: AiFighter): BattleDecision {
+    return { kind, style: pickStyle(pool, n(self.beat)) };
+}
 
 /**
  * 按双方当前数值决策，不掷骰。
- * 残血回血 > 收割/压场技能 > 普攻（快跳踢 / 劣势飞扑 / 能打贴身啄）。
+ * 残血回血 > 收割/压场技能 > 普攻（快就抢手 / 劣势搏命 / 攻能穿防就贴身）。
  *
  * 这是不带引擎依赖的默认实现，无界面验证直接用它；
  * 游戏跑起来时由 battle/BattleBrain 的行为树接管，判据同源，结论一致。
  */
 export function decide(self: AiFighter, foe: AiFighter): BattleDecision {
-    if (AI_RULE.needHeal(self, foe)) return HEAL_UP;
+    if (AI_RULE.needHeal(self, foe)) return act("heal", "heal", self);
     if (AI_RULE.skillReady(self, foe)
         && (AI_RULE.foeDying(self, foe) || AI_RULE.healthy(self, foe) || AI_RULE.outgun(self, foe))) {
-        return SKILL_DIVE;
+        return act("skill", "skill", self);
     }
-    if (AI_RULE.faster(self, foe)) return ATK_JUMP;
-    if (AI_RULE.losing(self, foe)) return ATK_DIVE;
-    if (AI_RULE.canPierce(self, foe)) return ATK_PECK;
-    return ATK_DIVE;
+    if (AI_RULE.faster(self, foe)) return act("attack", "fast", self);
+    if (AI_RULE.losing(self, foe)) return act("attack", "losing", self);
+    if (AI_RULE.canPierce(self, foe)) return act("attack", "pierce", self);
+    return act("attack", "hold", self);
 }
 
 /** 行为树 Task 与无界面验证共用 */

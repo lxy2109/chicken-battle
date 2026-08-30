@@ -201,7 +201,10 @@ function run() {
                                 for (const atk of [10, 19, 26]) {
                                     const self: AiFighter = {
                                         hp: 100 * myHp, maxHp: 100, atk, def: 8, spd, crit: 0.1,
-                                        healPerTurn, healCd, skillCd
+                                        healPerTurn, healCd, skillCd,
+                                        // 招式按出手序号在动作池里轮换，这里让序号跟着样本走，
+                                        // 行为树要是没照 core 那套规则轮，就会在这里跟 decide 对不上。
+                                        beat: n
                                     };
                                     const foe: AiFighter = {
                                         hp: 100 * foeHp, maxHp: 100, atk: 18, def: 14, spd: 12, crit: 0.1,
@@ -223,6 +226,43 @@ function run() {
             }
         }
         assert(n >= 500, `样本只有 ${n} 组，覆盖不够`);
+    });
+
+    ok("局势不变时招式仍轮换", () => {
+        // 数值一场里几乎不动，判据的结论也就不动。招式若跟判据一一绑死，
+        // 一整场就只看得见一个动作，这条断言守的就是这件事。
+        const foe: AiFighter = {
+            hp: 80, maxHp: 100, atk: 12, def: 8, spd: 8, healPerTurn: 0, healCd: 1, skillCd: 1
+        };
+        const styles = new Set<string>();
+        for (let beat = 0; beat < 4; beat++) {
+            const self: AiFighter = {
+                hp: 80, maxHp: 100, atk: 12, def: 8, spd: 20,
+                healPerTurn: 0, healCd: 1, skillCd: 1, beat
+            };
+            const d = decide(self, foe);
+            assert(d.kind === "attack", "局势没变，出招类型就该一直是普攻");
+            styles.add(d.style);
+        }
+        assert(styles.size >= 3, `同一局势连着出手应换着动作打，实际只有 ${styles.size} 种`);
+    });
+
+    ok("一场战斗的动作足够杂", () => {
+        const run = new RunState(7);
+        run.confirmAppearance(defaultAppearance());
+        const session = new BattleSession(run.playerFighter(), run.enemyFighter(), 7, false);
+        session.resolveAll();
+        const tally: Record<string, number> = {};
+        let total = 0;
+        for (const ev of session.events) {
+            if (ev.type !== "action") continue;
+            tally[ev.style] = (tally[ev.style] || 0) + 1;
+            total += 1;
+        }
+        const kinds = Object.keys(tally);
+        assert(kinds.length >= 4, `一场里应看到至少四种动作，实际 ${kinds.length} 种`);
+        const top = Math.max(...kinds.map(k => tally[k]));
+        assert(top / total < 0.5, `有一种动作占了 ${(100 * top / total).toFixed(0)}%，太单一`);
     });
 
     ok("战力排序与实际强弱一致", () => {
@@ -265,7 +305,7 @@ function run() {
         console.log("\nFAILED", fail.length);
         process.exit(1);
     }
-    console.log("\nALL PASS", 14);
+    console.log("\nALL PASS", 16);
 }
 
 run();

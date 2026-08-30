@@ -41,6 +41,8 @@ interface LiveFighter {
     lockUsed: boolean;
     /** 演出层正在播这一方的动作，期间不再出新招 */
     busy: boolean;
+    /** 已经出了几次手，交给决策去轮换招式动作 */
+    beats: number;
 }
 
 interface PendingStrike {
@@ -57,7 +59,8 @@ function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
         healCd: 0,
         skillCd: 0,
         lockUsed: false,
-        busy: false
+        busy: false,
+        beats: 0
     };
 }
 
@@ -185,6 +188,7 @@ export class BattleSession {
             const foe: BattleSide = side === "player" ? "enemy" : "player";
             const d = this.decider(this.toAi(actor), this.toAi(this.live(foe)));
             const style: StrikeStyle = d.style;
+            actor.beats += 1;
             out.push({ type: "action", side, kind: d.kind, style });
 
             if (d.kind === "heal") {
@@ -278,7 +282,8 @@ export class BattleSession {
             crit: f.stats.crit,
             healPerTurn: f.stats.healPerTurn,
             healCd: f.healCd,
-            skillCd: f.skillCd
+            skillCd: f.skillCd,
+            beat: f.beats
         };
     }
 

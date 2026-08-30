@@ -1,4 +1,8 @@
 import { Color, Node, Sprite, UITransform, tween, v3, Vec3 } from "cc";
+import { StrikeStyle } from "../core/Types";
+
+/** 位移用到的 easing 名。写成字面量是为了不依赖引擎导出的类型。 */
+type Ease = "quadIn" | "quadOut";
 
 /**
  * 一只鸡的演出控制器：踱步、冲刺、出招、受击、胜负姿态。
@@ -16,6 +20,12 @@ export class ChickenActor {
     private waiters: Array<() => void> = [];
     /** 各部位的原始配色，受击闪红后要还原成它，不能拿当前色当基准。 */
     private tints: Array<{ sp: Sprite; base: Color }> = [];
+    /**
+     * 各部位在预制体里的摆放位置。
+     * 头在 (16,158)、身子在 (0,-32)、脖子在 (8,78)，各有各的位置，
+     * 所以动完必须还原到这里，拿 (0,0,0) 当原点会把整只鸡拼到中心去。
+     */
+    private nests = new Map<Node, Vec3>();
 
     constructor(readonly node: Node, home: Vec3) {
         this.home = home.clone();
@@ -23,6 +33,9 @@ export class ChickenActor {
         this.sy = node.scale.y;
         for (const sp of node.getComponentsInChildren(Sprite)) {
             this.tints.push({ sp, base: sp.color.clone() });
+        }
+        for (const c of node.children) {
+            this.nests.set(c, c.position.clone());
         }
     }
 
@@ -44,45 +57,179 @@ export class ChickenActor {
      * 目标同时也在移动，所以每一步都重新朝它当前位置修正。
      *
      * onContact 在喙/脚真正碰到的那一帧回调，伤害要在这时结算才有打击感，
-     * 收招和回位是之后的事，不该让对手多挨那半秒。
+     * 收招和回位是之后的事，不该让对手多挨那半秒。所以它由各招式在接触瞬间自己叫，
+     * 这里只负责兜底：一整套演完都没碰到，才补一个没打中。
      */
-    async strike(target: Node, style: "peck" | "jump" | "dive", onContact?: (hit: boolean) => void): Promise<boolean> {
+    async strike(target: Node, style: StrikeStyle, onContact?: (hit: boolean) => void): Promise<boolean> {
         this.roaming = false;
         const tk = this.begin();
+        // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
+        // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
+        this.resetPose();
+        let told = false;
+        const contact = (hit: boolean) => {
+            if (told) return;
+            told = true;
+            if (onContact) onContact(hit);
+        };
 
-        if (style === "jump") {
-            this.flap(3);
-            const mid = this.node.position.clone();
-            mid.y += 56;
-            await this.moveTo(mid, 0.1, tk);
-        }
-        else if (style === "dive") {
-            this.flap(6);
-            const up = this.node.position.clone();
-            up.y += 88;
-            await this.moveTo(up, 0.12, tk);
-        }
-        else {
-            this.walkLegs(true, tk);
-        }
-
-        let hit = false;
-        for (let i = 0; i < 10 && this.alive(tk); i++) {
-            if (!target.isValid) break;
-            if (this.hits(target)) {
-                hit = true;
-                if (style === "peck") await this.peck(tk);
-                else this.kick(tk);
-                if (onContact) onContact(true);
-                await this.delay(0.08, tk);
-                break;
-            }
-            await this.moveTo(this.approach(target, 130), 0.09, tk);
-        }
-        if (!hit && onContact) onContact(false);
+        const hit = await this.perform(target, style, tk, contact);
+        contact(false);
         this.walkLegs(false, tk);
         if (this.alive(tk)) await this.retreat(tk);
         return hit;
+    }
+
+    private perform(target: Node, style: StrikeStyle, tk: number, contact: (hit: boolean) => void): Promise<boolean> {
+        switch (style) {
+            case "jump": return this.jumpMove(target, tk, contact);
+            case "dive": return this.diveMove(target, tk, contact);
+            case "leap": return this.leapMove(target, tk, contact);
+            case "charge": return this.chargeMove(target, tk, contact);
+            case "tail": return this.tailMove(target, tk, contact);
+            case "combo": return this.comboMove(target, tk, contact);
+            case "feint": return this.feintMove(target, tk, contact);
+            default: return this.peckMove(target, tk, contact);
+        }
+    }
+
+    //#region 招式
+
+    /** 贴身啄：走过去啄一口，最朴素的一招。 */
+    private async peckMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.walkLegs(true, tk);
+        const hit = await this.advance(target, tk, 130, 0.09);
+        this.walkLegs(false, tk);
+        if (!hit) return false;
+        contact(true);
+        await this.peck(tk);
+        return true;
+    }
+
+    /**
+     * 跳踢：一路小跳着逼过去，落点上补一脚。
+     * 每一步都走抛物线，连起来就是蹦过去的观感——以前是先抬一下再直线平移，
+     * 那点抬升立刻被插值拉平，所以怎么看都不像跳。
+     */
+    private async jumpMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.flap(3);
+        // 每跳压到 0.18 秒是有讲究的：出招期间逻辑层挂着 busy 不出新招，
+        // 接触前的耗时一旦超过最快出手间隔 0.55 秒，演出就会反过来拖慢节奏，
+        // 把速度堆上去的收益白白吃掉。下面几招的时长都是按这条线卡的。
+        const hit = await this.advance(target, tk, 168, 0.18, 62);
+        if (!hit) return false;
+        contact(true);
+        this.kick(tk);
+        await this.delay(0.12, tk);
+        return true;
+    }
+
+    /** 飞扑：先窜到高处，再压着身子一头扎下来。 */
+    private async diveMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.flap(6);
+        const up = this.node.position.clone();
+        up.y += 96;
+        await this.ease(up, 0.14, "quadOut", tk);
+        this.tilt(26);
+        const hit = await this.advance(target, tk, 220, 0.12);
+        this.node.angle = 0;
+        if (!hit) return false;
+        contact(true);
+        this.kick(tk);
+        await this.delay(0.1, tk);
+        return true;
+    }
+
+    /**
+     * 腾空下砸：原地窜起一大截，在最高点停一拍，再整只砸到对手头上。
+     * 那一拍停顿是留给观众反应的，没有它就只是个高一点的飞扑。
+     */
+    private async leapMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.flap(5);
+        const sky = this.node.position.clone();
+        sky.y += 186;
+        await this.ease(sky, 0.2, "quadOut", tk);
+        await this.delay(0.13, tk);
+        if (!this.alive(tk) || !target.isValid) return false;
+        const onto = target.position.clone();
+        onto.y += 44;
+        await this.ease(onto, 0.15, "quadIn", tk);
+        if (!this.hits(target)) return false;
+        contact(true);
+        this.squash(tk);
+        await this.delay(0.16, tk);
+        return true;
+    }
+
+    /** 扑翅冲撞：压低身子贴地加速撞过去，撞实了自己也被弹开。 */
+    private async chargeMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.flap(8);
+        this.squat(true, tk);
+        const hit = await this.advance(target, tk, 250, 0.08);
+        if (!hit) {
+            this.squat(false, tk);
+            return false;
+        }
+        contact(true);
+        this.squash(tk);
+        await this.knockBack(tk, 58);
+        this.squat(false, tk);
+        return true;
+    }
+
+    /** 转身扫尾：凑到跟前反身用尾巴抽，近身时最省事的一招。 */
+    private async tailMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.walkLegs(true, tk);
+        const hit = await this.advance(target, tk, 150, 0.09);
+        this.walkLegs(false, tk);
+        if (!hit) return false;
+        contact(true);
+        await this.sweep(tk);
+        return true;
+    }
+
+    /** 连啄：贴上去快啄三下，伤害仍然只结算一次，热闹归演出。 */
+    private async comboMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        this.walkLegs(true, tk);
+        const hit = await this.advance(target, tk, 160, 0.08);
+        this.walkLegs(false, tk);
+        if (!hit) return false;
+        contact(true);
+        for (let i = 0; i < 3 && this.alive(tk); i++) {
+            await this.peck(tk, 0.11);
+        }
+        return true;
+    }
+
+    /** 假动作：先虚晃一下把对手骗住，再绕到它另一侧偷一口。 */
+    private async feintMove(target: Node, tk: number, contact: (hit: boolean) => void) {
+        const bait = this.approach(target, 96);
+        await this.ease(bait, 0.09, "quadOut", tk);
+        await this.delay(0.06, tk);
+        if (!this.alive(tk) || !target.isValid) return false;
+        await this.arcTo(this.behind(target), 0.24, 104, tk);
+        const hit = await this.advance(target, tk, 150, 0.08);
+        if (!hit) return false;
+        contact(true);
+        await this.peck(tk);
+        return true;
+    }
+
+    //#endregion
+
+    /**
+     * 一步步逼近目标，撞上就停。arc 大于零时每一步走抛物线，看着就是蹦过去。
+     * 对手自己也在动，所以每步都重新朝它当下的位置修一次方向。
+     */
+    private async advance(target: Node, tk: number, step: number, dur: number, arc = 0): Promise<boolean> {
+        for (let i = 0; i < 10 && this.alive(tk); i++) {
+            if (!target.isValid) return false;
+            if (this.hits(target)) return true;
+            const next = this.approach(target, step);
+            if (arc > 0) await this.arcTo(next, dur, arc, tk);
+            else await this.moveTo(next, dur, tk);
+        }
+        return this.alive(tk) && target.isValid && this.hits(target);
     }
 
     /** 回到自己的位置继续踱步。 */
@@ -109,13 +256,18 @@ export class ChickenActor {
 
     private recoil(n: Node | null, dx: number, dy: number, deg: number) {
         if (!n) return;
+        const nest = this.nestOf(n);
         tween(n).stop();
-        n.setPosition(0, 0, 0);
+        n.setPosition(nest);
         n.angle = 0;
         tween(n)
-            .to(0.05, { position: v3(dx, dy, 0), angle: deg })
-            .to(0.14, { position: v3(0, 0, 0), angle: 0 })
+            .to(0.05, { position: v3(nest.x + dx, nest.y + dy, 0), angle: deg })
+            .to(0.14, { position: v3(nest.x, nest.y, 0), angle: 0 })
             .start();
+    }
+
+    private nestOf(n: Node): Vec3 {
+        return this.nests.get(n) || Vec3.ZERO;
     }
 
     hits(target: Node): boolean {
@@ -248,11 +400,12 @@ export class ChickenActor {
     private resetPose() {
         this.node.setScale(this.sx, this.sy, 1);
         this.node.angle = 0;
-        for (const name of ["Wing", "LegL", "LegR", "Neck", "Head", "Body", "Tail"]) {
+        // Beak 也要收：啄击是甩喙的，动画被抢占时它会歪着回不来。
+        for (const name of ["Wing", "LegL", "LegR", "Neck", "Head", "Body", "Tail", "Beak"]) {
             const n = this.child(name);
             if (!n) continue;
             n.angle = 0;
-            n.setPosition(0, 0, 0);
+            n.setPosition(this.nestOf(n));
         }
     }
 
@@ -260,6 +413,78 @@ export class ChickenActor {
         return this.hold(tk, (fin) => {
             tween(this.node).to(dur, { position: pos }).call(fin).start();
         });
+    }
+
+    private ease(pos: Vec3, dur: number, easing: Ease, tk: number) {
+        return this.hold(tk, (fin) => {
+            tween(this.node).to(dur, { position: pos }, { easing }).call(fin).start();
+        });
+    }
+
+    /**
+     * 沿抛物线跳到目标点。
+     *
+     * 位移用一段直线插值走完的话，起跳抬多高都会被立刻拉平成平移，
+     * 所以拆成上升和下落两段：上升减速、下落加速，才像被重力拽下来。
+     */
+    private async arcTo(to: Vec3, dur: number, height: number, tk: number) {
+        const from = this.node.position.clone();
+        const apex = v3((from.x + to.x) / 2, Math.max(from.y, to.y) + height, 0);
+        await this.ease(apex, dur * 0.45, "quadOut", tk);
+        if (!this.alive(tk)) return;
+        await this.ease(to, dur * 0.55, "quadIn", tk);
+    }
+
+    /** 目标身后：从自己站位那侧看过去的另一边。 */
+    private behind(target: Node): Vec3 {
+        const t = target.position;
+        const away = t.x - this.home.x >= 0 ? 96 : -96;
+        return v3(t.x + away, t.y - 12, 0);
+    }
+
+    /** 砸实了的压扁回弹，落地和撞击都用它收尾。 */
+    private squash(tk: number) {
+        if (!this.alive(tk)) return;
+        tween(this.node)
+            .to(0.05, { scale: v3(this.sx * 1.2, this.sy * 0.74, 1) })
+            .to(0.12, { scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
+            .start();
+    }
+
+    /**
+     * 冲撞前压低身子，冲完再站起来。
+     * 被抢占后就别再站起来了：那会儿新动作已经摆好自己的姿态，这一下会把它盖掉。
+     */
+    private squat(on: boolean, tk: number) {
+        if (!this.alive(tk)) return;
+        const x = on ? this.sx * 1.12 : this.sx;
+        const y = on ? this.sy * 0.86 : this.sy;
+        tween(this.node).to(0.08, { scale: v3(x, y, 1) }).start();
+    }
+
+    /** 撞完被反作用力弹开一截。 */
+    private knockBack(tk: number, dist: number) {
+        const p = this.node.position.clone();
+        p.x -= dist * this.sign();
+        return this.ease(p, 0.14, "quadOut", tk);
+    }
+
+    /** 转身扫尾：背过身去把尾巴甩出去，抽完再转回来。 */
+    private async sweep(tk: number) {
+        const tail = this.child("Tail");
+        this.node.setScale(-this.sx, this.sy, 1);
+        if (tail) {
+            tween(tail).stop();
+            tween(tail)
+                .to(0.08, { angle: -52 })
+                .to(0.12, { angle: 18 })
+                .to(0.08, { angle: 0 })
+                .start();
+        }
+        await this.delay(0.3, tk);
+        // 转回来这一下同样不能抢新动作的姿态，被抢占就交给它开头的归位去收。
+        if (!this.alive(tk)) return;
+        this.node.setScale(this.sx, this.sy, 1);
     }
 
     private delay(sec: number, tk: number) {
@@ -321,15 +546,18 @@ export class ChickenActor {
             .start();
     }
 
-    private peck(tk: number) {
+    /** 啄一口。dur 收得更短是给连啄用的，三下得比一下快才叫连。 */
+    private peck(tk: number, dur = 0.16) {
         const neck = this.child("Neck");
         const head = this.child("Head");
         const beak = this.child("Beak");
         const dip = 28 * this.sign();
-        if (neck) tween(neck).to(0.07, { angle: dip }).to(0.09, { angle: 0 }).start();
-        if (head) tween(head).to(0.07, { angle: dip }).to(0.09, { angle: 0 }).start();
-        if (beak) tween(beak).to(0.06, { angle: 12 }).to(0.08, { angle: 0 }).start();
-        return this.delay(0.16, tk);
+        const out = dur * 0.44;
+        const back = dur * 0.56;
+        if (neck) tween(neck).to(out, { angle: dip }).to(back, { angle: 0 }).start();
+        if (head) tween(head).to(out, { angle: dip }).to(back, { angle: 0 }).start();
+        if (beak) tween(beak).to(out * 0.85, { angle: 12 }).to(back, { angle: 0 }).start();
+        return this.delay(dur, tk);
     }
 
     private kick(tk: number) {

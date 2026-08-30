@@ -10,7 +10,7 @@ import { ChickenActor } from "../../battle/ChickenActor";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH } from "../../core/Catalog";
 import { BattleSession } from "../../core/BattleSession";
-import { BattleEvent, BattleSide } from "../../core/Types";
+import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { setLabel } from "../UiUtil";
@@ -24,6 +24,30 @@ const ARENA_HOME = new Vec3(0, 10, 0);
 /** 血条追赶实际血量的速度，越大越跟手。 */
 const BAR_EASE = 8;
 const LOG_HOLD = 1.6;
+
+/** 战报里管招式叫什么。 */
+const STYLE_TEXT: Record<StrikeStyle, string> = {
+    peck: "贴身啄",
+    jump: "跳踢",
+    dive: "飞扑",
+    leap: "腾空下砸",
+    charge: "扑翅冲撞",
+    tail: "转身扫尾",
+    combo: "连啄",
+    feint: "假动作偷袭"
+};
+
+/** 各招式打中时的震屏力度，整只砸下来的自然要比啄一口重。 */
+const HIT_QUAKE: Record<StrikeStyle, number> = {
+    peck: 6,
+    jump: 9,
+    dive: 11,
+    leap: 20,
+    charge: 16,
+    tail: 12,
+    combo: 7,
+    feint: 8
+};
 
 /**
  * 即时战斗界面。
@@ -46,6 +70,8 @@ export class BattleViewComp extends CCView<ChickenRun> {
     private running = false;
     private ticking = false;
     private shown: Record<BattleSide, number> = { player: 1, enemy: 1 };
+    /** 双方最近一击用的招式，伤害事件回来时靠它决定震屏力度。 */
+    private styleOf: Record<BattleSide, StrikeStyle> = { player: "peck", enemy: "peck" };
     private logLeft = 0;
 
     async start() {
@@ -132,7 +158,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
             void this.runStrike(ev.side, ev.style, ev.kind === "skill");
         }
         else if (ev.type === "hit") {
-            this.onHit(ev.to, ev.dmg, ev.crit);
+            this.onHit(ev.from, ev.to, ev.dmg, ev.crit);
         }
         else if (ev.type === "heal") {
             this.actor(ev.side)?.hop();
@@ -158,14 +184,16 @@ export class BattleViewComp extends CCView<ChickenRun> {
     }
 
     /** 一次出招的完整演出。命中判定交给碰撞，结果回给逻辑层结算。 */
-    private async runStrike(side: BattleSide, style: "peck" | "jump" | "dive", skill: boolean) {
+    private async runStrike(side: BattleSide, style: StrikeStyle, skill: boolean) {
         const self = this.actor(side);
         const foe = this.chicken(side === "player" ? "enemy" : "player");
         if (!self || !foe) {
             this.applyResult(this.session.resolveStrike(side, false));
             return;
         }
-        if (skill) this.log(side, style === "dive" ? "飞扑" : "绝招");
+        // 记下这一击用的招式，等伤害事件回来时按招式定震屏力度。
+        this.styleOf[side] = style;
+        this.log(side, skill ? `绝招·${STYLE_TEXT[style]}` : STYLE_TEXT[style]);
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         });
@@ -175,14 +203,15 @@ export class BattleViewComp extends CCView<ChickenRun> {
         for (const ev of evs) this.dispatch(ev);
     }
 
-    private onHit(to: BattleSide, dmg: number, crit: boolean) {
+    private onHit(from: BattleSide, to: BattleSide, dmg: number, crit: boolean) {
         this.actor(to)?.flinch();
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
             crit ? `暴击 -${dmg}` : `-${dmg}`,
             crit ? 0.7 : 0.5, crit ? 1.25 : 1
         );
-        this.shake(crit ? 18 : 7);
+        // 整只砸下来和啄一口不该抖得一样重，按招式给个底，暴击再往上加。
+        this.shake(HIT_QUAKE[this.styleOf[from]] + (crit ? 11 : 0));
         if (crit) this.log(to === "player" ? "enemy" : "player", "暴击");
         this.refreshHp(false);
     }

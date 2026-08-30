@@ -1,12 +1,15 @@
 import { BehaviorTree, Selector, Sequence, Task } from "db://oops-framework/libs/behavior-tree";
 import {
-    AI_RULE, ATK_DIVE, ATK_JUMP, ATK_PECK, AiFighter, AiRule, BattleDecision, HEAL_UP, SKILL_DIVE
+    AI_RULE, AiFighter, AiRule, BattleDecision, StylePool, act
 } from "../core/BattleAI";
+import { BattleActionKind } from "../core/Types";
+
+const FALLBACK: BattleDecision = { kind: "attack", style: "dive" };
 
 class Board {
     self!: AiFighter;
     foe!: AiFighter;
-    decision: BattleDecision = ATK_PECK;
+    decision: BattleDecision = FALLBACK;
 }
 
 /** 判据节点：过了这一支才往下走，没过就让 Selector 去试下一支。 */
@@ -21,14 +24,17 @@ class Cond extends Task {
     }
 }
 
-/** 结论节点：写下这一支的结论，走到这里这次决策就定了。 */
+/**
+ * 结论节点：写下这一支的结论，走到这里这次决策就定了。
+ * 出什么招由 kind 定，摆什么动作交给 core 的 act 按局势和出手序号轮换。
+ */
 class Act extends Task {
-    constructor(private readonly decision: BattleDecision) {
+    constructor(private readonly kind: BattleActionKind, private readonly pool: StylePool) {
         super();
     }
 
     run(bb: Board) {
-        bb.decision = this.decision;
+        bb.decision = act(this.kind, this.pool, bb.self);
         this.success();
     }
 }
@@ -38,7 +44,7 @@ class Act extends Task {
  *
  * 判据全部取自 core 的 AI_RULE，这里只负责编排优先级：
  * 从上往下试，回血最急，其次是技能（要冷却好，且满足收割、血厚、能打穿三者之一），
- * 再往下按速度和血量差挑普攻招式，都不满足就搏命飞扑。
+ * 再往下按速度和血量差挑局势，都不满足就走常规交手。
  *
  * 树本身不存跨次状态，每次 think 都从根重跑一遍，所以双方共用一棵没问题。
  */
@@ -48,7 +54,7 @@ export class BattleBrain {
 
     constructor() {
         const root = new Selector([
-            new Sequence([new Cond(AI_RULE.needHeal), new Act(HEAL_UP)]),
+            new Sequence([new Cond(AI_RULE.needHeal), new Act("heal", "heal")]),
             new Sequence([
                 new Cond(AI_RULE.skillReady),
                 new Selector([
@@ -56,12 +62,12 @@ export class BattleBrain {
                     new Cond(AI_RULE.healthy),
                     new Cond(AI_RULE.outgun)
                 ]),
-                new Act(SKILL_DIVE)
+                new Act("skill", "skill")
             ]),
-            new Sequence([new Cond(AI_RULE.faster), new Act(ATK_JUMP)]),
-            new Sequence([new Cond(AI_RULE.losing), new Act(ATK_DIVE)]),
-            new Sequence([new Cond(AI_RULE.canPierce), new Act(ATK_PECK)]),
-            new Act(ATK_DIVE)
+            new Sequence([new Cond(AI_RULE.faster), new Act("attack", "fast")]),
+            new Sequence([new Cond(AI_RULE.losing), new Act("attack", "losing")]),
+            new Sequence([new Cond(AI_RULE.canPierce), new Act("attack", "pierce")]),
+            new Act("attack", "hold")
         ]);
         this.tree = new BehaviorTree(root, this.board);
     }
@@ -69,7 +75,7 @@ export class BattleBrain {
     think(self: AiFighter, foe: AiFighter): BattleDecision {
         this.board.self = self;
         this.board.foe = foe;
-        this.board.decision = ATK_DIVE;
+        this.board.decision = FALLBACK;
         this.tree.run();
         return this.board.decision;
     }

@@ -76,8 +76,13 @@ export type BattleSide = "player" | "enemy";
 
 export type BattleActionKind = "heal" | "skill" | "attack";
 
-/** 普攻/技能的接触方式：贴身啄、跳踢、飞扑 */
-export type StrikeStyle = "peck" | "jump" | "dive";
+/**
+ * 出招的接触方式：贴身啄、跳踢、飞扑、腾空下砸、扑翅冲撞、转身扫尾、连啄、假动作绕后。
+ *
+ * 纯演出用，一次出招打多少伤害只看 kind 是普攻还是技能，跟这里选哪个动作无关。
+ * 所以招式可以按观赏性随便编排，不必担心动到平衡。
+ */
+export type StrikeStyle = "peck" | "jump" | "dive" | "leap" | "charge" | "tail" | "combo" | "feint";
 
 export type BattleEvent =
     | { type: "taunt"; side: BattleSide; text: string }
