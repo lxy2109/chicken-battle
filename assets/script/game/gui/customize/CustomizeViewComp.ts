@@ -6,7 +6,7 @@ import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { getColorPalette, getFaceList } from "../../core/Catalog";
 import { combatPower, formatStatsLine } from "../../core/EquipMath";
-import { Appearance, FaceId, PART_TEXT, PartId, defaultAppearance } from "../../core/Types";
+import { Appearance, FaceId, PART_TEXT, PARTS, PartId, defaultAppearance } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel } from "../UiUtil";
@@ -27,12 +27,10 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
             colors: { ...this.ent.run.appearance.colors }
         };
         bindClick(this, "BtnEnter", this.onEnter.bind(this));
-        bindClick(this, "BtnPartComb", () => this.selectPart("comb"));
-        bindClick(this, "BtnPartHead", () => this.selectPart("head"));
-        bindClick(this, "BtnPartBody", () => this.selectPart("body"));
-        bindClick(this, "BtnPartWing", () => this.selectPart("wing"));
-        bindClick(this, "BtnPartTail", () => this.selectPart("tail"));
-        bindClick(this, "BtnPartLeg", () => this.selectPart("leg"));
+        // 按钮名由部位 id 首字母大写拼出来，加部位时只改 PARTS 和 gen-prefabs，不用动这里。
+        for (const part of PARTS) {
+            bindClick(this, "BtnPart" + part.charAt(0).toUpperCase() + part.slice(1), () => this.selectPart(part));
+        }
         getFaceList().forEach((face, i) => bindClick(this, `BtnFace${i}`, () => this.selectFace(face)));
         getColorPalette().forEach((_, i) => bindClick(this, `BtnColor${i}`, () => this.selectColor(i)));
         this.refresh();

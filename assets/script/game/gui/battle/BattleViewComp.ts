@@ -95,6 +95,8 @@ export class BattleViewComp extends CCView<ChickenRun> {
             this.enemyNode.parent = arena;
             this.enemyNode.setPosition(E_HOME);
         }
+        // 必须等 spawnChicken 建完再造 Actor：它会记下各部位此刻的位置当复位基准，
+        // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
         if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, P_HOME);
         if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, E_HOME);
 

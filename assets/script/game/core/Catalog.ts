@@ -1,5 +1,5 @@
 import { tableRow, tableRows } from "./Config";
-import { Appearance, EquipItem, FaceId, PartId, SetDef, Stats } from "./Types";
+import { Appearance, EquipItem, FaceId, PartId, SetDef, Stats, UpgradeDef } from "./Types";
 
 export const PREFAB_PATH = {
     chicken: "game/prefab/chicken",
@@ -25,6 +25,7 @@ export const TEX = {
 export const PART_NODE: Record<PartId, string> = {
     comb: "Comb",
     head: "Head",
+    neck: "Neck",
     body: "Body",
     wing: "Wing",
     tail: "Tail",
@@ -67,8 +68,8 @@ export function getFaceList(): FaceId[] {
     return tableRows("Part").filter(r => r.type === "face").map(r => r.value as FaceId);
 }
 
-export function getRewards() {
-    return tableRows("Reward");
+export function getUpgrades(): UpgradeDef[] {
+    return tableRows("Reward").map(toUpgrade);
 }
 
 export function itemById(id: string): EquipItem {
@@ -96,6 +97,8 @@ export function enemyToFighter(id: string) {
         colors: {
             comb: e.comb,
             head: e.head,
+            // Enemy 表里没有脖子这一列，缺了就跟躯干同色，跟脖子独立成部位之前的观感一致。
+            neck: e.neck || e.body,
             body: e.body,
             wing: e.wing,
             tail: e.tail,
@@ -147,6 +150,21 @@ function packStats(row: any, prefix = ""): Partial<Stats> {
     if (n("healPerTurn")) out.healPerTurn = n("healPerTurn");
     if (n("lockHp")) out.lockHp = true;
     return out;
+}
+
+function toUpgrade(row: any): UpgradeDef {
+    const part = String(row.part || "").trim();
+    return {
+        id: String(row.id),
+        title: row.title,
+        desc: row.desc,
+        part: part ? part as PartId : undefined,
+        goldPerStage: Number(row.goldPerStage) || 0,
+        stats: packStats(row),
+        maxLevel: Number(row.maxLevel) || 0,
+        scalePerLevel: Number(row.scalePerLevel) || 0,
+        weight: Number(row.weight) || 0
+    };
 }
 
 function toItem(row: any): EquipItem {

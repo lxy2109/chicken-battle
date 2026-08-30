@@ -1,4 +1,4 @@
-import { Label, Node, tween, v3 } from "cc";
+import { Label, Node, UITransform, tween, v3 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { FACE_TEXT, Appearance, PartId } from "../core/Types";
 import { PART_NODE } from "../core/Catalog";
@@ -27,18 +27,27 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
     return node;
 }
 
-export function paintChicken(root: Node, appearance: Appearance) {
+/**
+ * 给刚建出来的鸡上色，并按强化等级把练过的部位撑大。
+ *
+ * 只能对新节点调一次：撑大是在预制体原有缩放上乘出来的，同一个节点调两次就会越乘越大。
+ */
+function paintChicken(root: Node, appearance: Appearance) {
+    const scale = appearance.partScale || {};
     for (const part in PART_NODE) {
-        const name = PART_NODE[part as PartId];
-        const node = root.getChildByName(name);
-        if (node) setSpriteColor(node, appearance.colors[part as PartId]);
-        if (part === "leg") {
-            const r = root.getChildByName("LegR");
-            if (r) setSpriteColor(r, appearance.colors.leg);
+        const id = part as PartId;
+        const node = root.getChildByName(PART_NODE[id]);
+        if (node) {
+            setSpriteColor(node, appearance.colors[id]);
+            sizePart(node, scale[id]);
         }
-        if (part === "body") {
-            const neck = root.getChildByName("Neck");
-            if (neck) setSpriteColor(neck, appearance.colors.body);
+        // 两条腿是分开的节点，配色和体型都得跟着腿走。
+        if (id === "leg") {
+            const r = root.getChildByName("LegR");
+            if (r) {
+                setSpriteColor(r, appearance.colors.leg);
+                sizePart(r, scale.leg);
+            }
         }
     }
     const face = root.getChildByName("Face");
@@ -46,6 +55,24 @@ export function paintChicken(root: Node, appearance: Appearance) {
         const lab = face.getComponent(Label);
         if (lab) lab.string = FACE_TEXT[appearance.face];
     }
+}
+
+/**
+ * 按强化等级把部位撑大。
+ *
+ * 预制体里部位本身的缩放不一定是 1（比如右腿是 -1 翻过来的），所以要乘上去而不是
+ * 直接赋值，不然一强化就把原本的朝向和比例抹平了。
+ *
+ * 撑大之后还得把底边钉回原处。节点是绕自身中心放大的，不补这一下，腿会往下伸出
+ * 影子外面像陷进地里，身子也会往下坠；钉住底边之后长大只往上和两侧扩，才像长壮了。
+ */
+function sizePart(node: Node, k?: number) {
+    if (!k || k === 1) return;
+    const s = node.scale;
+    node.setScale(s.x * k, s.y * k, s.z);
+    const h = node.getComponent(UITransform)?.height ?? 0;
+    const p = node.position;
+    node.setPosition(p.x, p.y + h * (k - 1) / 2, p.z);
 }
 
 export function punch(node: Node | null, dir: number) {

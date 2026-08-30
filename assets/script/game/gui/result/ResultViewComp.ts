@@ -27,9 +27,12 @@ export class ResultViewComp extends CCView<ChickenRun> {
 
         // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
         let hint: string;
-        if (run.phase === "boss") hint = win ? "鸡王已败，村口从此姓你" : "再练练，鸡王还在村口等你";
-        else if (warmup) hint = win ? "热身拿下，接着去鸡市逛逛" : "热身可败，仍能进正式赛";
-        else hint = win ? "正式赛拿下，挑一份奖励带走" : "正式赛失败，本局从热身赛重来";
+        if (run.phase === "boss") hint = win ? "鸡王已败，村口从此姓你" : "鸡王暂时打不过，回去再练";
+        else if (warmup) hint = win ? "热身拿下" : "热身可败，仍能进正式赛";
+        else hint = win ? "正式赛拿下" : "正式赛失败，本局从热身赛重来";
+        // 奖励那组默认是空的（战后就给金币，不用挑），配表开了才会有两组要挑。
+        if (run.rewards.length > 0) hint += "，先挑奖励和强化";
+        else if (run.upgrades.length > 0) hint += "，先挑个部位练";
         setLabel(this, "LabHint", hint);
 
         setNodeActive(this, "Confetti", win);

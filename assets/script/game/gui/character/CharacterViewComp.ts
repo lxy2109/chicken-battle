@@ -6,15 +6,16 @@ import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { TEX, getItems, getSets, itemById } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
-import { PART_TEXT, PartId, Stats } from "../../core/Types";
+import { levelOf } from "../../core/PartUpgrade";
+import { PART_TEXT, PARTS, PartId, Stats } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
-/** 槽位顺序要和 gen-prefabs 里的 SLOT_POS 一一对应。 */
-const SLOTS: Array<PartId | "face"> = ["comb", "head", "body", "wing", "tail", "leg", "face"];
+/** 槽位顺序要和 gen-prefabs 里的 SLOT_POS 一一对应，部位增减这里跟着 PARTS 走。 */
+const SLOTS: Array<PartId | "face"> = [...PARTS, "face"];
 
 const SLOT_TEXT: Record<string, string> = Object.assign({ face: "皮肤" }, PART_TEXT);
 
@@ -47,18 +48,17 @@ export class CharacterViewComp extends CCView<ChickenRun> {
     }
 
     private async fillSlots() {
-        const owned = this.ent.run.ownedIds.map(itemById);
+        const run = this.ent.run;
+        const owned = run.ownedIds.map(itemById);
         for (let i = 0; i < SLOTS.length; i++) {
             const slot = SLOTS[i];
             const item = owned.find(it => it.slot === slot);
+            // 练过的部位标上等级，不然玩家只能靠鸡的体型猜自己练了什么。
+            const lv = slot === "face" ? 0 : levelOf(run.partLevels, slot);
+            const tag = lv > 0 ? ` Lv${lv}` : "";
             setNodeActive(this, `SlotIcon${i}`, !!item);
-            if (item) {
-                setLabel(this, `LabSlot${i}`, item.name);
-                await setNodeSprite(this, `SlotIcon${i}`, TEX.equip(item.id));
-            }
-            else {
-                setLabel(this, `LabSlot${i}`, SLOT_TEXT[slot]);
-            }
+            if (item) await setNodeSprite(this, `SlotIcon${i}`, TEX.equip(item.id));
+            setLabel(this, `LabSlot${i}`, (item ? item.name : SLOT_TEXT[slot]) + tag);
         }
     }
 

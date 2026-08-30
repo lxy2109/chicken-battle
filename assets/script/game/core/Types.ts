@@ -1,5 +1,5 @@
-/** 斗鸡部位 */
-export type PartId = "comb" | "head" | "body" | "wing" | "tail" | "leg";
+/** 斗鸡部位。顺序按从头到脚排，染色按钮和装备槽都跟着这个顺序摆。 */
+export type PartId = "comb" | "head" | "neck" | "body" | "wing" | "tail" | "leg";
 
 /** 表情 */
 export type FaceId = "fierce" | "dumb" | "proud" | "cute";
@@ -7,7 +7,7 @@ export type FaceId = "fierce" | "dumb" | "proud" | "cute";
 /** 外观特殊效果 */
 export type SpecialId = "none" | "heal" | "revive" | "lockHp";
 
-export const PARTS: PartId[] = ["comb", "head", "body", "wing", "tail", "leg"];
+export const PARTS: PartId[] = ["comb", "head", "neck", "body", "wing", "tail", "leg"];
 
 export const FACE_TEXT: Record<FaceId, string> = {
     fierce: "凶",
@@ -19,6 +19,7 @@ export const FACE_TEXT: Record<FaceId, string> = {
 export const PART_TEXT: Record<PartId, string> = {
     comb: "鸡冠",
     head: "头部",
+    neck: "脖子",
     body: "躯干",
     wing: "翅膀",
     tail: "尾巴",
@@ -40,6 +41,12 @@ export interface Stats {
 export interface Appearance {
     colors: Record<PartId, string>;
     face: FaceId;
+    /**
+     * 各部位的放大倍数，缺省当 1。
+     * 强化过的部位会明显大一圈，这是玩家唯一能一眼看出练了什么的地方，
+     * 所以挂在外观上跟着快照走，战斗、备战、结算各界面都自动生效。
+     */
+    partScale?: Partial<Record<PartId, number>>;
 }
 
 export interface EquipItem {
@@ -109,13 +116,35 @@ export type RunScreen =
     | "reward"
     | "ending";
 
+/**
+ * 一条三选一强化的配置，整张 Reward 表由策划维护。
+ *
+ * 部位对应哪个属性、每级撑大多少、最多几级、出现权重，全在表里，代码不写死任何一条。
+ * part 留空就是纯 buff（比如给钱），weight 设 0 就是暂时不出现。
+ */
+export interface UpgradeDef {
+    id: string;
+    title: string;
+    desc: string;
+    part?: PartId;
+    goldPerStage: number;
+    stats: Partial<Stats>;
+    maxLevel: number;
+    scalePerLevel: number;
+    weight: number;
+}
+
 export interface RewardOption {
     id: string;
     title: string;
     desc: string;
     gold: number;
     stats: Partial<Stats>;
+    /** 有部位的是部位强化，会连带把那个部位撑大；没有的是纯 buff。 */
     part?: PartId;
+    /** 选了它之后该部位到几级，界面直接拿来显示，不用自己再算一遍。 */
+    nextLevel?: number;
+    maxLevel?: number;
 }
 
 export function emptyStats(): Stats {
@@ -134,6 +163,21 @@ export function emptyStats(): Stats {
 
 export function cloneStats(s: Stats): Stats {
     return { ...s };
+}
+
+/** 合并两份增量。装备加成、三选一强化各算一份，最后一起塞进 buildStats。 */
+export function addPartial(a: Partial<Stats>, b: Partial<Stats>): Partial<Stats> {
+    return {
+        maxHp: (a.maxHp ?? 0) + (b.maxHp ?? b.hp ?? 0),
+        atk: (a.atk ?? 0) + (b.atk ?? 0),
+        def: (a.def ?? 0) + (b.def ?? 0),
+        spd: (a.spd ?? 0) + (b.spd ?? 0),
+        crit: (a.crit ?? 0) + (b.crit ?? 0),
+        revive: (a.revive ?? 0) + (b.revive ?? 0),
+        healPerTurn: (a.healPerTurn ?? 0) + (b.healPerTurn ?? 0),
+        lockHp: !!(a.lockHp || b.lockHp),
+        hp: 0
+    };
 }
 
 export function addStats(base: Stats, extra: Partial<Stats>): Stats {
@@ -156,6 +200,8 @@ export function defaultAppearance(): Appearance {
         colors: {
             comb: "#B91C1C",
             head: "#E23B3B",
+            // 脖子原先跟着躯干上色，独立成部位后沿用同一个色，视觉上不变。
+            neck: "#E23B3B",
             body: "#E23B3B",
             wing: "#8B5A2B",
             tail: "#7B4B2A",

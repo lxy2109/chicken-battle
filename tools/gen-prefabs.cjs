@@ -361,10 +361,15 @@ function makeCustomize() {
     textNode(b, root, "LabStats", "数值", 0, -6, { font: 21, w: 600, h: 62, color: INK.dark });
 
     textNode(b, root, "LabPart", "正在染：躯干", 0, -78, { font: 26, w: 560, h: 38, color: INK.cream, outline: true });
-    const parts = ["Comb", "Head", "Body", "Wing", "Tail", "Leg"];
-    const partText = ["鸡冠", "头部", "躯干", "翅膀", "尾巴", "腿部"];
+    // 顺序跟 Types.ts 的 PARTS 一致，按钮名由部位 id 首字母大写拼成，运行时照这个规则绑事件。
+    const parts = ["Comb", "Head", "Neck", "Body", "Wing", "Tail", "Leg"];
+    const partText = ["鸡冠", "头部", "脖子", "躯干", "翅膀", "尾巴", "腿部"];
+    // 七个按钮排 4+3 两行。摊成三行的话最后一行会顶到下面的色块上。
     parts.forEach((p, i) => {
-        labBtn(b, root, "BtnPart" + p, partText[i], -206 + (i % 3) * 206, -130 - Math.floor(i / 3) * 76, 194, 64);
+        const top = i < 4;
+        const col = top ? i : i - 4;
+        const x = (top ? -234 : -156) + col * 156;
+        labBtn(b, root, "BtnPart" + p, partText[i], x, top ? -130 : -206, 150, 64);
     });
 
     for (let i = 0; i < 10; i++) {
@@ -446,13 +451,13 @@ function makeMap() {
 }
 
 /**
- * 装备槽落点，顺序对应 comb / head / body / wing / tail / leg / face。
- * 策划图画的是 4 格，这里按 Item.json 实际的 6 个部位槽加 face 皮肤槽排 7 格，
- * 保证界面显示的是真数据而不是摆设。
+ * 装备槽落点，顺序对应 Types.ts 的 PARTS 再接一个 face 皮肤槽，
+ * 也就是 comb / head / neck / body / wing / tail / leg / face 共八格。
+ * 策划图画的是 4 格，这里按实际部位数排满，保证界面显示的是真数据而不是摆设。
  */
 const SLOT_POS = [
     [-246, -232], [-82, -232], [82, -232], [246, -232],
-    [-164, -392], [0, -392], [164, -392]
+    [-246, -392], [-82, -392], [82, -392], [246, -392]
 ];
 
 function makeCharacter() {
