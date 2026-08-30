@@ -176,4 +176,50 @@ function trim(img, padding = 0) {
     return crop(img, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 }
 
-module.exports = { decode, encode, crop, trim };
+/**
+ * 双线性缩放。生图工具只能按固定宽高比出图，落到 UI 上的尺寸都是定死的，
+ * 所以导入前统一在这里缩到位。
+ */
+function resize(img, w, h) {
+    const out = Buffer.alloc(w * h * 4);
+    const rx = img.width / w;
+    const ry = img.height / h;
+    for (let y = 0; y < h; y++) {
+        const fy = Math.min(img.height - 1, Math.max(0, (y + 0.5) * ry - 0.5));
+        const y0 = Math.floor(fy);
+        const y1 = Math.min(img.height - 1, y0 + 1);
+        const wy = fy - y0;
+        for (let x = 0; x < w; x++) {
+            const fx = Math.min(img.width - 1, Math.max(0, (x + 0.5) * rx - 0.5));
+            const x0 = Math.floor(fx);
+            const x1 = Math.min(img.width - 1, x0 + 1);
+            const wx = fx - x0;
+            const o = (y * w + x) * 4;
+            const i00 = (y0 * img.width + x0) * 4;
+            const i10 = (y0 * img.width + x1) * 4;
+            const i01 = (y1 * img.width + x0) * 4;
+            const i11 = (y1 * img.width + x1) * 4;
+            for (let c = 0; c < 4; c++) {
+                const top = img.data[i00 + c] + (img.data[i10 + c] - img.data[i00 + c]) * wx;
+                const bot = img.data[i01 + c] + (img.data[i11 + c] - img.data[i01 + c]) * wx;
+                out[o + c] = Math.round(top + (bot - top) * wy);
+            }
+        }
+    }
+    return { width: w, height: h, data: out };
+}
+
+/** 按目标宽高比居中裁一刀再缩放，避免直接拉伸把画面挤变形。 */
+function fitCrop(img, w, h) {
+    const want = w / h;
+    const have = img.width / img.height;
+    let cw = img.width;
+    let ch = img.height;
+    if (have > want) cw = Math.round(img.height * want);
+    else ch = Math.round(img.width / want);
+    const x = Math.floor((img.width - cw) / 2);
+    const y = Math.floor((img.height - ch) / 2);
+    return resize(crop(img, x, y, cw, ch), w, h);
+}
+
+module.exports = { decode, encode, crop, trim, resize, fitCrop };

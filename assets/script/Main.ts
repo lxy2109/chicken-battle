@@ -9,7 +9,6 @@ import { DEBUG } from 'cc/env';
 import { oops } from '../../extensions/oops-plugin-framework/assets/core/Oops';
 import { Root } from '../../extensions/oops-plugin-framework/assets/core/Root';
 import { ecs } from '../../extensions/oops-plugin-framework/assets/libs/ecs/ECS';
-import { Account } from './game/account/Account';
 import { ChickenRun } from './game/chicken/ChickenRun';
 import { smc } from './game/common/SingletonModuleComp';
 import { UIConfigData } from './game/common/config/GameUIConfig';
@@ -25,7 +24,6 @@ export class Main extends Root {
 
     protected run() {
         smc.initialize = ecs.getEntity<Initialize>(Initialize);
-        smc.account = ecs.getEntity<Account>(Account);
         smc.chickenRun = ecs.getEntity<ChickenRun>(ChickenRun);
     }
 
