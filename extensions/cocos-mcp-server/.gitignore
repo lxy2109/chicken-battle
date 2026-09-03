@@ -76,6 +76,7 @@ settings.local.json
 test-*.js
 test-*.ts
 debug-*.js
+!dist/tools/debug-tools.js
 comprehensive-test.js
 source/test/
 dist/test/
