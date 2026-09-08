@@ -99,12 +99,14 @@ export class GameComponent extends Component {
      * 从资源缓存中找到预制资源名并创建一个显示对象
      * @param path 资源路径
      */
-    createPrefabNode(path: string, bundleName: string = oops.res.defaultBundleName): Promise<Node> {
-        return new Promise(async (resolve, reject) => {
-            const prefab = await this.load(bundleName, path, Prefab);
-            const node = instantiate(prefab);
-            resolve(node);
-        });
+    async createPrefabNode(path: string, bundleName: string = oops.res.defaultBundleName): Promise<Node> {
+        const prefab = await this.load(bundleName, path, Prefab);
+        if (!isValid(prefab) || !prefab.data) {
+            throw new Error(`预制体加载失败：${bundleName}:${path}`);
+        }
+        // 与当前组件 release() 中的引用释放配对，防止旧界面销毁时释放共用预制体。
+        prefab.addRef();
+        return instantiate(prefab);
     }
     //#endregion
 

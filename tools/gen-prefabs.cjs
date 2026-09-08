@@ -122,7 +122,7 @@ class Builder {
         this.addComp(nodeId, null, {
             type: "cc.Widget",
             fields: {
-                _alignFlags: 45, _target: null,
+                _alignFlags: 18, _target: null,
                 _left: 0, _right: 0, _top: 0, _bottom: 0,
                 _horizontalCenter: 0, _verticalCenter: 0,
                 _isAbsLeft: true, _isAbsRight: true, _isAbsTop: true, _isAbsBottom: true,
@@ -328,7 +328,7 @@ function iconNode(b, parent, name, frame, x, y, s) {
     return id;
 }
 
-/** 整屏底板，带 Widget 自适应。 */
+/** 固定 720×1280 的底板，Widget 只负责居中，不随窗口拉伸。 */
 function panel(b, name, bg = SF.bg_home) {
     const root = b.node({ name, w: 720, h: 1280, x: 0, y: 0 });
     b.widget(root);
