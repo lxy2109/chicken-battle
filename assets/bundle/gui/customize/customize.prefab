@@ -742,7 +742,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 127,
-      "height": 65
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -921,7 +921,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 87,
-      "height": 45
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -958,10 +958,10 @@
     "_string": "头部",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -3007,7 +3007,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 127,
-      "height": 65
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3186,7 +3186,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 87,
-      "height": 45
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3223,10 +3223,10 @@
     "_string": "脖子",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -5272,7 +5272,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 127,
-      "height": 65
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5451,7 +5451,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 87,
-      "height": 45
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5488,10 +5488,10 @@
     "_string": "身体",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -7537,7 +7537,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 127,
-      "height": 65
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7716,7 +7716,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 87,
-      "height": 45
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7753,10 +7753,10 @@
     "_string": "翅膀",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -9802,7 +9802,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 127,
-      "height": 65
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -9981,7 +9981,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 87,
-      "height": 45
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -10018,10 +10018,10 @@
     "_string": "脚部",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -12060,7 +12060,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 587,
-      "height": 32
+      "height": 34
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -12097,10 +12097,10 @@
     "_string": "正在染：躯干",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 23,
-    "_fontSize": 23,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 28,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -12362,10 +12362,10 @@
     "_string": "表情",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 23,
-    "_fontSize": 23,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 28,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -12476,7 +12476,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 92,
-      "height": 64
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -12655,7 +12655,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 52,
-      "height": 44
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -12692,10 +12692,10 @@
     "_string": "凶",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -12806,7 +12806,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 92,
-      "height": 64
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -12985,7 +12985,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 52,
-      "height": 44
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13022,10 +13022,10 @@
     "_string": "呆",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -13136,7 +13136,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 92,
-      "height": 64
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13315,7 +13315,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 52,
-      "height": 44
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13352,10 +13352,10 @@
     "_string": "傲",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -13466,7 +13466,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 92,
-      "height": 64
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13645,7 +13645,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 52,
-      "height": 44
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -13682,10 +13682,10 @@
     "_string": "萌",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -13947,10 +13947,10 @@
     "_string": "村口鸡",
     "_horizontalAlign": 0,
     "_verticalAlign": 1,
-    "_actualFontSize": 27,
-    "_fontSize": 27,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 32,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -14061,7 +14061,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 145,
-      "height": 48
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14240,7 +14240,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 105,
-      "height": 28
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14277,10 +14277,10 @@
     "_string": "随机",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 20,
-    "_fontSize": 20,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 24,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -14391,7 +14391,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 147,
-      "height": 80
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14570,7 +14570,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 107,
-      "height": 60
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14721,7 +14721,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 213,
-      "height": 80
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -14900,7 +14900,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 173,
-      "height": 60
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -15051,7 +15051,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 227,
-      "height": 80
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -15230,7 +15230,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 187,
-      "height": 60
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -15842,7 +15842,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 280,
-      "height": 70
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -16021,7 +16021,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 240,
-      "height": 50
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -16058,10 +16058,10 @@
     "_string": "清除本地存档",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 29,
-    "_fontSize": 29,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 35,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -16202,10 +16202,10 @@
     "_string": "进度与养成自动保存到本机",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 18,
-    "_fontSize": 18,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 22,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -16768,10 +16768,10 @@
     "_string": "将删除关卡进度、强化、金币、装备和首通记录。此操作无法撤销。",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 23,
-    "_fontSize": 23,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 28,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -16882,7 +16882,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 187,
-      "height": 70
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17061,7 +17061,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 147,
-      "height": 50
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17098,10 +17098,10 @@
     "_string": "取消",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 29,
-    "_fontSize": 29,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 35,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -17212,7 +17212,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 187,
-      "height": 70
+      "height": 88
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17391,7 +17391,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 147,
-      "height": 50
+      "height": 68
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -17428,10 +17428,10 @@
     "_string": "确认清除",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 29,
-    "_fontSize": 29,
+    "_actualFontSize": 34,
+    "_fontSize": 34,
     "_fontFamily": "Arial",
-    "_lineHeight": 35,
+    "_lineHeight": 41,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,

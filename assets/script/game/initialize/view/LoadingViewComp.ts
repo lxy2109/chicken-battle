@@ -55,14 +55,14 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
 
     /** 加载游戏本地JSON数据（自定义内容） */
     private async loadCustom() {
-        this.data.prompt = oops.language.getLangByID("loading_load_json");
+        this.data.prompt = "战鸡正在整装待发…";
         await loadGameTables();
     }
 
     /** 加载初始游戏内容资源 */
     private loadGameRes() {
-        // 加载初始游戏内容资源的多语言提示文本
-        this.data.prompt = oops.language.getLangByID("loading_load_game");
+        // 加载初始游戏内容资源时的提示文本
+        this.data.prompt = "村口擂台准备中…";
         oops.res.loadDir("game", this.onProgressCallback.bind(this), this.onCompleteCallback.bind(this));
     }
 
@@ -74,14 +74,14 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
         var progress = finished / total;
         if (progress > this.progress) {
             this.progress = progress;
-            this.data.progress = (progress * 100).toFixed(2);
+            this.data.progress = (progress * 100).toFixed(0);
         }
     }
 
     /** 加载完成事件 */
     private async onCompleteCallback() {
-        // 获取用户信息的多语言提示文本
-        this.data.prompt = oops.language.getLangByID("loading_load_player");
+        // 恢复本地存档并进入首页
+        this.data.prompt = "准备就绪，即将进入村庄";
         smc.chickenRun.RunModel.load();
         await openRunView(smc.chickenRun, CustomizeViewComp);
         this.remove();

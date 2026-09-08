@@ -59,7 +59,7 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
             const delta = row.value(a) - row.value(b);
             const suffix = row.name === "攻击伤害" ? "Atk" : row.name === "生命" ? "Hp" : row.name === "敏捷" ? "Spd" : row.name === "连击" ? "Combo" : "Crit";
             const unit = row.name === "暴击" ? "%" : "";
-            setLabel(this, `LabDiff${suffix}`, `${row.name} ${delta >= 0 ? "+" : ""}${delta}${unit}`);
+            setLabel(this, `LabDiff${suffix}`, `${row.name === "攻击伤害" ? "攻击" : row.name} ${delta >= 0 ? "+" : ""}${delta}${unit}`);
             setLabel(this, `LabPlayer${suffix}`, `${row.value(a)}${unit}`);
             setLabel(this, `LabEnemy${suffix}`, `${row.value(b)}${unit}`);
         }

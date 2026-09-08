@@ -23,7 +23,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         await setNodeSprite(this, "map", TEX.background(run.currentMap().background));
         setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", `战力 ${combatPower(run.playerFighter().stats)}`);
-        setLabel(this, "LabRouteTitle", run.currentRoute().name);
+        setLabel(this, "LabRouteTitle", run.currentRoute().name.split(" · ").pop()!);
         setLabel(this, "LabHint", run.mapHint());
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
@@ -52,7 +52,7 @@ export class MapViewComp extends CCView<ChickenRun> {
             setSpriteColor(view, cleared || active ? "#FFFFFF" : "#9C8A72");
             view.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
             setLabel(this, `LabStageNum${i + 1}`, cleared ? "✓" : `${run.currentMap().id}-${i + 1}`);
-            setLabel(this, `LabStageName${i + 1}`, node.name);
+            setLabel(this, `LabStageName${i + 1}`, node.name.split(" · ").pop()!);
             bindClick(this, `BtnStage${i + 1}`, () => this.onBattleNode(node.id));
         }
 
@@ -65,7 +65,7 @@ export class MapViewComp extends CCView<ChickenRun> {
             await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
             bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
-            setLabel(this, "LabBossName", active ? "鸡王 · 决战" : boss.name);
+            setLabel(this, "LabBossName", active ? "鸡王 · 决战" : "鸡王");
             bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
         }
     }
@@ -73,7 +73,7 @@ export class MapViewComp extends CCView<ChickenRun> {
     private async onBattleNode(id: number) {
         const run = this.ent.run;
         if (id !== run.routeNode) {
-            this.warn(id < run.routeNode ? "这个关卡已经完成了" : `请先完成${run.currentRoute().name}`);
+            this.warn(id < run.routeNode ? "本关已完成" : "请先挑战当前关卡");
             return;
         }
         const node = run.currentRoute();

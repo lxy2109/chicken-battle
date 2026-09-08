@@ -74,7 +74,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
                 const owned = ownedSetCount(run.ownedIds, set.id);
                 const price = setPrice(set.id);
                 await this.addCard(setSlot, {
-                    title: `${set.name} ${owned}/${set.pieceIds.length}`,
+                    title: set.name,
                     desc: owned >= set.pieceIds.length ? "已集齐" : `补齐整套 ${set.pieceIds.length} 件`,
                     price,
                     icon: TEX.equip(set.pieceIds[0]),
@@ -94,16 +94,13 @@ export class ShopViewComp extends CCView<ChickenRun> {
             if (lab) lab.string = value;
         };
         text(node.getChildByName("LabTitle"), view.title);
-        text(node.getChildByName("LabDesc"), view.desc);
+        text(node.getChildByName("LabDesc"), view.affordable ? "点击购买" : view.desc === "已集齐" ? "已集齐" : "点击查看");
         text(node.getChildByName("PriceRow")?.getChildByName("LabPrice") ?? null, `${view.price}`);
 
         const icon = node.getChildByName("IconSlot")?.getChildByName("Icon")?.getComponent(Sprite);
         if (icon) await this.setSprite(icon, view.icon);
 
         // 先展示价格和效果，确认后仍由 RunState 校验余额和已购状态。
-        const buy = node.getChildByName("BtnBuy");
-        setSpriteColor(buy ?? undefined, view.affordable ? "#FFFFFF" : "#9A9A9A");
-        bindNodeClick(buy || node, () => this.showPurchase(view), this);
         bindNodeClick(node, () => this.showPurchase(view), this);
     }
 

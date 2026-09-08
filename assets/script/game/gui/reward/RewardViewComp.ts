@@ -25,7 +25,7 @@ function rewardIcon(opt: RewardOption): string {
 /** 部位强化的牌面写清练哪儿、练到几级，纯 buff 就只有名字。 */
 function cardTitle(opt: RewardOption): string {
     if (!opt.part) return opt.title;
-    return `${opt.title} · ${PART_TEXT[opt.part]} Lv${opt.nextLevel}/${opt.maxLevel}`;
+    return `${PART_TEXT[opt.part]}强化\nLv${opt.nextLevel}/${opt.maxLevel}`;
 }
 
 @ccclass("RewardViewComp")

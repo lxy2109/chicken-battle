@@ -118,7 +118,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "jAR8pGXevM3kBS9qHYfwN4"
+    "fileId": "8pGXevM3kBS9qHYfwN4lCT"
   },
   {
     "__type__": "cc.Widget",
@@ -153,7 +153,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "qHYfwN4lCTarIZgxO5mDUb"
+    "fileId": "fwN4lCTarIZgxO5mDUbsJ0"
   },
   {
     "__type__": "cc.Sprite",
@@ -197,7 +197,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "xO5mDUbsJ0hyP6nEVctK1i"
+    "fileId": "mDUbsJ0hyP6nEVctK1izQ7"
   },
   {
     "__type__": "cc.Node",
@@ -274,7 +274,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "EVctK1izQ7oFWduL2jAR8p"
+    "fileId": "tK1izQ7oFWduL2jAR8pGXe"
   },
   {
     "__type__": "cc.Label",
@@ -301,10 +301,10 @@
     "_string": "自动战斗",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 23,
-    "_fontSize": 23,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 28,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -341,7 +341,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "L2jAR8pGXevM3kBS9qHYfw"
+    "fileId": "AR8pGXevM3kBS9qHYfwN4l"
   },
   {
     "__type__": "cc.Node",
@@ -425,7 +425,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "S9qHYfwN4lCTarIZgxO5mD"
+    "fileId": "HYfwN4lCTarIZgxO5mDUbs"
   },
   {
     "__type__": "cc.Sprite",
@@ -469,7 +469,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "ZgxO5mDUbsJ0hyP6nEVctK"
+    "fileId": "O5mDUbsJ0hyP6nEVctK1iz"
   },
   {
     "__type__": "cc.Node",
@@ -546,7 +546,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "6nEVctK1izQ7oFWduL2jAR"
+    "fileId": "VctK1izQ7oFWduL2jAR8pG"
   },
   {
     "__type__": "cc.Sprite",
@@ -590,7 +590,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "duL2jAR8pGXevM3kBS9qHY"
+    "fileId": "2jAR8pGXevM3kBS9qHYfwN"
   },
   {
     "__type__": "cc.Node",
@@ -657,7 +657,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 280,
-      "height": 34
+      "height": 40
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -667,7 +667,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "kBS9qHYfwN4lCTarIZgxO5"
+    "fileId": "9qHYfwN4lCTarIZgxO5mDU"
   },
   {
     "__type__": "cc.Label",
@@ -694,10 +694,10 @@
     "_string": "",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 22,
-    "_fontSize": 22,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 26,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -734,7 +734,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "rIZgxO5mDUbsJ0hyP6nEVc"
+    "fileId": "gxO5mDUbsJ0hyP6nEVctK1"
   },
   {
     "__type__": "cc.Node",
@@ -801,7 +801,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 240,
-      "height": 26
+      "height": 40
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -811,7 +811,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "yP6nEVctK1izQ7oFWduL2j"
+    "fileId": "nEVctK1izQ7oFWduL2jAR8"
   },
   {
     "__type__": "cc.Label",
@@ -838,10 +838,10 @@
     "_string": "0/0",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 17,
-    "_fontSize": 17,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 20,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -878,7 +878,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "FWduL2jAR8pGXevM3kBS9q"
+    "fileId": "uL2jAR8pGXevM3kBS9qHYf"
   },
   {
     "__type__": "cc.Node",
@@ -962,7 +962,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "M3kBS9qHYfwN4lCTarIZgx"
+    "fileId": "BS9qHYfwN4lCTarIZgxO5m"
   },
   {
     "__type__": "cc.Sprite",
@@ -1006,7 +1006,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "TarIZgxO5mDUbsJ0hyP6nE"
+    "fileId": "IZgxO5mDUbsJ0hyP6nEVct"
   },
   {
     "__type__": "cc.Node",
@@ -1083,7 +1083,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "0hyP6nEVctK1izQ7oFWduL"
+    "fileId": "P6nEVctK1izQ7oFWduL2jA"
   },
   {
     "__type__": "cc.Sprite",
@@ -1127,7 +1127,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "7oFWduL2jAR8pGXevM3kBS"
+    "fileId": "WduL2jAR8pGXevM3kBS9qH"
   },
   {
     "__type__": "cc.Node",
@@ -1194,7 +1194,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 280,
-      "height": 34
+      "height": 40
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1204,7 +1204,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "evM3kBS9qHYfwN4lCTarIZ"
+    "fileId": "3kBS9qHYfwN4lCTarIZgxO"
   },
   {
     "__type__": "cc.Label",
@@ -1231,10 +1231,10 @@
     "_string": "",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 22,
-    "_fontSize": 22,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 26,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -1271,7 +1271,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "lCTarIZgxO5mDUbsJ0hyP6"
+    "fileId": "arIZgxO5mDUbsJ0hyP6nEV"
   },
   {
     "__type__": "cc.Node",
@@ -1338,7 +1338,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 240,
-      "height": 26
+      "height": 40
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1348,7 +1348,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "sJ0hyP6nEVctK1izQ7oFWd"
+    "fileId": "hyP6nEVctK1izQ7oFWduL2"
   },
   {
     "__type__": "cc.Label",
@@ -1375,10 +1375,10 @@
     "_string": "0/0",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 17,
-    "_fontSize": 17,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 20,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -1415,7 +1415,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "zQ7oFWduL2jAR8pGXevM3k"
+    "fileId": "oFWduL2jAR8pGXevM3kBS9"
   },
   {
     "__type__": "cc.Node",
@@ -1496,7 +1496,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "GXevM3kBS9qHYfwN4lCTar"
+    "fileId": "vM3kBS9qHYfwN4lCTarIZg"
   },
   {
     "__type__": "cc.Node",
@@ -1570,7 +1570,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "N4lCTarIZgxO5mDUbsJ0hy"
+    "fileId": "CTarIZgxO5mDUbsJ0hyP6n"
   },
   {
     "__type__": "cc.Node",
@@ -1644,7 +1644,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "UbsJ0hyP6nEVctK1izQ7oF"
+    "fileId": "J0hyP6nEVctK1izQ7oFWdu"
   },
   {
     "__type__": "cc.Node",
@@ -1721,7 +1721,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "1izQ7oFWduL2jAR8pGXevM"
+    "fileId": "Q7oFWduL2jAR8pGXevM3kB"
   },
   {
     "__type__": "cc.Label",
@@ -1788,7 +1788,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "8pGXevM3kBS9qHYfwN4lCT"
+    "fileId": "XevM3kBS9qHYfwN4lCTarI"
   },
   {
     "__type__": "cc.Node",
@@ -1855,7 +1855,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 413,
-      "height": 36
+      "height": 40
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1865,7 +1865,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "fwN4lCTarIZgxO5mDUbsJ0"
+    "fileId": "4lCTarIZgxO5mDUbsJ0hyP"
   },
   {
     "__type__": "cc.Label",
@@ -1892,10 +1892,10 @@
     "_string": "战鸡自动出招",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 20,
-    "_fontSize": 20,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 24,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -1932,7 +1932,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "mDUbsJ0hyP6nEVctK1izQ7"
+    "fileId": "bsJ0hyP6nEVctK1izQ7oFW"
   },
   {
     "__type__": "cc.Node",
@@ -2009,7 +2009,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "tK1izQ7oFWduL2jAR8pGXe"
+    "fileId": "izQ7oFWduL2jAR8pGXevM3"
   },
   {
     "__type__": "cc.Label",
@@ -2036,10 +2036,10 @@
     "_string": "",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 23,
-    "_fontSize": 23,
+    "_actualFontSize": 28,
+    "_fontSize": 28,
     "_fontFamily": "Arial",
-    "_lineHeight": 28,
+    "_lineHeight": 34,
     "_overflow": 2,
     "_enableWrapText": true,
     "_font": null,
@@ -2076,7 +2076,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "AR8pGXevM3kBS9qHYfwN4l"
+    "fileId": "pGXevM3kBS9qHYfwN4lCTa"
   },
   {
     "__type__": "cc.Node",
@@ -2150,7 +2150,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "HYfwN4lCTarIZgxO5mDUbs"
+    "fileId": "wN4lCTarIZgxO5mDUbsJ0h"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -2160,7 +2160,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "O5mDUbsJ0hyP6nEVctK1iz",
+    "fileId": "DUbsJ0hyP6nEVctK1izQ7o",
     "instance": null,
     "targetOverrides": null
   },
@@ -2172,7 +2172,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "VctK1izQ7oFWduL2jAR8pG",
+    "fileId": "K1izQ7oFWduL2jAR8pGXev",
     "instance": null,
     "targetOverrides": null
   },
@@ -2184,7 +2184,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "2jAR8pGXevM3kBS9qHYfwN",
+    "fileId": "R8pGXevM3kBS9qHYfwN4lC",
     "instance": null,
     "targetOverrides": null
   },
@@ -2196,7 +2196,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "9qHYfwN4lCTarIZgxO5mDU",
+    "fileId": "YfwN4lCTarIZgxO5mDUbsJ",
     "instance": null,
     "targetOverrides": null
   },
@@ -2208,7 +2208,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "gxO5mDUbsJ0hyP6nEVctK1",
+    "fileId": "5mDUbsJ0hyP6nEVctK1izQ",
     "instance": null,
     "targetOverrides": null
   },
@@ -2220,7 +2220,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "nEVctK1izQ7oFWduL2jAR8",
+    "fileId": "ctK1izQ7oFWduL2jAR8pGX",
     "instance": null,
     "targetOverrides": null
   },
@@ -2232,7 +2232,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "uL2jAR8pGXevM3kBS9qHYf",
+    "fileId": "jAR8pGXevM3kBS9qHYfwN4",
     "instance": null,
     "targetOverrides": null
   },
@@ -2244,7 +2244,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "BS9qHYfwN4lCTarIZgxO5m",
+    "fileId": "qHYfwN4lCTarIZgxO5mDUb",
     "instance": null,
     "targetOverrides": null
   },
@@ -2256,7 +2256,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "IZgxO5mDUbsJ0hyP6nEVct",
+    "fileId": "xO5mDUbsJ0hyP6nEVctK1i",
     "instance": null,
     "targetOverrides": null
   },
@@ -2268,7 +2268,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "P6nEVctK1izQ7oFWduL2jA",
+    "fileId": "EVctK1izQ7oFWduL2jAR8p",
     "instance": null,
     "targetOverrides": null
   },
@@ -2280,7 +2280,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "WduL2jAR8pGXevM3kBS9qH",
+    "fileId": "L2jAR8pGXevM3kBS9qHYfw",
     "instance": null,
     "targetOverrides": null
   },
@@ -2292,7 +2292,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "3kBS9qHYfwN4lCTarIZgxO",
+    "fileId": "S9qHYfwN4lCTarIZgxO5mD",
     "instance": null,
     "targetOverrides": null
   },
@@ -2304,7 +2304,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "arIZgxO5mDUbsJ0hyP6nEV",
+    "fileId": "ZgxO5mDUbsJ0hyP6nEVctK",
     "instance": null,
     "targetOverrides": null
   },
@@ -2316,7 +2316,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "hyP6nEVctK1izQ7oFWduL2",
+    "fileId": "6nEVctK1izQ7oFWduL2jAR",
     "instance": null,
     "targetOverrides": null
   },
@@ -2328,7 +2328,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "oFWduL2jAR8pGXevM3kBS9",
+    "fileId": "duL2jAR8pGXevM3kBS9qHY",
     "instance": null,
     "targetOverrides": null
   },
@@ -2340,7 +2340,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "vM3kBS9qHYfwN4lCTarIZg",
+    "fileId": "kBS9qHYfwN4lCTarIZgxO5",
     "instance": null,
     "targetOverrides": null
   },
@@ -2352,7 +2352,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "CTarIZgxO5mDUbsJ0hyP6n",
+    "fileId": "rIZgxO5mDUbsJ0hyP6nEVc",
     "instance": null,
     "targetOverrides": null
   }

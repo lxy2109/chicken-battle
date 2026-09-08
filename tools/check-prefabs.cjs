@@ -20,6 +20,7 @@ const WHITE = "7d8f9b89-4fd1-4c9f-a3ab-38ec7cded7ca@f9941";
 
 /** 生成脚本产出的预制体，编辑器手搓的那几个不在校验范围内。 */
 const TARGETS = [
+    "assets/bundle/gui/loading/loading.prefab",
     "assets/bundle/gui/customize/customize.prefab",
     "assets/bundle/gui/map/map.prefab",
     "assets/bundle/gui/character/character.prefab",
@@ -45,6 +46,10 @@ function knownFrames() {
     const set = new Set([WHITE]);
     for (const key of Object.keys(uuids)) {
         if (typeof uuids[key] === "string") set.add(uuids.frame(uuids[key]));
+    }
+    for (const name of ["icon_loading_bar", "panel_loading_bottom_frame"]) {
+        const meta = JSON.parse(fs.readFileSync(path.join(ROOT, `assets/bundle/gui/loading/texture/${name}.png.meta`), "utf8"));
+        set.add(meta.subMetas.f9941.uuid);
     }
     return set;
 }

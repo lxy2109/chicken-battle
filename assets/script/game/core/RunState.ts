@@ -268,8 +268,8 @@ export class RunState {
 
     mapHint(): string {
         const node = this.currentRoute();
-        if (node.kind === "boss") return `${this.currentMap().name}终战：击败鸡王即可通关本地图。`;
-        return `节点 ${node.id} · ${node.name}：${this.claimedGoldNodes.includes(node.id) ? "首通金币已领取" : "首通可得金币"}，战后选择强化。`;
+        if (node.kind === "boss") return this.currentMap().id === MAPS[MAPS.length - 1].id ? "击败鸡王，完成挑战" : "击败鸡王，前往下一图";
+        return this.claimedGoldNodes.includes(node.id) ? "本关首通金币已领取" : `首通奖励 ${node.goldWin || 0} 金币`;
     }
 
     fightTitle(): string {
