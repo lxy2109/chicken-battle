@@ -226,5 +226,8 @@
       }
     },
     "globalConfigKey": "migrationsConfig"
+  },
+  "macroConfig": {
+    "CLEANUP_IMAGE_CACHE": true
   }
 }

@@ -14,7 +14,8 @@
     }
   },
   "script": {
-    "preserveSymlinks": true
+    "preserveSymlinks": true,
+    "loose": false
   },
   "custom_joint_texture_layouts": []
 }
