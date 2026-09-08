@@ -27,6 +27,14 @@
 
 参考：[Cocos 自动图集说明](https://docs.cocos.com/creator/3.8/manual/zh/asset/auto-atlas.html)。
 
+## 网站发布
+
+Web 构建开启“MD5 Cache”，让公共脚本、资源包入口及配置按内容生成版本文件名。尤其在修改 `script.loose` 等编译选项后，应上传同一次构建的完整目录，避免新脚本调用旧公共脚本中不存在的 Babel 函数。此设置与游戏运行期的资源内存缓存相互独立。
+
+上传前执行 `node tools/check-web-scripts.cjs build/web-mobile`，检查脚本版本及 Babel 函数导入是否匹配。旧的构建任务如果仍保存着关闭状态，需要在该任务里重新勾选“MD5 Cache”再构建。此检查不代替网站实际启动验证。
+
+`extensions/web-publish` 在 Web 构建结束后补充同内容的 `cocos-js/cc.js`，供游戏平台识别、安装共享引擎。原有带 MD5 的入口及 import map 保持一致，两个入口都要上传。缺少 `cc.js` 会导致平台跳过引擎安装，随后版本化入口返回 404。首次添加扩展后，已打开的 Creator 需要重新加载该扩展或重新打开项目。
+
 ## 验证记录（2026-09-08）
 
 - 图片源文件总计：24,989,606 → 15,136,106 字节，减少约 39%。
