@@ -28,6 +28,7 @@ export class Main extends Root {
     }
 
     protected initGui() {
+        oops.res.memoryCacheBundles.add(oops.res.defaultBundleName);
         oops.gui.init(UIConfigData);
     }
 }

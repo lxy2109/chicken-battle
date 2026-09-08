@@ -63,7 +63,9 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     private loadGameRes() {
         // 加载初始游戏内容资源时的提示文本
         this.data.prompt = "村口擂台准备中…";
-        oops.res.loadDir("game", this.onProgressCallback.bind(this), this.onCompleteCallback.bind(this));
+        // 首屏只加载首页与角色；战斗、商店、地图资源由对应界面按需加载。
+        oops.res.loadAny("bundle", ["gui/customize/customize", "game/prefab/chicken"],
+            this.onProgressCallback.bind(this), this.onCompleteCallback.bind(this));
     }
 
     /** 加载进度事件 */

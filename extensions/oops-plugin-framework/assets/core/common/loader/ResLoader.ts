@@ -36,6 +36,10 @@ export class ResLoader {
     /** 全局默认加载的资源包名 */
     defaultBundleName: string = "resources";
 
+    /** 指定资源包按需加载后常驻内存，普通界面关闭只释放使用方的引用。 */
+    readonly memoryCacheBundles = new Set<string>();
+    private memoryCache = new Map<Asset, string>();
+
     /** 下载时的最大并发数 - 项目设置 -> 项目数据 -> 资源下载并发数，设置默认值；初始值为15 */
     get maxConcurrency(): number {
         return assetManager.downloader.maxConcurrency;
@@ -135,6 +139,9 @@ export class ResLoader {
     removeBundle(bundleName: string) {
         let bundle = assetManager.bundles.get(bundleName);
         if (bundle) {
+            for (const [asset, name] of this.memoryCache) {
+                if (name === bundleName) this.memoryCache.delete(asset);
+            }
             bundle.releaseAll();
             assetManager.removeBundle(bundle);
         }
@@ -359,7 +366,8 @@ export class ResLoader {
             }
 
             if (path == "" && bundleName != "resources") {
-                assetManager.removeBundle(bundle);
+                if (this.memoryCacheBundles.has(bundleName)) this.removeBundle(bundleName);
+                else assetManager.removeBundle(bundle);
             }
         }
     }
@@ -379,15 +387,9 @@ export class ResLoader {
 
     /** 释放预制依赖资源 */
     private releasePrefabtDepsRecursively(uuid: string | Asset) {
-        let asset: Asset | null | undefined;
-        if (uuid instanceof Asset) {
-            asset = uuid;
-            uuid.decRef();
-        }
-        else {
-            asset = assetManager.assets.get(uuid);
-            if (asset) asset.decRef();
-        }
+        const asset = uuid instanceof Asset ? uuid : assetManager.assets.get(uuid);
+        // 常驻引用不能被界面释放消耗；重复使用不会累加常驻引用。
+        if (asset && (!this.memoryCache.has(asset) || asset.refCount > 1)) asset.decRef();
 
         // 释放预制引用资源
         // if (asset instanceof Prefab) {
@@ -438,6 +440,18 @@ export class ResLoader {
     }
 
     private loadByBundleAndArgs<T extends Asset>(bundle: AssetManager.Bundle, args: ILoadResArgs<T>): void {
+        if (!args.preload && this.memoryCacheBundles.has(bundle.name)) {
+            const onComplete = args.onComplete;
+            args.onComplete = (err: Error | null, data: T | T[]) => {
+                for (const asset of Array.isArray(data) ? data : [data]) {
+                    if (asset instanceof Asset && asset.isValid && !this.memoryCache.has(asset)) {
+                        asset.addRef();
+                        this.memoryCache.set(asset, bundle.name);
+                    }
+                }
+                onComplete?.(err, data);
+            };
+        }
         if (args.dir) {
             if (args.preload) {
                 bundle.preloadDir(args.paths as string, args.type, args.onProgress, args.onComplete);
