@@ -4,15 +4,13 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { TEX, getStages } from "../../core/Catalog";
+import { TEX, enemyToFighter } from "../../core/Catalog";
 import { combatPower } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
+import { spawnChicken } from "../ChickenBinder";
 import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
-
-/** 路线上的节点数，与 gen-prefabs 的 MAP_NODES 长度一致。 */
-const NODE_COUNT = 5;
 
 @ccclass("MapViewComp")
 @ecs.register("MapView", false)
@@ -21,99 +19,78 @@ export class MapViewComp extends CCView<ChickenRun> {
     async start() {
         this.nodeTreeInfoLite();
         const run = this.ent.run;
-        setLabel(this, "LabTitle", "冒险路线");
+        setLabel(this, "LabTitle", `${run.currentMap().id}/5 · ${run.currentMap().name}`);
+        await setNodeSprite(this, "map", TEX.background(run.currentMap().background));
         setLabel(this, "LabGold", `${run.gold}`);
-        setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
+        setLabel(this, "LabPower", `战力 ${combatPower(run.playerFighter().stats)}`);
+        setLabel(this, "LabRouteTitle", run.currentRoute().name);
         setLabel(this, "LabHint", run.mapHint());
-
-        await this.fillStages();
-        this.fillBoss();
-        this.fillShop();
-
-        bindClick(this, "BtnShop", this.onShop.bind(this));
-        bindClick(this, "BtnBoss", this.onBoss.bind(this));
+        await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
+        bindClick(this, "BtnHome", () => goScreen(this, "customize"));
+        setLabel(this, "BtnChallengeLab", "开始挑战");
+        bindClick(this, "BtnChallenge", () => this.onBattleNode(run.routeNode));
+        bindClick(this, "BtnShop", this.onShop.bind(this));
     }
 
-    private async fillStages() {
+    private async fillRoute() {
         const run = this.ent.run;
-        const stages = getStages();
-        for (let i = 1; i <= NODE_COUNT; i++) {
-            const row = stages[i - 1];
-            const node = this.getNode(`BtnStage${i}`);
-            if (node) node.active = !!row;
-            setNodeActive(this, `LabStageName${i}`, !!row);
-            if (!row || !node) continue;
+        const nodes = run.route();
+        const current = run.routeNode;
+        const battleNodes = nodes.filter(node => node.kind === "battle");
+        const preview = battleNodes.find(node => node.id >= current) || battleNodes[battleNodes.length - 1];
+        if (preview?.enemyId) await spawnChicken(this, "MapEnemySlot", enemyToFighter(preview.enemyId).appearance, 0.25);
+        for (let i = 0; i < 3; i++) {
+            const node = battleNodes[i];
+            const view = this.getNode(`BtnStage${i + 1}`);
+            setNodeActive(this, `BtnStage${i + 1}`, !!node);
+            setNodeActive(this, `LabStageName${i + 1}`, !!node);
+            if (!node || !view) continue;
+            const cleared = node.id < current;
+            const active = node.id === current;
+            await setNodeSprite(this, `BtnStage${i + 1}`, TEX.mapNode(cleared ? "chest" : active ? "stage" : "lock"));
+            setSpriteColor(view, cleared || active ? "#FFFFFF" : "#9C8A72");
+            view.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
+            setLabel(this, `LabStageNum${i + 1}`, cleared ? "✓" : `${run.currentMap().id}-${i + 1}`);
+            setLabel(this, `LabStageName${i + 1}`, node.name);
+            bindClick(this, `BtnStage${i + 1}`, () => this.onBattleNode(node.id));
+        }
 
-            const cleared = i < run.stage || run.phase === "boss";
-            const current = i === run.stage && run.phase !== "boss";
-            // 打完的关放宝箱，当前关放旗标，没走到的上锁。
-            await setNodeSprite(this, `BtnStage${i}`, TEX.mapNode(cleared ? "chest" : current ? "stage" : "lock"));
-            setSpriteColor(node, current || cleared ? "#FFFFFF" : "#9C8A72");
-            node.setScale(current ? 1.16 : 1, current ? 1.16 : 1, 1);
-
-            const phase = current ? (run.phase === "warmup" ? " · 热身" : " · 正式") : "";
-            setLabel(this, `LabStageName${i}`, `${row.name}${phase}`);
-            setLabel(this, `LabStageNum${i}`, cleared ? "✓" : `${i}`);
-            bindClick(this, `BtnStage${i}`, () => this.onStage(i));
+        const boss = nodes.find(node => node.kind === "boss");
+        const bossView = this.getNode("BtnBoss");
+        if (boss && bossView) {
+            if (boss.enemyId) await spawnChicken(this, "MapBossSlot", enemyToFighter(boss.enemyId).appearance, 0.32, true);
+            const active = boss.id === current;
+            const cleared = boss.id < current;
+            await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
+            setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
+            bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
+            setLabel(this, "LabBossName", active ? "鸡王 · 决战" : boss.name);
+            bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
         }
     }
 
-    /** 没开张也留在图上，只是灰着。整个节点藏掉玩家会以为这局没有商店。 */
-    private fillShop() {
-        const open = this.ent.run.shopPending;
-        const shop = this.getNode("BtnShop");
-        if (shop) shop.setScale(open ? 1.1 : 1, open ? 1.1 : 1, 1);
-        setSpriteColor(shop, open ? "#FFFFFF" : "#9C8A72");
-        setLabel(this, "LabShopName", open ? "鸡市 · 开张" : "鸡市");
-    }
-
-    private fillBoss() {
+    private async onBattleNode(id: number) {
         const run = this.ent.run;
-        const ready = run.phase === "boss";
-        const boss = this.getNode("BtnBoss");
-        if (boss) boss.setScale(ready ? 1.16 : 1, ready ? 1.16 : 1, 1);
-        setSpriteColor(boss, ready ? "#FFFFFF" : "#9C8A72");
-        setLabel(this, "LabBossName", ready ? "鸡王 · 决战" : "鸡王");
-    }
-
-    private async onStage(i: number) {
-        const run = this.ent.run;
-        if (run.phase === "boss") {
-            this.warn("五关都过了，去村口会会鸡王");
+        if (id !== run.routeNode) {
+            this.warn(id < run.routeNode ? "这个关卡已经完成了" : `请先完成${run.currentRoute().name}`);
             return;
         }
-        if (i < run.stage) {
-            this.warn(`第 ${i} 关已经打完了`);
-            return;
-        }
-        if (i > run.stage) {
-            this.warn(`得先打完第 ${run.stage} 关`);
+        const node = run.currentRoute();
+        if (node.kind !== "battle" && node.kind !== "boss") {
+            this.warn("当前节点不是战斗");
             return;
         }
         run.enterFight();
-        await goScreen(this, "prebattle");
-    }
-
-    private async onBoss() {
-        if (this.ent.run.phase !== "boss") {
-            this.warn("打完五关，鸡王才肯露面");
-            return;
-        }
-        this.ent.run.enterFight();
-        await goScreen(this, "prebattle");
+        if (run.screen === "prebattle") await goScreen(this);
     }
 
     private async onShop() {
-        if (!this.ent.run.shopPending) {
-            this.warn("鸡市这会儿没开张");
-            return;
-        }
-        this.ent.run.openShop();
+        const run = this.ent.run;
+        run.openShop();
         await goScreen(this, "shop");
     }
 
-    /** 点了去不了的地方要说明白为什么，过一会儿再换回常规提示。 */
     private warn(text: string) {
         setLabel(this, "LabHint", text);
         this.unschedule(this.restoreHint);

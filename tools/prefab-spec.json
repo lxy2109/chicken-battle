@@ -3,6 +3,7 @@
   "gui": [
     "db://assets/bundle/gui/customize/customize.prefab",
     "db://assets/bundle/gui/map/map.prefab",
+    "db://assets/bundle/gui/character/character.prefab",
     "db://assets/bundle/gui/prebattle/prebattle.prefab",
     "db://assets/bundle/gui/battle/battle.prefab",
     "db://assets/bundle/gui/result/result.prefab",
@@ -18,8 +19,8 @@
     "db://assets/bundle/game/prefab/fx_start.prefab",
     "db://assets/bundle/game/prefab/taunt_bubble.prefab",
     "db://assets/bundle/game/prefab/shop_item.prefab",
-    "db://assets/bundle/game/prefab/reward_card.prefab",
-    "db://assets/bundle/game/prefab/stat_row.prefab"
+    "db://assets/bundle/game/prefab/shop_set_item.prefab",
+    "db://assets/bundle/game/prefab/reward_card.prefab"
   ],
   "scripts": {
     "gui/customize/customize": "CustomizeViewComp",

@@ -32,6 +32,8 @@ export interface Stats {
     atk: number;
     def: number;
     spd: number;
+    /** 连击展示值；旧表未配置时由敏捷派生。 */
+    combo?: number;
     crit: number;
     revive: number;
     lockHp: boolean;
@@ -41,6 +43,8 @@ export interface Stats {
 export interface Appearance {
     colors: Record<PartId, string>;
     face: FaceId;
+    /** 当前穿戴的装备图片，随战斗快照交给角色部位渲染。 */
+    equipment?: Partial<Record<PartId | "face", string>>;
     /**
      * 各部位的放大倍数，缺省当 1。
      * 强化过的部位会明显大一圈，这是玩家唯一能一眼看出练了什么的地方，
@@ -102,7 +106,26 @@ export type BattleEvent =
     | { type: "lock"; side: BattleSide }
     | { type: "end"; win: boolean };
 
-export type StagePhase = "warmup" | "official" | "boss";
+/**
+ * 线性路线上的当前节点类型。
+ *
+ * v7 原型不再区分“热身/正式”两种局内阶段，而是把战斗、商店和鸡王
+ * 作为路线上的三类节点。保留旧字面量是为了让旧存档/旧工具在迁移期间
+ * 仍能被读取；新流程只会写入 battle/shop/boss。
+ */
+export type StagePhase = "battle" | "shop" | "boss" | "warmup" | "official";
+
+export type RouteNodeKind = "battle" | "shop" | "boss";
+
+export interface RouteNode {
+    id: number;
+    mapId?: number;
+    kind: RouteNodeKind;
+    name: string;
+    enemyId?: string;
+    goldWin?: number;
+    goldLose?: number;
+}
 
 /** character 是从地图进出的查看界面，不参与 RunState 的流程推进。 */
 export type RunScreen =
@@ -154,6 +177,7 @@ export function emptyStats(): Stats {
         atk: 0,
         def: 0,
         spd: 0,
+        combo: 0,
         crit: 0,
         revive: 0,
         lockHp: false,
@@ -172,6 +196,7 @@ export function addPartial(a: Partial<Stats>, b: Partial<Stats>): Partial<Stats>
         atk: (a.atk ?? 0) + (b.atk ?? 0),
         def: (a.def ?? 0) + (b.def ?? 0),
         spd: (a.spd ?? 0) + (b.spd ?? 0),
+        combo: (a.combo ?? 0) + (b.combo ?? 0),
         crit: (a.crit ?? 0) + (b.crit ?? 0),
         revive: (a.revive ?? 0) + (b.revive ?? 0),
         healPerTurn: (a.healPerTurn ?? 0) + (b.healPerTurn ?? 0),
@@ -187,6 +212,7 @@ export function addStats(base: Stats, extra: Partial<Stats>): Stats {
     out.atk += extra.atk ?? 0;
     out.def += extra.def ?? 0;
     out.spd += extra.spd ?? 0;
+    out.combo = (out.combo ?? 0) + (extra.combo ?? 0);
     out.crit += extra.crit ?? 0;
     out.revive += extra.revive ?? 0;
     out.healPerTurn += extra.healPerTurn ?? 0;

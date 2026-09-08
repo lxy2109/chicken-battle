@@ -32,12 +32,12 @@ const TARGETS = [
     "assets/bundle/game/prefab/chicken.prefab",
     "assets/bundle/game/prefab/shop_item.prefab",
     "assets/bundle/game/prefab/reward_card.prefab",
-    "assets/bundle/game/prefab/stat_row.prefab",
     "assets/bundle/game/prefab/taunt_bubble.prefab",
     "assets/bundle/game/prefab/fx_hit.prefab",
     "assets/bundle/game/prefab/fx_skill.prefab",
     "assets/bundle/game/prefab/fx_heal.prefab",
-    "assets/bundle/game/prefab/fx_start.prefab"
+    "assets/bundle/game/prefab/fx_start.prefab",
+    "assets/bundle/game/prefab/shop_set_item.prefab"
 ];
 
 /** 所有合法的 spriteFrame uuid：素材表里的每张图 + 内置纯白图。 */
@@ -81,25 +81,36 @@ function overlaps(a, b) {
     return Math.abs(a.x - b.x) * 2 < a.w + b.w && Math.abs(a.y - b.y) * 2 < a.h + b.h;
 }
 
-function checkOne(rel, frames) {
+function checkOne(rel, frames, variant) {
     const full = path.join(ROOT, rel);
     if (!fs.existsSync(full)) return [`${rel}: 文件不存在`];
     const objs = JSON.parse(fs.readFileSync(full, "utf8"));
+    if (variant === "customize") {
+        objs.find(n => n._name === "CustomizePanel")._active = true;
+        objs.find(n => n._name === "StartPanel")._active = false;
+    }
+    if (variant === "purchase") {
+        for (const ref of objs[1]._children) objs[ref.__id__]._active = objs[ref.__id__]._name === "PurchaseModal";
+    }
+    if (variant === "clearSave") {
+        for (const ref of objs[1]._children) objs[ref.__id__]._active = objs[ref.__id__]._name === "ClearSaveModal";
+    }
     const problems = [];
     const seen = new Map();
     const isScreen = rel.indexOf("/gui/") >= 0;
     const texts = [];
 
-    const walk = (id, wx, wy, laidOut) => {
+    const walk = (id, wx, wy, laidOut, parentActive = true) => {
         const n = objs[id];
         if (!n || n.__type__ !== "cc.Node") return;
         const x = wx + n._lpos.x;
         const y = wy + n._lpos.y;
+        const active = parentActive && n._active !== false;
 
         seen.set(n._name, (seen.get(n._name) || 0) + 1);
 
         const t = transformOf(objs, n);
-        if (t && !laidOut && labelOf(objs, n)) {
+        if (t && active && !laidOut && labelOf(objs, n)) {
             texts.push({ name: n._name, x, y, w: t._contentSize.width, h: t._contentSize.height });
         }
         if (t && isScreen) {
@@ -123,7 +134,7 @@ function checkOne(rel, frames) {
         }
 
         const nested = laidOut || hasLayout(objs, n);
-        for (const ch of n._children) walk(ch.__id__, x, y, nested);
+        for (const ch of n._children) walk(ch.__id__, x, y, nested, active);
     };
 
     walk(1, 0, 0, false);
@@ -144,6 +155,9 @@ function checkOne(rel, frames) {
 const frames = knownFrames();
 const all = [];
 for (const rel of TARGETS) all.push(...checkOne(rel, frames));
+all.push(...checkOne("assets/bundle/gui/customize/customize.prefab", frames, "customize"));
+all.push(...checkOne("assets/bundle/gui/shop/shop.prefab", frames, "purchase"));
+all.push(...checkOne("assets/bundle/gui/customize/customize.prefab", frames, "clearSave"));
 
 if (all.length === 0) {
     console.log(`预制体校验通过，共 ${TARGETS.length} 个`);

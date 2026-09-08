@@ -72,7 +72,8 @@ const EQUIPS = [
     "eq_kun_tail"
 ];
 
-const BGS = ["bg_home", "bg_map", "bg_arena", "bg_prebattle"];
+const BGS = ["bg_home", "bg_map", "bg_arena", "bg_prebattle",
+    "bg_start_figma", "bg_village_figma", "bg_arena_figma", "bg_shop_figma", "bg_map_figma"];
 
 const uuids = Object.assign(
     {},

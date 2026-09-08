@@ -82,6 +82,7 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     private async onCompleteCallback() {
         // 获取用户信息的多语言提示文本
         this.data.prompt = oops.language.getLangByID("loading_load_player");
+        smc.chickenRun.RunModel.load();
         await openRunView(smc.chickenRun, CustomizeViewComp);
         this.remove();
     }

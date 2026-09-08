@@ -4,7 +4,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { TEX } from "../../core/Catalog";
+import { MAPS, TEX, routeNode } from "../../core/Catalog";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
@@ -19,20 +19,20 @@ export class ResultViewComp extends CCView<ChickenRun> {
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const win = run.lastWin;
-        const warmup = run.phase === "warmup";
-
-        setLabel(this, "LabTitle", win ? "胜利" : (warmup ? "热身落败" : "败北"));
+        const battleNode = routeNode(run.lastBattleNode);
+        const boss = battleNode.kind === "boss";
+        setLabel(this, "LabHeader", run.playerFighter().name);
+        setLabel(this, "BtnNextLab", win && boss
+            ? (run.routeNode > run.lastBattleNode ? "前往下一关" : "查看总战绩") : run.upgrades.length ? "选择强化" : "返回地图");
+        setLabel(this, "LabTitle", win ? "胜利" : "失败");
         setLabel(this, "LabGold", `+${run.lastGoldGain}`);
-        setLabel(this, "LabDesc", `现有金币 ${run.gold}`);
+        setLabel(this, "LabDesc", run.lastFirstClear ? "首通奖励" : win ? "首通奖励已领取" : "本局获得");
 
         // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
         let hint: string;
-        if (run.phase === "boss") hint = win ? "鸡王已败，村口从此姓你" : "鸡王暂时打不过，回去再练";
-        else if (warmup) hint = win ? "热身拿下" : "热身可败，仍能进正式赛";
-        else hint = win ? "正式赛拿下" : "正式赛失败，本局从热身赛重来";
-        // 奖励那组默认是空的（战后就给金币，不用挑），配表开了才会有两组要挑。
-        if (run.rewards.length > 0) hint += "，先挑奖励和强化";
-        else if (run.upgrades.length > 0) hint += "，先挑个部位练";
+        if (boss) hint = win ? `${MAPS.find(map => map.id === (battleNode.mapId || 1))!.name}已通关` : "本大关进度已重置，强化、金币和套装保留";
+        else hint = win ? "本节点已完成" : "节点未完成，可以再次挑战";
+        if (run.upgrades.length > 0) hint += "，下一步选择一项强化";
         setLabel(this, "LabHint", hint);
 
         setNodeActive(this, "Confetti", win);

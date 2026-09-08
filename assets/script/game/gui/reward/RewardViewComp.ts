@@ -1,14 +1,13 @@
-import { Label, Sprite, _decorator } from "cc";
+import { Button, Label, Sprite, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX } from "../../core/Catalog";
-import { combatPower } from "../../core/EquipMath";
 import { PART_TEXT, RewardOption } from "../../core/Types";
 import { goScreen, registerScreen } from "../Nav";
-import { bindClick, bindNodeClick, clearChildren, setLabel } from "../UiUtil";
+import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
@@ -33,33 +32,37 @@ function cardTitle(opt: RewardOption): string {
 @ecs.register("RewardView", false)
 @gui.register("RewardView", { layer: LayerType.UI, prefab: "gui/reward/reward" })
 export class RewardViewComp extends CCView<ChickenRun> {
+    private selectedId: string | null = null;
+    private confirming = false;
+    private ready = false;
+
     async start() {
         this.nodeTreeInfoLite();
-        bindClick(this, "BtnSkip", this.skip.bind(this));
+        // v7 强化必须明确选一张，结算页的金币不会再挤占三选一名额。
+        setNodeActive(this, "BtnSkip", false);
+        bindClick(this, "BtnConfirm", this.onConfirm.bind(this));
         await this.fill();
     }
 
-    /**
-     * 摆出当前这一组牌。
-     *
-     * 一场打完要连挑两次：先战后奖励，再部位强化。两组共用这一屏，挑完前一组就地换牌，
-     * 不跳界面——为这一步单开一个界面只是把同样的三张牌换个地方摆。
-     */
+    /** 摆出当前战斗产生的三张部位强化牌。 */
     private async fill() {
+        this.ready = false;
         const run = this.ent.run;
-        const buff = run.rewards.length > 0;
-        const cards = buff ? run.rewards : run.upgrades;
+        const cards = run.upgrades;
+        this.selectedId = null;
+        const confirm = this.getNode("BtnConfirm")?.getComponent(Button);
+        if (confirm) confirm.interactable = false;
+        setLabel(this, "BtnConfirmLab", "请先选择强化");
 
-        setLabel(this, "LabTitle", buff ? "战后奖励" : "部位强化");
-        setLabel(this, "LabGold", `${run.gold}`);
-        setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
-        setLabel(this, "LabHint", buff ? "免费挑一份带走" : "免费挑一个部位练，练过的部位会长大");
+        setLabel(this, "LabTitle", "选择强化");
+        setLabel(this, "LabHint", cards.length === 3 ? "请选择 1 项强化（三选一）" : `剩余 ${cards.length} 项可强化部位，请选择 1 项`);
 
         const slot = this.getNode("CardSlot");
         clearChildren(slot);
         if (!slot) return;
         for (const opt of cards) {
             const card = await this.createPrefabNode(PREFAB_PATH.rewardCard);
+            if (!this.node.isValid) { card.destroy(); return; }
             card.parent = slot;
 
             const title = card.getChildByName("LabTitle")?.getComponent(Label);
@@ -74,21 +77,33 @@ export class RewardViewComp extends CCView<ChickenRun> {
             const icon = card.getChildByName("IconSlot")?.getChildByName("Icon")?.getComponent(Sprite);
             if (icon) await this.setSprite(icon, TEX.icon(rewardIcon(opt)));
 
-            bindNodeClick(card.getChildByName("BtnPick") || card, () => this.pick(opt.id), this);
+            setSpriteColor(card, opt.id === this.selectedId ? "#FFD23F" : "#FFFFFF");
+            bindNodeClick(card, () => this.select(opt.id), this);
         }
+        this.ready = true;
     }
 
-    private async pick(id: string) {
-        this.ent.run.pickReward(id);
+    private select(id: string) {
+        if (this.confirming || !this.ready) return;
+        this.selectedId = id;
+        const cards = this.ent.run.upgrades;
+        this.getNode("CardSlot")?.children.forEach((node, i) => setSpriteColor(node, cards[i]?.id === id ? "#FFD23F" : "#FFFFFF"));
+        const confirm = this.getNode("BtnConfirm")?.getComponent(Button);
+        if (confirm) confirm.interactable = true;
+        setLabel(this, "BtnConfirmLab", "确认强化");
+    }
+
+    private async onConfirm() {
+        if (!this.selectedId || this.confirming) return;
+        this.confirming = true;
+        if (!this.ent.run.pickReward(this.selectedId)) {
+            this.confirming = false;
+            return;
+        }
         await this.next();
     }
 
-    private async skip() {
-        this.ent.run.skipReward();
-        await this.next();
-    }
-
-    /** 还剩一组牌就留在这屏换牌，两组都挑完了才走。去哪由 RunState 定，这里别写死。 */
+    /** 选完强化后由 RunState 决定回到路线还是打开固定商店。 */
     private async next() {
         if (this.ent.run.screen === "reward") await this.fill();
         else await goScreen(this);

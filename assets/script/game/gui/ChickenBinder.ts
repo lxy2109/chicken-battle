@@ -1,12 +1,13 @@
-import { Label, Node, UITransform, tween, v3 } from "cc";
+import { Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, tween, v3 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { FACE_TEXT, Appearance, PartId } from "../core/Types";
-import { PART_NODE } from "../core/Catalog";
+import { PART_NODE, TEX } from "../core/Catalog";
 import { setSpriteColor } from "./UiUtil";
 
 export async function spawnChicken(view: GameComponent, slotName: string, appearance: Appearance, scale = 1, flip = false): Promise<Node | null> {
     const slot = view.getNode(slotName);
     if (!slot) return null;
+    for (const child of slot.children) child.destroy();
     slot.removeAllChildren();
     let node: Node | null = null;
     try {
@@ -16,6 +17,7 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
         return null;
     }
     if (!node) return null;
+    if (!slot.isValid) { node.destroy(); return null; }
     node.parent = slot;
     node.setPosition(0, 0, 0);
     node.setScale(flip ? -Math.abs(scale) : scale, scale, 1);
@@ -24,7 +26,51 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
         if (face) face.setScale(-1, 1, 1);
     }
     paintChicken(node, appearance);
+    await dressChicken(view, node, appearance);
+    if (!node.isValid) return null;
     return node;
+}
+
+/** 装备挂在对应部位下，随强化缩放和战斗动作一起运动。 */
+async function dressChicken(view: GameComponent, root: Node, appearance: Appearance) {
+    for (const slot of Object.keys(appearance.equipment || {}) as Array<PartId | "face">) {
+        const itemId = appearance.equipment![slot]!;
+        const parents = slot === "leg" ? ["LegL", "LegR"] : [slot === "face" ? "Head" : PART_NODE[slot]];
+        for (let i = 0; i < parents.length; i++) {
+            if (!root.isValid) return;
+            const parent = root.getChildByName(parents[i]);
+            if (!parent) continue;
+            const equipment = new Node("Equipment");
+            equipment.layer = parent.layer;
+            equipment.parent = parent;
+            const transform = equipment.addComponent(UITransform);
+            const sprite = equipment.addComponent(Sprite);
+            sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            if (slot === "leg") {
+                // 现有脚部图是一双鞋，分别显示左右半张，避免每条腿上出现两只鞋。
+                const texture = await view.load("bundle", `game/texture/equip/${itemId}/texture`, Texture2D);
+                if (!texture || !equipment.isValid) return;
+                const frame = new SpriteFrame();
+                frame.reset({ texture, rect: new Rect(i * texture.width / 2, 0, texture.width / 2, texture.height) });
+                frame.packable = false;
+                sprite.spriteFrame = frame;
+                equipment.once(Node.EventType.NODE_DESTROYED, () => frame.destroy());
+                equipment.setScale(i === 1 ? -1 : 1, 1, 1);
+            }
+            else {
+                await view.setSprite(sprite, TEX.equip(itemId));
+            }
+            if (!equipment.isValid) return;
+            const base = parent.getComponent(UITransform)!;
+            const frame = sprite.spriteFrame;
+            if (!frame) continue;
+            const width = slot === "comb" ? 82 : slot === "face" ? 108 : slot === "leg" ? 52 : base.width * 1.12;
+            const height = slot === "comb" ? 76 : slot === "face" ? 94 : slot === "leg" ? 86 : base.height * 1.12;
+            const ratio = Math.min(width / frame.rect.width, height / frame.rect.height);
+            transform.setContentSize(frame.rect.width * ratio, frame.rect.height * ratio);
+            equipment.setPosition(0, slot === "face" ? 48 : slot === "leg" ? -12 : 0, 0);
+        }
+    }
 }
 
 /**

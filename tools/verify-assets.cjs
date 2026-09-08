@@ -9,6 +9,9 @@
  */
 const http = require("http");
 const { FILES } = require("./import-art.cjs");
+const art = require("./art-uuids.cjs");
+const CHECK_FILES = FILES.concat(["start_figma", "village_figma", "arena_figma", "shop_figma", "map_figma"]
+    .map(name => [null, `assets/bundle/game/texture/bg/${name}.png`, art[`bg_${name}`]]));
 
 const PORT = Number(process.env.MCP_PORT || 3100);
 
@@ -44,7 +47,7 @@ function call(name, args) {
 
 (async () => {
     const bad = [];
-    for (const [, rel, uuid] of FILES) {
+    for (const [, rel, uuid] of CHECK_FILES) {
         const url = "db://" + rel.replace(/^assets\//, "assets/");
         let got = null;
         try {
@@ -64,7 +67,7 @@ function call(name, args) {
     }
 
     if (bad.length === 0) {
-        console.log(`贴图 uuid 全部一致，共 ${FILES.length} 张`);
+        console.log(`贴图 uuid 全部一致，共 ${CHECK_FILES.length} 张`);
         process.exit(0);
     }
     for (const b of bad) console.log(b);

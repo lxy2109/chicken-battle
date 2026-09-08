@@ -61,6 +61,7 @@ function times(s: Partial<Stats>, n: number): Partial<Stats> {
     if (s.atk) out.atk = s.atk * n;
     if (s.def) out.def = s.def * n;
     if (s.spd) out.spd = s.spd * n;
+    if (s.combo) out.combo = s.combo * n;
     if (s.crit) out.crit = s.crit * n;
     if (s.revive) out.revive = s.revive * n;
     if (s.healPerTurn) out.healPerTurn = s.healPerTurn * n;

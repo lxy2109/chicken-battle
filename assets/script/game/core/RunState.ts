@@ -1,98 +1,161 @@
-import { enemyToFighter, getPlayer, getStage, itemById, maxStage, playerTaunts, setById } from "./Catalog";
+import { MAPS, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
 import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
 import { PartLevels, canUpgrade, partScale, upgradeBonus } from "./PartUpgrade";
-import { rollBuffs, rollUpgrades } from "./RewardGen";
+import { rollUpgrades } from "./RewardGen";
 import { Rng } from "./Rng";
 import {
-    Appearance, EquipItem, FighterSnapshot, PartId, RewardOption, RunScreen, StagePhase, Stats,
-    addPartial, defaultAppearance
+    Appearance, EquipItem, FighterSnapshot, PartId, RewardOption, RouteNode, RunScreen, StagePhase,
+    Stats, addPartial, defaultAppearance
 } from "./Types";
 
+/**
+ * 一局的唯一流程状态。
+ *
+ * 每图三场小怪与一场 BOSS；配表中的商店只触发弹出，不占关卡进度。
+ * 战斗结束即更新并保存进度；结算页展示金币，之后选择强化（BOSS 胜利除外）。
+ * 商店货架由 EquipMath 固定生成，不存在刷新或随机换货。
+ */
 export class RunState {
     gold = 0;
+    /** 首通领取记录和大关通关记录不参与 BOSS 战败回退。 */
+    claimedGoldNodes: number[] = [];
+    completedMaps: number[] = [];
+    lastBattleNode = 1;
+    lastFirstClear = false;
+    /** 由本地存档适配层订阅；逻辑测试不依赖引擎或浏览器。 */
+    onChanged?: () => void;
+    /** 全局路线节点 id。`stage` 保留为旧界面/存档的兼容别名。 */
+    routeNode = 1;
     stage = 1;
-    phase: StagePhase = "warmup";
+    phase: StagePhase = "battle";
     shopPending = false;
     lastWin = false;
     lastGoldGain = 0;
     screen: RunScreen = "customize";
     appearance: Appearance = defaultAppearance();
+    /** 自定义页的名称只属于本局，不修改 Player 配表。 */
+    playerName = "村口鸡";
     ownedIds: string[] = [];
+    /** 背包与穿戴分开；同一装备槽最多一件。 */
+    equippedIds: string[] = [];
     bonus: Partial<Stats> = {};
-    /** 各部位练到几级。属性加成和体型都从它现算，不另存一份。 */
     partLevels: PartLevels = {};
-    /** 已经发过几次三选一，只用来错开摇牌的种子，免得每场摇出同样三张。 */
     rewardRolls = 0;
-    /** 战后奖励与 buff 的三张牌，先发这一组。 */
+    /** 原型没有独立的战后 buff 池；保留字段以兼容旧预制体/存档，但新流程为空。 */
     rewards: RewardOption[] = [];
-    /** 部位强化的三张牌，奖励挑完再发这一组。 */
     upgrades: RewardOption[] = [];
     shopItems: EquipItem[] = [];
+    shopLoadedAt = 0;
     seed: number;
+
     constructor(seed?: number) {
         this.seed = seed ?? (Date.now() % 100000);
     }
+
     playerFighter(): FighterSnapshot {
-        const p = getPlayer();
-        const look = applySkinAppearance(this.appearance, this.ownedIds);
+        const look = applySkinAppearance(this.appearance, this.equippedIds);
         look.partScale = partScale(this.partLevels);
         return {
-            name: p.name,
+            name: this.playerName || getPlayer().name,
             appearance: look,
-            stats: healFull(buildStats(this.ownedIds, addPartial(this.bonus, upgradeBonus(this.partLevels)))),
-            taunts: playerTaunts()
+            stats: healFull(buildStats(this.equippedIds, addPartial(this.bonus, upgradeBonus(this.partLevels)))),
+            taunts: this.taunts()
         };
     }
+
     enemyFighter(): FighterSnapshot {
-        if (this.phase === "boss") {
-            return enemyToFighter(getPlayer().bossEnemyId);
-        }
-        const row = getStage(this.stage);
-        const id = this.phase === "warmup" ? row.warmupEnemyId : row.officialEnemyId;
+        const node = this.currentRoute();
+        const id = node.enemyId || getPlayer().bossEnemyId;
         return enemyToFighter(id);
     }
+
+    currentRoute(): RouteNode {
+        return routeNode(this.routeNode);
+    }
+
+    route(): RouteNode[] {
+        return getRoute().filter(node => (node.mapId || 1) === this.currentMap().id && node.kind !== "shop");
+    }
+
+    currentMap() {
+        return MAPS.find(map => map.id === (this.currentRoute().mapId || 1))!;
+    }
+
     confirmAppearance(appearance: Appearance) {
-        this.appearance = appearance;
+        this.appearance = { face: appearance.face, colors: { ...appearance.colors } };
         this.screen = "map";
+        this.onChanged?.();
     }
+
+    setPlayerName(name: string) {
+        const clean = name.trim().slice(0, 12);
+        if (clean) this.playerName = clean;
+        this.onChanged?.();
+    }
+
     enterFight() {
-        this.screen = "prebattle";
+        if (this.screen === "result" || this.screen === "reward") return;
+        if (this.completedMaps.includes(this.currentMap().id) || this.upgrades.length > 0) return;
+        this.shopPending = false;
+        if (this.phase === "battle" || this.phase === "boss") this.screen = "prebattle";
+        this.onChanged?.();
     }
+
     startBattle() {
-        this.screen = "battle";
+        if (this.screen === "result" || this.screen === "reward") return;
+        if (this.completedMaps.includes(this.currentMap().id) || this.upgrades.length > 0) return;
+        if (this.phase === "battle" || this.phase === "boss") this.screen = "battle";
+        this.onChanged?.();
     }
+
     settle(win: boolean) {
+        // 结算回调重复到达时，金币和强化牌都只能产生一次。
+        if (this.screen === "result" || this.screen === "reward" || this.completedMaps.includes(this.currentMap().id)) return;
         this.lastWin = win;
-        this.lastGoldGain = 0;
-        const stage = this.phase === "boss" ? null : getStage(this.stage);
-        if (this.phase === "warmup" && stage) {
-            this.lastGoldGain = win ? stage.warmupGoldWin : stage.warmupGoldLose;
-            this.gold += this.lastGoldGain;
-            this.shopPending = true;
-        }
-        else if (win) {
-            this.lastGoldGain = this.phase === "boss" ? getPlayer().bossGoldWin : getStage(this.stage).officialGoldWin;
-            this.gold += this.lastGoldGain;
-        }
-        // 每场打完都发牌，输了也给，重来时手里好歹多点东西。
-        // 只有打赢鸡王例外：那一场之后直接通关，发牌没有意义。
+        const node = this.currentRoute();
+        this.lastBattleNode = node.id;
+        this.lastFirstClear = win && !this.claimedGoldNodes.includes(node.id);
+        this.lastGoldGain = this.lastFirstClear ? (node.goldWin || 0) : 0;
+        if (this.lastFirstClear) this.claimedGoldNodes.push(node.id);
+        this.gold += this.lastGoldGain;
+        this.shopPending = false;
+        // 结算只显示金币；强化牌在点击“获得强化”后才进入下一屏。
+        this.rewards = [];
         if (!(this.phase === "boss" && win)) {
-            // 两组牌各用一个种子，否则同一场里奖励和强化会摇出同样的顺序。
-            const base = this.seed + this.rewardRolls * 131 + this.stage * 17;
-            this.rewards = rollBuffs(this.stage, base);
-            this.upgrades = rollUpgrades(this.stage, base + 7717, this.partLevels);
+            this.upgrades = rollUpgrades(this.routeNode, this.seed + this.rewardRolls * 131, this.partLevels);
             this.rewardRolls += 1;
         }
+        else {
+            this.upgrades = [];
+        }
+        if (node.kind === "boss") {
+            if (win) this.completedMaps.push(this.currentMap().id);
+            else {
+                const first = this.route()[0];
+                this.routeNode = first.id;
+                this.stage = first.id;
+                this.phase = first.kind;
+                this.shopLoadedAt = 0;
+                this.shopItems = [];
+            }
+        }
+        // 进度与首通金币一起落盘，不依赖结算或强化页按钮。
+        if (win) this.advanceRoute();
         this.screen = "result";
+        this.onChanged?.();
     }
+
     afterResult() {
-        if (this.phase === "boss" && this.lastWin) {
-            this.screen = "ending";
+        if (this.screen !== "result") return;
+        if (routeNode(this.lastBattleNode).kind === "boss" && this.lastWin) {
+            this.screen = this.routeNode > this.lastBattleNode ? "map" : "ending";
+            this.onChanged?.();
             return;
         }
         this.stepReward();
+        this.onChanged?.();
     }
-    /** 两组牌都发完了才离开三选一，中途留在原界面换下一组。 */
+
     private stepReward() {
         if (this.rewards.length > 0 || this.upgrades.length > 0) {
             this.screen = "reward";
@@ -100,109 +163,128 @@ export class RunState {
         }
         this.afterReward();
     }
-    /** 三选一之后去哪：赢了逛商店，输了回地图重来。 */
-    afterReward() {
-        if (this.phase === "warmup") {
-            this.openShop();
-            return;
-        }
-        if (this.phase === "official") {
-            if (this.lastWin) {
-                this.shopPending = true;
-                this.openShop();
-                return;
-            }
-            this.phase = "warmup";
-            this.shopPending = false;
-            this.screen = "map";
-            return;
-        }
-        // 鸡王没打过，回地图再攒一攒
-        this.screen = "map";
+
+    /** 进度已在结算时更新，强化完成后只打开对应界面。 */
+    private afterReward() {
+        if (this.shopPending) this.openShop();
+        else this.screen = "map";
     }
+
+    private advanceRoute() {
+        const following = getRoute().filter(node => node.id > this.routeNode);
+        const next = following.find(node => node.kind !== "shop");
+        if (!next) return;
+        this.shopPending = following.some(node => node.id < next.id && node.kind === "shop");
+        this.routeNode = next.id;
+        this.stage = this.routeNode;
+        this.phase = next.kind;
+    }
+
     pickReward(id: string) {
+        if (this.screen !== "reward") return false;
         const fromBuff = this.rewards.find(v => v.id === id);
         const opt = fromBuff ?? this.upgrades.find(v => v.id === id);
-        if (opt) {
-            this.gold += opt.gold;
-            // 部位强化只记等级，属性由等级现算；这里再 merge 一遍就成了双倍。
-            if (opt.part) this.levelUp(opt.part);
-            else this.mergeBonus(opt.stats);
-        }
+        if (!opt) return false;
+        if (this.lastFirstClear) this.gold += opt.gold;
+        if (opt.part) this.levelUp(opt.part);
+        else this.mergeBonus(opt.stats);
         this.dropCards(!!fromBuff);
+        this.onChanged?.();
+        return true;
     }
-    skipReward() {
-        this.dropCards(this.rewards.length > 0);
-    }
-    /** 收掉刚才那一组牌，再看还有没有下一组。 */
+
     private dropCards(buff: boolean) {
         if (buff) this.rewards = [];
         else this.upgrades = [];
         this.stepReward();
     }
+
     levelUp(part: PartId) {
         if (!canUpgrade(this.partLevels, part)) return;
         this.partLevels[part] = (this.partLevels[part] ?? 0) + 1;
     }
+
     openShop() {
-        this.shopItems = shopStock(this.stage, this.ownedIds);
+        this.shopPending = false;
+        // 同一节点重复打开也不能重新摇货；买掉的条目只会从固定货架上移除。
+        if (this.shopLoadedAt !== this.routeNode) {
+            this.shopItems = shopStock(this.routeNode, this.ownedIds);
+            this.shopLoadedAt = this.routeNode;
+        }
         this.screen = "shop";
+        this.onChanged?.();
     }
+
     buyItem(id: string): boolean {
         const item = itemById(id);
-        if (this.ownedIds.indexOf(id) >= 0) return false;
-        if (this.gold < item.price) return false;
+        if (this.ownedIds.indexOf(id) >= 0 || this.gold < item.price) return false;
         this.gold -= item.price;
         this.ownedIds.push(id);
-        this.shopItems = shopStock(this.stage, this.ownedIds);
+        this.shopItems = this.shopItems.filter(shopItem => shopItem.id !== id);
+        this.onChanged?.();
         return true;
     }
+
     buySet(setId: string): boolean {
         const def = setById(setId);
         const missing = def.pieceIds.filter(id => this.ownedIds.indexOf(id) < 0);
         const price = setPrice(setId);
-        if (missing.length === 0) return false;
-        if (this.gold < price) return false;
+        if (missing.length === 0 || this.gold < price) return false;
         this.gold -= price;
         for (const id of missing) this.ownedIds.push(id);
-        this.shopItems = shopStock(this.stage, this.ownedIds);
+        const bought = new Set(missing);
+        this.shopItems = this.shopItems.filter(shopItem => !bought.has(shopItem.id));
+        this.onChanged?.();
         return true;
     }
+
+    equipItem(id: string): boolean {
+        if (!this.ownedIds.includes(id) || this.screen === "battle") return false;
+        const equipped = this.equippedIds.includes(id);
+        const slot = itemById(id).slot;
+        this.equippedIds = this.equippedIds.filter(other => itemById(other).slot !== slot);
+        if (!equipped) this.equippedIds.push(id);
+        this.onChanged?.();
+        return true;
+    }
+
+    equipSet(setId: string): boolean {
+        const pieces = setById(setId).pieceIds;
+        if (this.screen === "battle" || !pieces.every(id => this.ownedIds.includes(id))) return false;
+        const equipped = pieces.every(id => this.equippedIds.includes(id));
+        const slots = pieces.map(id => itemById(id).slot);
+        this.equippedIds = this.equippedIds.filter(id => !slots.includes(itemById(id).slot));
+        if (!equipped) this.equippedIds.push(...pieces);
+        this.onChanged?.();
+        return true;
+    }
+
     leaveShop() {
+        if (this.screen !== "shop") return;
         this.shopPending = false;
-        if (this.phase === "warmup") {
-            this.phase = "official";
-            this.screen = "map";
-            return;
-        }
-        if (this.phase === "official") {
-            if (this.stage >= maxStage()) {
-                this.phase = "boss";
-            }
-            else {
-                this.stage += 1;
-                this.phase = "warmup";
-            }
-            this.screen = "map";
-            return;
-        }
         this.screen = "map";
+        this.onChanged?.();
     }
+
     mapHint(): string {
-        const p = getPlayer();
-        if (this.phase === "boss") return p.hintBoss;
-        const row = getStage(this.stage);
-        if (this.phase === "warmup") return row.hintWarmup;
-        return row.hintOfficial;
+        const node = this.currentRoute();
+        if (node.kind === "boss") return `${this.currentMap().name}终战：击败鸡王即可通关本地图。`;
+        return `节点 ${node.id} · ${node.name}：${this.claimedGoldNodes.includes(node.id) ? "首通金币已领取" : "首通可得金币"}，战后选择强化。`;
     }
+
     fightTitle(): string {
-        if (this.phase === "boss") return "鸡王挑战";
-        if (this.phase === "warmup") return `第${this.stage}局 · 热身赛`;
-        return `第${this.stage}局 · 正式赛`;
+        const node = this.currentRoute();
+        return node.kind === "boss" ? "鸡王挑战" : `节点 ${node.id} · ${node.name}`;
     }
+
     rng(): Rng {
-        return new Rng(this.seed + this.stage * 100 + (this.phase === "warmup" ? 1 : this.phase === "official" ? 2 : 3));
+        return new Rng(this.seed + this.routeNode * 100 + (this.phase === "boss" ? 3 : 1));
     }
+
+    private taunts(): string[] {
+        return playerTaunts();
+    }
+
     private mergeBonus(extra: Partial<Stats>) {
         this.bonus = addPartial(this.bonus, extra);
     }

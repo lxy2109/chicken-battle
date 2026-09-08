@@ -60,6 +60,7 @@
         "atk": 0,
         "def": 2,
         "spd": 0,
+        "combo": 12,
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,

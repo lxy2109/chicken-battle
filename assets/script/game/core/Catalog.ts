@@ -1,5 +1,5 @@
 import { tableRow, tableRows } from "./Config";
-import { Appearance, EquipItem, FaceId, PartId, SetDef, Stats, UpgradeDef } from "./Types";
+import { Appearance, EquipItem, FaceId, PartId, RouteNode, SetDef, Stats, UpgradeDef } from "./Types";
 
 export const PREFAB_PATH = {
     chicken: "game/prefab/chicken",
@@ -9,18 +9,28 @@ export const PREFAB_PATH = {
     fxStart: "game/prefab/fx_start",
     taunt: "game/prefab/taunt_bubble",
     shopItem: "game/prefab/shop_item",
-    rewardCard: "game/prefab/reward_card",
-    statRow: "game/prefab/stat_row"
+    shopSetItem: "game/prefab/shop_set_item",
+    rewardCard: "game/prefab/reward_card"
 };
 
 /** bundle 内贴图路径，供 GameComponent.setSprite 运行时换图。 */
 export const TEX = {
+    background: (name: string) => `game/texture/bg/${name}/spriteFrame`,
     /** 装备图标文件名与 Item.json 的 id 一致。 */
     equip: (itemId: string) => `game/texture/equip/${itemId}/spriteFrame`,
     icon: (name: string) => `game/texture/icon/${name}/spriteFrame`,
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`
 };
+
+/** 场景先复用现有背景；美术交付后只替换这里的资源路径。 */
+export const MAPS = [
+    { id: 1, name: "东篱村", background: "map_figma" },
+    { id: 2, name: "青竹溪", background: "map_figma" },
+    { id: 3, name: "金穗田", background: "map_figma" },
+    { id: 4, name: "古祠镇", background: "map_figma" },
+    { id: 5, name: "鸡王山", background: "map_figma" }
+];
 
 export const PART_NODE: Record<PartId, string> = {
     comb: "Comb",
@@ -38,6 +48,42 @@ export function getPlayer() {
 
 export function getStages() {
     return tableRows("Stage");
+}
+
+/** v7 线性路线。旧项目没有 Route 表时退回 Stage 表，方便编辑器缓存或旧导出继续启动。 */
+export function getRoute(): RouteNode[] {
+    try {
+        return tableRows("Route").map(row => ({
+            id: Number(row.id),
+            mapId: Number(row.mapId) || 1,
+            kind: String(row.kind || row.type) as RouteNode["kind"],
+            name: String(row.name || "路线节点"),
+            enemyId: row.enemyId ? String(row.enemyId) : undefined,
+            goldWin: Number(row.goldWin) || 0,
+            goldLose: Number(row.goldLose) || 0
+        }));
+    }
+    catch {
+        const stages = getStages();
+        const route: RouteNode[] = stages.slice(0, 3).map((row, i) => ({
+            id: i < 2 ? i + 1 : 4,
+            kind: "battle",
+            name: String(row.name || `节点 ${i + 1}`),
+            enemyId: String(row.officialEnemyId || row.warmupEnemyId),
+            goldWin: Number(row.officialGoldWin) || 0,
+            goldLose: 0
+        }));
+        route.splice(2, 0, { id: 3, kind: "shop", name: "鸡市 · 中场" });
+        route.push({ id: 5, kind: "shop", name: "鸡市 · 决战前" });
+        route.push({ id: 6, kind: "boss", name: "鸡王", enemyId: getPlayer().bossEnemyId, goldWin: getPlayer().bossGoldWin });
+        return route;
+    }
+}
+
+export function routeNode(id: number): RouteNode {
+    const node = getRoute().find(v => v.id === id);
+    if (!node) throw new Error(`路线没有节点 id=${id}`);
+    return node;
 }
 
 export function maxStage(): number {
@@ -111,6 +157,7 @@ export function enemyToFighter(id: string) {
         atk: e.atk,
         def: e.def,
         spd: e.spd,
+        combo: Number(e.combo) || e.spd * 10,
         crit: e.crit,
         revive: e.revive,
         lockHp: !!e.lockHp,
@@ -127,6 +174,7 @@ export function getBaseStats(): Stats {
         atk: p.atk,
         def: p.def,
         spd: p.spd,
+        combo: Number(p.combo) || p.spd * 10,
         crit: p.crit,
         revive: 0,
         lockHp: false,
@@ -145,6 +193,7 @@ function packStats(row: any, prefix = ""): Partial<Stats> {
     if (n("atk")) out.atk = n("atk");
     if (n("def")) out.def = n("def");
     if (n("spd")) out.spd = n("spd");
+    if (n("combo")) out.combo = n("combo");
     if (n("crit")) out.crit = n("crit");
     if (n("revive")) out.revive = n("revive");
     if (n("healPerTurn")) out.healPerTurn = n("healPerTurn");

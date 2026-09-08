@@ -7,8 +7,12 @@ const path = require("path");
 const ExcelJS = require("exceljs");
 
 const ROOT = path.resolve(__dirname, "..");
-const XLSX = path.join(ROOT, "excel", "斗鸡配置.xlsx");
-const JSON_DIR = path.join(ROOT, "assets/bundle/config/game");
+const XLSX = process.env.CHICKEN_BATTLE_XLSX
+    ? path.resolve(ROOT, process.env.CHICKEN_BATTLE_XLSX)
+    : path.join(ROOT, "excel", "斗鸡配置.xlsx");
+const JSON_DIR = process.env.CHICKEN_BATTLE_JSON_DIR
+    ? path.resolve(ROOT, process.env.CHICKEN_BATTLE_JSON_DIR)
+    : path.join(ROOT, "assets/bundle/config/game");
 
 const PAL = ["#E23B3B", "#F4D35E", "#EE964B", "#7B4B2A", "#2A9D8F", "#264653", "#E76F51", "#FFFFFF", "#8E44AD", "#3498DB"];
 const FACES = ["fierce", "dumb", "proud", "cute"];
@@ -71,6 +75,15 @@ const COLS = {
         ["正式胜金币", "officialGoldWin", "int"],
         ["热身提示", "hintWarmup", "string"],
         ["正式提示", "hintOfficial", "string"]
+    ],
+    Route: [
+        ["节点编号", "id", "int"],
+        ["地图编号", "mapId", "int"],
+        ["节点类型 battle/shop/boss", "kind", "string"],
+        ["节点名", "name", "string"],
+        ["敌人id", "enemyId", "string"],
+        ["胜利金币", "goldWin", "int"],
+        ["失败金币", "goldLose", "int"]
     ],
     Enemy: [
         ["编号", "id", "string"],
@@ -145,13 +158,25 @@ const COLS = {
         ["编号", "id", "string"],
         ["标题", "title", "string"],
         ["描述", "desc", "string"],
-        ["每局金币", "goldPerStage", "int"],
+        ["强化部位", "part", "string"],
+        ["每节点金币", "goldPerStage", "int"],
         ["生命", "maxHp", "int"],
         ["攻击", "atk", "int"],
         ["防御", "def", "int"],
         ["速度", "spd", "int"],
+        ["连击", "combo", "int"],
         ["暴击", "crit", "float"],
-        ["随机部位", "randomPart", "int"]
+        ["复活", "revive", "int"],
+        ["回血", "healPerTurn", "int"],
+        ["锁血", "lockHp", "int"],
+        ["部位上限", "maxLevel", "int"],
+        ["每级放大", "scalePerLevel", "float"],
+        ["出现权重", "weight", "int"]
+    ],
+    Language: [
+        ["编号【KEY】", "id", "string"],
+        ["简体中文", "zh", "string"],
+        ["英文", "en", "string"]
     ]
 };
 
@@ -198,6 +223,15 @@ function seed() {
             taunt1: "今儿个让你见识村口一霸！", taunt2: "你这只鸡，看着就嫩。", taunt3: "热身都站不稳？正式赛更别来。"
         }],
         Stage: stageRows,
+        Route: ["东篱村", "青竹溪", "金穗田", "古祠镇", "鸡王山"].flatMap((mapName, mapIndex) => [
+            { id: 1, kind: "battle", name: "东篱小怪", enemyId: "s1_official", goldWin: 50, goldLose: 0 },
+            { id: 2, kind: "battle", name: "麦场小怪", enemyId: "s2_official", goldWin: 80, goldLose: 0 },
+            { id: 3, kind: "shop", name: "鸡市 · 中场", enemyId: "", goldWin: 0, goldLose: 0 },
+            { id: 4, kind: "battle", name: "祠堂小怪", enemyId: "s3_official", goldWin: 120, goldLose: 0 },
+            { id: 5, kind: "shop", name: "鸡市 · 决战前", enemyId: "", goldWin: 0, goldLose: 0 },
+            { id: 6, kind: "boss", name: "鸡王", enemyId: "kun_boss", goldWin: 200, goldLose: 0 }
+        ].map(row => ({ ...row, id: mapIndex * 6 + row.id, mapId: mapIndex + 1,
+            name: row.kind === "shop" ? "鸡友杂货铺" : `${mapName} · ${row.name}` }))),
         Enemy: enemyRows,
         Item: [
             { id: "iron_comb", name: "铁喙冠", desc: "攻击+3", slot: "comb", setId: "iron_beak", price: 40, isSkin: 0, special: "none", maxHp: 0, atk: 3, def: 0, spd: 0, crit: 0, revive: 0, healPerTurn: 0, lockHp: 0, skinFace: "", skinColor: "" },
@@ -227,12 +261,15 @@ function seed() {
             FACES.map((f, i) => ({ id: "face_" + f, type: "face", name: FACE_NAME[f], value: f, order: i }))
         ),
         Reward: [
-            { id: "gold", title: "一袋铜钱", desc: "立刻获得金币", goldPerStage: 30, maxHp: 0, atk: 0, def: 0, spd: 0, crit: 0, randomPart: 0 },
-            { id: "atk", title: "锐喙", desc: "随机部位 攻击+3", goldPerStage: 0, maxHp: 0, atk: 3, def: 0, spd: 0, crit: 0, randomPart: 1 },
-            { id: "hp", title: "壮体", desc: "随机部位 生命+20", goldPerStage: 0, maxHp: 20, atk: 0, def: 0, spd: 0, crit: 0, randomPart: 1 },
-            { id: "def", title: "硬羽", desc: "随机部位 防御+2", goldPerStage: 0, maxHp: 0, atk: 0, def: 2, spd: 0, crit: 0, randomPart: 1 },
-            { id: "spd", title: "疾步", desc: "随机部位 速度+2", goldPerStage: 0, maxHp: 0, atk: 0, def: 0, spd: 2, crit: 0, randomPart: 1 },
-            { id: "crit", title: "凶眼", desc: "随机部位 暴击+6%", goldPerStage: 0, maxHp: 0, atk: 0, def: 0, spd: 0, crit: 0.06, randomPart: 1 }
+            { id: "up_head", title: "锐喙", desc: "喙磨得更尖，啄下去更狠", part: "head", goldPerStage: 0, maxHp: 0, atk: 3, def: 0, spd: 0, combo: 0, crit: 0, revive: 0, healPerTurn: 0, lockHp: 0, maxLevel: 5, scalePerLevel: 0.06, weight: 10 },
+            { id: "up_neck", title: "灵颈", desc: "脖子甩得更狠，容易一击致命", part: "neck", goldPerStage: 0, maxHp: 0, atk: 0, def: 0, spd: 0, combo: 0, crit: 0.06, revive: 0, healPerTurn: 0, lockHp: 0, maxLevel: 5, scalePerLevel: 0.06, weight: 10 },
+            { id: "up_body", title: "壮体", desc: "躯干壮实，血更厚", part: "body", goldPerStage: 0, maxHp: 20, atk: 0, def: 0, spd: 0, combo: 0, crit: 0, revive: 0, healPerTurn: 0, lockHp: 0, maxLevel: 5, scalePerLevel: 0.06, weight: 10 },
+            { id: "up_wing", title: "硬羽", desc: "翅羽变厚，连击更顺", part: "wing", goldPerStage: 0, maxHp: 0, atk: 0, def: 2, spd: 0, combo: 12, crit: 0, revive: 0, healPerTurn: 0, lockHp: 0, maxLevel: 5, scalePerLevel: 0.06, weight: 10 },
+            { id: "up_leg", title: "疾步", desc: "腿脚更有劲，出手更勤", part: "leg", goldPerStage: 0, maxHp: 0, atk: 0, def: 0, spd: 2, combo: 0, crit: 0, revive: 0, healPerTurn: 0, lockHp: 0, maxLevel: 5, scalePerLevel: 0.06, weight: 10 }
+        ],
+        Language: [
+            { id: "role_level_up", zh: "升级", en: "Upgrade" },
+            { id: "role_attack", zh: "攻击", en: "Attack" }
         ]
     };
 }
@@ -283,13 +320,59 @@ function parseCell(type, raw) {
     return raw;
 }
 
+function migrateLegacyRewards(table) {
+    const idMap = { gold: "buff_gold", atk: "up_head", hp: "up_body", def: "up_wing", spd: "up_leg", crit: "up_neck" };
+    const defaults = Object.fromEntries(seed().Reward.map(row => [row.id, row]));
+    const numericKeys = ["goldPerStage", "maxHp", "atk", "def", "spd", "crit"];
+    const out = {};
+    Object.entries(table).forEach(([oldId, row]) => {
+        const id = idMap[oldId] || oldId;
+        const base = defaults[id];
+        if (!base) {
+            // 自定义旧奖励没有办法从 randomPart 推断固定部位，保留但默认关闭，
+            // 避免导出后被误当成可用的部位强化。
+            out[id] = Object.assign({}, row, {
+                id,
+                part: String(row.part || "").trim(),
+                combo: Number(row.combo) || 0,
+                revive: Number(row.revive) || 0,
+                healPerTurn: Number(row.healPerTurn) || 0,
+                lockHp: Number(row.lockHp) || 0,
+                maxLevel: Number(row.maxLevel) || 0,
+                scalePerLevel: Number(row.scalePerLevel) || 0,
+                weight: 0
+            });
+            delete out[id].randomPart;
+            return;
+        }
+        const migrated = Object.assign({}, base, { id });
+        if (row.title) migrated.title = String(row.title);
+        const desc = String(row.desc || "").trim();
+        if (desc && !desc.includes("随机部位")) migrated.desc = desc;
+        numericKeys.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(row, key)) migrated[key] = row[key];
+        });
+        out[id] = migrated;
+    });
+    return out;
+}
+
 async function readXlsx() {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(XLSX);
     const out = {};
     for (const sheet of Object.keys(COLS)) {
         const ws = wb.getWorksheet(sheet);
-        if (!ws) throw new Error("Excel 缺少工作表 " + sheet);
+        if (!ws) {
+            if (sheet === "Route") {
+                out.Route = seed().Route.reduce((table, row) => {
+                    table[String(row.id)] = row;
+                    return table;
+                }, {});
+                continue;
+            }
+            throw new Error("Excel 缺少工作表 " + sheet);
+        }
         const keys = [];
         const types = [];
         ws.getRow(2).eachCell((cell, col) => { keys[col] = String(cell.value || "").trim(); });
@@ -300,11 +383,34 @@ async function readXlsx() {
             const obj = {};
             keys.forEach((key, col) => {
                 if (!key) return;
-                obj[key] = parseCell(types[col] || "string", row.getCell(col).value);
+                const type = types[col] || "string";
+                const raw = row.getCell(col).value;
+                // Keep optional numeric fields absent when the source row was
+                // absent, while preserving explicit empty string fields such
+                // as Reward.part for pure buffs.
+                if ((sheet === "Route" || sheet === "Reward")
+                    && (raw == null || raw === "")
+                    && (sheet === "Route" || type !== "string")) return;
+                obj[key] = parseCell(type, raw);
             });
             if (obj.id === "" || obj.id == null) return;
             table[String(obj.id)] = obj;
         });
+        // 兼容 v6 Excel 中 Reward 的 randomPart 列，导出时迁移到当前的
+        // 部位等级配置，避免一次运行 excel-kit 就把强化池写成不可用的旧格式。
+        if (sheet === "Reward" && keys.indexOf("randomPart") >= 0) {
+            out[sheet] = migrateLegacyRewards(table);
+            continue;
+        }
+        if (sheet === "Language") {
+            // Language.json is keyed by the first-column key and historically
+            // stores only the locale fields inside each value object.
+            out[sheet] = Object.fromEntries(Object.entries(table).map(([id, row]) => {
+                const { id: _rowId, ...locale } = row;
+                return [id, locale];
+            }));
+            continue;
+        }
         out[sheet] = table;
     }
     return out;

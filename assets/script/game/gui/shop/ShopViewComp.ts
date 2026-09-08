@@ -7,7 +7,8 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX, getSets } from "../../core/Catalog";
 import { combatPower, ownedSetCount, setPrice } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
-import { bindClick, bindNodeClick, clearChildren, setLabel, setSpriteColor } from "../UiUtil";
+import { spawnChicken } from "../ChickenBinder";
+import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
@@ -24,19 +25,32 @@ interface ItemView {
 @ecs.register("ShopView", false)
 @gui.register("ShopView", { layer: LayerType.UI, prefab: "gui/shop/shop" })
 export class ShopViewComp extends CCView<ChickenRun> {
+    private selected: ItemView | null = null;
+
     async start() {
         this.nodeTreeInfoLite();
+        const backgrounds = ["shop_figma", "village_figma"];
+        const index = this.ent.run.phase === "boss" ? 1 : 0;
+        await setNodeSprite(this, "shop", TEX.background(backgrounds[index % backgrounds.length]));
+        await spawnChicken(this, "ShopkeeperSlot", this.ent.run.playerFighter().appearance, 0.22, true);
+        bindClick(this, "BtnBack", this.onLeave.bind(this));
+        bindClick(this, "BtnCancelBuy", () => this.closePurchase());
+        bindClick(this, "BtnConfirmBuy", () => {
+            const selected = this.selected;
+            if (!selected || !selected.affordable) return;
+            this.closePurchase();
+            selected.onBuy();
+        });
         bindClick(this, "BtnLeave", this.onLeave.bind(this));
         await this.refresh();
     }
 
     private async refresh() {
         const run = this.ent.run;
-        setLabel(this, "LabTitle", "鸡市");
+        setLabel(this, "LabTitle", "鸡友杂货铺");
         setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
-        setLabel(this, "LabHint", run.phase === "warmup" ? "热身补给，买完再去正式赛" : "胜后补给");
-        setLabel(this, "LabDesc", "同套凑齐两件触发加成，整套买有折扣");
+        setLabel(this, "LabDesc", "点击商品查看效果与价格，确认后购买");
 
         const itemSlot = this.getNode("ItemSlot");
         clearChildren(itemSlot);
@@ -45,11 +59,11 @@ export class ShopViewComp extends CCView<ChickenRun> {
                 await this.addCard(itemSlot, {
                     title: item.name,
                     desc: item.desc,
-                    price: item.price,
-                    icon: TEX.equip(item.id),
-                    affordable: run.gold >= item.price,
-                    onBuy: () => this.buyItem(item.id)
-                });
+                price: item.price,
+                icon: TEX.equip(item.id),
+                affordable: run.gold >= item.price,
+                onBuy: () => this.buyItem(item.id)
+                }, PREFAB_PATH.shopItem);
             }
         }
 
@@ -66,13 +80,13 @@ export class ShopViewComp extends CCView<ChickenRun> {
                     icon: TEX.equip(set.pieceIds[0]),
                     affordable: run.gold >= price && owned < set.pieceIds.length,
                     onBuy: () => this.buySet(set.id)
-                });
+                }, PREFAB_PATH.shopSetItem);
             }
         }
     }
 
-    private async addCard(parent: Node, view: ItemView) {
-        const node = await this.createPrefabNode(PREFAB_PATH.shopItem);
+    private async addCard(parent: Node, view: ItemView, prefab: string) {
+        const node = await this.createPrefabNode(prefab);
         node.parent = parent;
 
         const text = (target: Node | null, value: string) => {
@@ -86,10 +100,27 @@ export class ShopViewComp extends CCView<ChickenRun> {
         const icon = node.getChildByName("IconSlot")?.getChildByName("Icon")?.getComponent(Sprite);
         if (icon) await this.setSprite(icon, view.icon);
 
-        // 买不起只压暗按钮，仍然可点，让 RunState 去拒绝，避免两处各判一次条件。
+        // 先展示价格和效果，确认后仍由 RunState 校验余额和已购状态。
         const buy = node.getChildByName("BtnBuy");
         setSpriteColor(buy ?? undefined, view.affordable ? "#FFFFFF" : "#9A9A9A");
-        bindNodeClick(buy || node, view.onBuy, this);
+        bindNodeClick(buy || node, () => this.showPurchase(view), this);
+        bindNodeClick(node, () => this.showPurchase(view), this);
+    }
+
+    private showPurchase(view: ItemView) {
+        this.selected = view;
+        setLabel(this, "LabPurchaseTitle", view.title);
+        setLabel(this, "LabPurchaseDesc", view.desc);
+        setLabel(this, "LabPurchasePrice", `${view.price} 金币 · 当前拥有 ${this.ent.run.gold}`);
+        setLabel(this, "BtnConfirmBuyLab", view.affordable ? "确认购买" : "暂不可购买");
+        setSpriteColor(this.getNode("BtnConfirmBuy"), view.affordable ? "#FFFFFF" : "#9A9A9A");
+        void setNodeSprite(this, "PurchaseIcon", view.icon);
+        setNodeActive(this, "PurchaseModal", true);
+    }
+
+    private closePurchase() {
+        this.selected = null;
+        setNodeActive(this, "PurchaseModal", false);
     }
 
     private async buyItem(id: string) {

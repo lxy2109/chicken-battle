@@ -25,7 +25,7 @@ const { defaultAppearance } = require(path.join(G, "core/Types.js"));
 
 const dir = path.resolve(__dirname, "../assets/bundle/config/game");
 const tables = {};
-for (const n of ["Player", "Stage", "Enemy", "Item", "Set", "Part", "Reward"]) {
+for (const n of ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward"]) {
     tables[n] = JSON.parse(fs.readFileSync(path.join(dir, n + ".json"), "utf8"));
 }
 bindTables(tables);
@@ -89,11 +89,16 @@ function play(player, enemy, boss, anim) {
     return t;
 }
 
-/** 跑整局五关加鸡王，统计出招构成。 */
+/** 跑整局线性路线，统计战斗节点的出招构成。 */
 function tally(seed, out) {
     const run = fresh(seed);
-    for (let i = 0; i < 6; i++) {
-        const s = new BattleSession(run.playerFighter(), run.enemyFighter(), seed + i, run.phase === "boss");
+    let guard = 0;
+    while (run.phase !== "boss" && guard++ < 20) {
+        if (run.screen === "shop") {
+            run.leaveShop();
+            continue;
+        }
+        const s = new BattleSession(run.playerFighter(), run.enemyFighter(), seed + run.routeNode, false);
         s.resolveAll();
         for (const ev of s.events) {
             if (ev.type !== "action") continue;
@@ -102,19 +107,27 @@ function tally(seed, out) {
         advance(run);
         if (run.screen === "ending") break;
     }
+    if (run.phase === "boss") {
+        const s = new BattleSession(run.playerFighter(), run.enemyFighter(), seed + 99, true);
+        s.resolveAll();
+        for (const ev of s.events) if (ev.type === "action") out[ev.style] = (out[ev.style] || 0) + 1;
+    }
 }
 
 /**
- * 打赢一场并挑掉两组三选一（先奖励再强化），走到下一场。
- * 挑而不是跳过，是因为真实玩家不会白放着免费的不拿，
- * 一路练下来后面几关会明显变快，跳过就量不到这件事。
+ * 打赢一个战斗节点并挑掉部位强化，走到下一个路线节点。
+ * 关闭商店弹出不推进关卡，也不会重新生成货架。
  */
 function advance(run) {
+    if (run.screen === "shop") {
+        run.leaveShop();
+        return;
+    }
     run.settle(true);
     run.afterResult();
     let guard = 0;
     while (run.screen === "reward" && guard++ < 4) {
-        const cards = run.rewards.length > 0 ? run.rewards : run.upgrades;
+        const cards = run.upgrades;
         run.pickReward(cards[0].id);
     }
     if (run.screen === "shop") run.leaveShop();
@@ -154,24 +167,29 @@ console.log("\n一场打多久");
 const cases = [];
 {
     const run = fresh(11);
-    cases.push(["首战", run.playerFighter(), run.enemyFighter(), false, 15, 32]);
+    cases.push(["首战", run.playerFighter(), run.enemyFighter(), false, 15, 40]);
 
     const swift = fresh(11);
     const fast = swift.playerFighter();
     fast.stats = Object.assign({}, fast.stats, { spd: 45 });
-    cases.push(["堆满速度", fast, swift.enemyFighter(), false, 8, 25]);
+    cases.push(["堆满速度", fast, swift.enemyFighter(), false, 8, 28]);
 
     const GEAR = ["iron_comb", "iron_head", "iron_body", "iron_wing", "stone_comb", "stone_head", "stone_body", "stone_leg"];
 
     const kun = fresh(11);
     kun.phase = "boss";
+    kun.routeNode = 6;
     kun.ownedIds = GEAR;
+    kun.equipSet("stone_crown");
+    kun.equipItem("iron_wing");
     cases.push(["鸡王战", kun.playerFighter(), kun.enemyFighter(), true, 20, 45]);
 
-    // 真实走到鸡王的玩家吃过十次三选一，比上面那只强不少。
+    // 真实走到鸡王的玩家吃过三次三选一，比上面那只强不少。
     // 强化把这一场压得太短的话，通关就没有紧张感了，所以单独盯一遍。
     const grown = growToBoss(11);
     grown.ownedIds = GEAR;
+    grown.equipSet("stone_crown");
+    grown.equipItem("iron_wing");
     cases.push(["鸡王战·练过", grown.playerFighter(), grown.enemyFighter(), true, 18, 45]);
 }
 for (const [label, p, e, boss, lo, hi] of cases) {

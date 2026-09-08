@@ -7,16 +7,16 @@ export function ownedSetCount(ownedIds: string[], setId: string): number {
     return def.pieceIds.filter(id => ownedIds.indexOf(id) >= 0).length;
 }
 
-export function buildStats(ownedIds: string[], extra: Partial<Stats> = {}): Stats {
+export function buildStats(equippedIds: string[], extra: Partial<Stats> = {}): Stats {
     let stats = getBaseStats();
     const seen = new Set<string>();
-    for (const id of ownedIds) {
+    for (const id of equippedIds) {
         const item = itemById(id);
         stats = addStats(stats, item.stats);
         seen.add(item.setId);
     }
     for (const setId of seen) {
-        const n = ownedSetCount(ownedIds, setId);
+        const n = ownedSetCount(equippedIds, setId);
         const def = getSets().find(s => s.id === setId)!;
         if (n >= 2) stats = addStats(stats, def.bonus2);
         if (n >= 4) stats = addStats(stats, def.bonus4);
@@ -26,13 +26,15 @@ export function buildStats(ownedIds: string[], extra: Partial<Stats> = {}): Stat
     return stats;
 }
 
-export function applySkinAppearance(appearance: Appearance, ownedIds: string[]): Appearance {
+export function applySkinAppearance(appearance: Appearance, equippedIds: string[]): Appearance {
     const next: Appearance = {
         face: appearance.face,
-        colors: { ...appearance.colors }
+        colors: { ...appearance.colors },
+        equipment: {}
     };
-    for (const id of ownedIds) {
+    for (const id of equippedIds) {
         const item = itemById(id);
+        next.equipment![item.slot] = id;
         if (!item.isSkin) continue;
         if (item.skinFace) next.face = item.skinFace as FaceId;
         if (item.skinColor && item.slot !== "face") {
@@ -48,11 +50,16 @@ export function setPrice(setId: string): number {
     return Math.floor(raw * def.discount);
 }
 
-export function shopStock(stage: number, ownedIds: string[]): EquipItem[] {
+/**
+ * v7 商店是固定货架：每次进入都按头饰、翅膀、身体、脚部的顺序展示一件
+ * 可购买的单件，不刷新、不因路线节点随机变化。套装仍由商店界面单独展示。
+ */
+export function shopStock(_stage: number, ownedIds: string[]): EquipItem[] {
     const locked = new Set(ownedIds);
-    const pool = getItems().filter(it => !locked.has(it.id));
-    const start = Math.max(0, (stage - 1) * 2);
-    return pool.slice(start, start + 6);
+    const slots: PartId[] = ["head", "wing", "body", "leg"];
+    return slots
+        .map(slot => getItems().find(item => item.slot === slot && !locked.has(item.id)))
+        .filter((item): item is EquipItem => !!item);
 }
 
 /** 一场里典型的挨刀次数，用来把每刀生效的属性折算成等效生命。 */
@@ -78,12 +85,12 @@ export function combatPower(s: Stats): number {
         + s.healPerTurn * HEALS
         + s.revive * s.maxHp * 0.4
         + (s.lockHp ? s.maxHp * 0.3 : 0);
-    return Math.round(dps * DPS_WEIGHT + ehp);
+    return Math.round(dps * DPS_WEIGHT + ehp + (s.combo ?? 0) * 0.2);
 }
 
 /** 单行紧凑属性串，给空间有限的界面用。 */
 export function formatStatsLine(s: Stats): string {
-    return `生命 ${s.maxHp}   攻击 ${s.atk}   防御 ${s.def}   速度 ${s.spd}   暴击 ${Math.round(s.crit * 100)}%`;
+    return `生命 ${s.maxHp}   攻击伤害 ${s.atk}   敏捷 ${s.spd}   连击 ${Math.round(s.combo ?? s.spd * 10)}   暴击 ${Math.round(s.crit * 100)}%`;
 }
 
 export function healFull(s: Stats): Stats {

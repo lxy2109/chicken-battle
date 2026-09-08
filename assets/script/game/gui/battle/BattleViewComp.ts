@@ -14,13 +14,14 @@ import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { setLabel } from "../UiUtil";
+import { playGameEffect } from "../GameAudio";
 
 const { ccclass } = _decorator;
 
 /** 与 battle.prefab 里 PlayerSlot / EnemySlot 的落点保持一致。 */
-const P_HOME = new Vec3(-100, -160, 0);
-const E_HOME = new Vec3(100, 160, 0);
-const ARENA_HOME = new Vec3(0, 10, 0);
+const P_HOME = new Vec3(-160, -76, 0);
+const E_HOME = new Vec3(160, -76, 0);
+const ARENA_HOME = new Vec3(0, 0, 0);
 /** 血条追赶实际血量的速度，越大越跟手。 */
 const BAR_EASE = 8;
 const LOG_HOLD = 1.6;
@@ -73,13 +74,15 @@ export class BattleViewComp extends CCView<ChickenRun> {
     /** 双方最近一击用的招式，伤害事件回来时靠它决定震屏力度。 */
     private styleOf: Record<BattleSide, StrikeStyle> = { player: "peck", enemy: "peck" };
     private logLeft = 0;
+    private danmakuElapsed = 0;
+    private danmakuIndex = 0;
 
     async start() {
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const me = run.playerFighter();
         const foe = run.enemyFighter();
-        setLabel(this, "LabTitle", run.fightTitle());
+        setLabel(this, "LabTitle", "自动战斗");
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabLog", "");
@@ -147,6 +150,17 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (this.closed || !this.running) return;
         for (const ev of this.session.tick(dt)) this.dispatch(ev);
         this.easeBars(dt);
+        this.danmakuElapsed += dt;
+        if (this.danmakuElapsed >= 5) {
+            this.danmakuElapsed = 0;
+            const comments = ["村口擂台，强鸡出击！", "稳住，下一招就是机会！", "这身手，有鸡王的气势！"];
+            const line = this.getNode("LabDanmaku");
+            if (line) {
+                setLabel(this, "LabDanmaku", comments[this.danmakuIndex++ % comments.length]);
+                line.setPosition(640, line.position.y, 0);
+                tween(line).to(4.5, { position: v3(-640, line.position.y, 0) }).start();
+            }
+        }
         if (this.logLeft > 0) {
             this.logLeft -= dt;
             if (this.logLeft <= 0) setLabel(this, "LabLog", "");
@@ -163,6 +177,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
             this.onHit(ev.from, ev.to, ev.dmg, ev.crit);
         }
         else if (ev.type === "heal") {
+            playGameEffect("heal");
             this.actor(ev.side)?.hop();
             void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, `+${ev.amount}`, 0.5);
             this.log(ev.side, "回血");
@@ -206,6 +221,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     }
 
     private onHit(from: BattleSide, to: BattleSide, dmg: number, crit: boolean) {
+        playGameEffect(crit ? "critical" : "hit");
         this.actor(to)?.flinch();
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
@@ -221,6 +237,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     private async finish(win: boolean) {
         if (!this.running) return;
         this.running = false;
+        playGameEffect(win ? "win" : "lose");
         this.stopTick();
         this.trig(win ? "toWin" : "toLose");
         this.ent.run.settle(win);

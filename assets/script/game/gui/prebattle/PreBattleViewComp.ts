@@ -1,23 +1,23 @@
-import { Label, Sprite, _decorator } from "cc";
+import { _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { PREFAB_PATH, TEX } from "../../core/Catalog";
 import { combatPower } from "../../core/EquipMath";
 import { Stats } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
-import { bindClick, clearChildren, setLabel } from "../UiUtil";
+import { bindClick, setLabel } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
-const ROWS: Array<{ key: keyof Stats; name: string; icon: string }> = [
-    { key: "maxHp", name: "生命", icon: "hp" },
-    { key: "atk", name: "攻击", icon: "atk" },
-    { key: "def", name: "防御", icon: "def" },
-    { key: "spd", name: "速度", icon: "spd" }
+const ROWS: Array<{ name: string; value: (stats: Stats) => number }> = [
+    { name: "生命", value: stats => stats.maxHp },
+    { name: "攻击伤害", value: stats => stats.atk },
+    { name: "敏捷", value: stats => stats.spd },
+    { name: "连击", value: stats => Math.round(stats.combo ?? stats.spd * 10) },
+    { name: "暴击", value: stats => Math.round(stats.crit * 100) }
 ];
 
 /** 特殊能力摘要，没有的项不占位。 */
@@ -39,52 +39,35 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
         const me = run.playerFighter();
         const foe = run.enemyFighter();
 
-        setLabel(this, "LabTitle", run.fightTitle());
+        setLabel(this, "LabTitle", run.currentRoute().name);
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabPlayerPower", `${combatPower(me.stats)}`);
         setLabel(this, "LabEnemyPower", `${combatPower(foe.stats)}`);
         setLabel(this, "LabExtra", extraText(me.stats));
         setLabel(this, "LabEnemyExtra", extraText(foe.stats));
+        setLabel(this, "LabDiff", "VS");
+        this.fillDiff(me.stats, foe.stats);
 
-        await spawnChicken(this, "PlayerSlot", me.appearance, 0.62);
-        await spawnChicken(this, "EnemySlot", foe.appearance, 0.62, true);
-        await this.fillStats(me.stats, foe.stats);
+        await spawnChicken(this, "PlayerSlot", me.appearance, 0.24);
+        await spawnChicken(this, "EnemySlot", foe.appearance, 0.24, true);
         bindClick(this, "BtnFight", this.onFight.bind(this));
     }
 
-    private async fillStats(a: Stats, b: Stats) {
-        const slot = this.getNode("StatSlot");
-        clearChildren(slot);
-        if (!slot) return;
+    private fillDiff(a: Stats, b: Stats) {
         for (const row of ROWS) {
-            const node = await this.createPrefabNode(PREFAB_PATH.statRow);
-            node.parent = slot;
-
-            const av = Number(a[row.key]);
-            const bv = Number(b[row.key]);
-            const name = node.getChildByName("LabName")?.getComponent(Label);
-            const pv = node.getChildByName("LabPlayer")?.getComponent(Label);
-            const ev = node.getChildByName("LabEnemy")?.getComponent(Label);
-            if (name) name.string = row.name;
-            if (pv) pv.string = `${av}`;
-            if (ev) ev.string = `${bv}`;
-
-            const icon = node.getChildByName("Icon")?.getComponent(Sprite);
-            if (icon) await this.setSprite(icon, TEX.icon(row.icon));
-
-            const arrow = node.getChildByName("Arrow");
-            if (arrow) {
-                arrow.active = av !== bv;
-                const sp = arrow.getComponent(Sprite);
-                if (sp && av !== bv) await this.setSprite(sp, TEX.icon(av > bv ? "up" : "down"));
-            }
+            const delta = row.value(a) - row.value(b);
+            const suffix = row.name === "攻击伤害" ? "Atk" : row.name === "生命" ? "Hp" : row.name === "敏捷" ? "Spd" : row.name === "连击" ? "Combo" : "Crit";
+            const unit = row.name === "暴击" ? "%" : "";
+            setLabel(this, `LabDiff${suffix}`, `${row.name} ${delta >= 0 ? "+" : ""}${delta}${unit}`);
+            setLabel(this, `LabPlayer${suffix}`, `${row.value(a)}${unit}`);
+            setLabel(this, `LabEnemy${suffix}`, `${row.value(b)}${unit}`);
         }
     }
 
     private async onFight() {
         this.ent.run.startBattle();
-        await goScreen(this, "battle");
+        if (this.ent.run.screen === "battle") await goScreen(this);
     }
 
     reset() {

@@ -1,5 +1,6 @@
 import { Button, Color, Label, Node, Sprite } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
+import { playGameEffect } from "./GameAudio";
 
 export function hexColor(hex: string): Color {
     const h = hex.replace("#", "");
@@ -39,7 +40,10 @@ export function bindNodeClick(node: Node | undefined, cb: () => void, host: any)
     let btn = node.getComponent(Button);
     if (!btn) btn = node.addComponent(Button);
     node.off(Button.EventType.CLICK);
-    node.on(Button.EventType.CLICK, cb, host);
+    node.on(Button.EventType.CLICK, () => {
+        playGameEffect("click");
+        cb.call(host);
+    }, host);
 }
 
 export function bindClick(view: GameComponent, name: string, cb: () => void) {
