@@ -4,7 +4,19 @@
     "md5Cache": true
   },
   "textureCompressConfig": {
-    "genMipmaps": false
+    "genMipmaps": false,
+    "userPreset": {
+      "chicken-web": {
+        "name": "Chicken Web (WebP 85)",
+        "options": {
+          "web": {
+            "webp": {
+              "quality": 85
+            }
+          }
+        }
+      }
+    }
   },
   "bundleConfig": {
     "custom": {

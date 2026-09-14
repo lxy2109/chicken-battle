@@ -37,6 +37,10 @@
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": false,
-    "redirect": "f598eb04-b04c-4276-932f-a41814df567b@6c48a"
+    "redirect": "f598eb04-b04c-4276-932f-a41814df567b@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "chicken-web"
+    }
   }
 }

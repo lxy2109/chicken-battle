@@ -1,13 +1,49 @@
 import { revealUI } from "./UiUtil";
-import { Node, view } from "cc";
+import { Node, SpriteFrame, view } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { oops } from "db://oops-framework/core/Oops";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCEntity, ECSCtor, ECSView } from "db://oops-framework/module/common/CCEntity";
+import { ECSCtor, ECSView } from "db://oops-framework/module/common/CCEntity";
+import { ChickenRun } from "../chicken/ChickenRun";
+
+const preparedDirectories = new Map<string, Promise<void>>();
 
 /** 打开界面：预制体缺脚本时补挂，保证动态加载预制体可跑 */
-export async function openRunView<T extends ECSView>(entity: CCEntity, ctor: ECSCtor<T>): Promise<Node> {
+export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: ECSCtor<T>): Promise<Node> {
     const key = gui.internal.getKey(ctor);
+    // Dynamic sprites are not prefab dependencies. Finish their downloads and
+    // decoding while the loading/previous view is still visible.
+    const directories = ["chicken", "equip", "ui"];
+    if (key === "MapView") directories.push("map");
+    if (key === "RewardView") directories.push("icon");
+    if (key === "BattleView") directories.push("fx");
+    const backgrounds = key === "MapView" ? [entity.run.currentMap().background]
+        : key === "ShopView" ? ["shop_figma", "shop_weapon_figma"]
+        : key === "ResultView" ? ["result_figma", "result_lose_figma"] : [];
+    await Promise.all([
+        ...directories.map(dir => {
+            let ready = preparedDirectories.get(dir);
+            if (!ready) {
+                ready = new Promise<void>((resolve, reject) => {
+                    oops.res.loadDir("bundle", `game/texture/${dir}`, SpriteFrame, (error: Error | null) => {
+                        if (error) reject(error);
+                        else resolve();
+                    });
+                }).catch(error => {
+                    preparedDirectories.delete(dir);
+                    throw error;
+                });
+                preparedDirectories.set(dir, ready);
+            }
+            return ready;
+        }),
+        new Promise<void>((resolve, reject) => {
+            oops.res.loadAny("bundle", [gui.internal.getConfig(key).prefab,
+                "game/prefab/chicken", "game/feather-gradient",
+                ...backgrounds.map(bg => `game/texture/bg/${bg}/spriteFrame`)],
+            null, (error: Error | null) => error ? reject(error) : resolve());
+        })
+    ]);
     const node = await oops.gui.open(key, { preload: true });
     // LayerGame resets prefab scale on open. Keep the game's 720x1280 local
     // coordinates proportional to the project's current design canvas.

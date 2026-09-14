@@ -20,7 +20,10 @@
     "contourBleed": true,
     "paddingBleed": true,
     "filterUnused": false,
-    "compressSettings": {},
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "chicken-web"
+    },
     "textureSetting": {
       "wrapModeS": "clamp-to-edge",
       "wrapModeT": "clamp-to-edge",

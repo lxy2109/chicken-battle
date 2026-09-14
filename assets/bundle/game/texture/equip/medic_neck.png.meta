@@ -53,10 +53,10 @@
         "offsetY": 0.0,
         "trimX": 0,
         "trimY": 0,
-        "width": 383,
-        "height": 337,
-        "rawWidth": 383,
-        "rawHeight": 337,
+        "width": 256,
+        "height": 225,
+        "rawWidth": 256,
+        "rawHeight": 225,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -71,17 +71,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -191.5,
-            -168.5,
+            -128.0,
+            -112.5,
             0,
-            191.5,
-            -168.5,
+            128.0,
+            -112.5,
             0,
-            -191.5,
-            168.5,
+            -128.0,
+            112.5,
             0,
-            191.5,
-            168.5,
+            128.0,
+            112.5,
             0
           ],
           "indexes": [
@@ -94,12 +94,12 @@
           ],
           "uv": [
             0,
-            337,
-            383,
-            337,
+            225,
+            256,
+            225,
             0,
             0,
-            383,
+            256,
             0
           ],
           "nuv": [
@@ -113,13 +113,13 @@
             1.0
           ],
           "minPos": [
-            -191.5,
-            -168.5,
+            -128.0,
+            -112.5,
             0
           ],
           "maxPos": [
-            191.5,
-            168.5,
+            128.0,
+            112.5,
             0
           ]
         }
@@ -130,6 +130,10 @@
     "type": "sprite-frame",
     "redirect": "88726a81-3296-5592-8f30-2cf44e664342@6c48a",
     "hasAlpha": true,
-    "fixAlphaTransparencyArtifacts": false
+    "fixAlphaTransparencyArtifacts": false,
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "chicken-web"
+    }
   }
 }

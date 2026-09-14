@@ -130,6 +130,10 @@
     "type": "sprite-frame",
     "redirect": "de82f6ad-66d5-5321-aea2-f9493c118aa0@6c48a",
     "hasAlpha": true,
-    "fixAlphaTransparencyArtifacts": false
+    "fixAlphaTransparencyArtifacts": false,
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "chicken-web"
+    }
   }
 }

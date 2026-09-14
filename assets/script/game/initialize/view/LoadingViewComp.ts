@@ -81,12 +81,22 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     }
 
     /** 加载完成事件 */
-    private async onCompleteCallback() {
+    private async onCompleteCallback(error?: Error) {
+        if (error) {
+            this.data.prompt = "资源加载失败，请刷新重试";
+            console.error("[LoadingView]", error);
+            return;
+        }
         // 恢复本地存档并进入首页
-        this.data.prompt = "准备就绪，即将进入村庄";
+        this.data.prompt = "正在准备角色与装备…";
         smc.chickenRun.RunModel.load();
-        await openRunView(smc.chickenRun, CustomizeViewComp);
-        this.remove();
+        try {
+            await openRunView(smc.chickenRun, CustomizeViewComp);
+            this.remove();
+        } catch (error) {
+            this.data.prompt = "资源加载失败，请刷新重试";
+            console.error("[LoadingView]", error);
+        }
     }
 
     reset(): void { }

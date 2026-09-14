@@ -49,14 +49,14 @@
         "trimType": "none",
         "trimThreshold": 1,
         "rotated": false,
-        "offsetX": 0,
-        "offsetY": 0,
+        "offsetX": 0.0,
+        "offsetY": 0.0,
         "trimX": 0,
         "trimY": 0,
-        "width": 502,
-        "height": 553,
-        "rawWidth": 502,
-        "rawHeight": 553,
+        "width": 384,
+        "height": 423,
+        "rawWidth": 384,
+        "rawHeight": 423,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -71,17 +71,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -251,
-            -276.5,
+            -192.0,
+            -211.5,
             0,
-            251,
-            -276.5,
+            192.0,
+            -211.5,
             0,
-            -251,
-            276.5,
+            -192.0,
+            211.5,
             0,
-            251,
-            276.5,
+            192.0,
+            211.5,
             0
           ],
           "indexes": [
@@ -94,32 +94,32 @@
           ],
           "uv": [
             0,
-            553,
-            502,
-            553,
+            423,
+            384,
+            423,
             0,
             0,
-            502,
+            384,
             0
           ],
           "nuv": [
-            0,
-            0,
-            1,
-            0,
-            0,
-            1,
-            1,
-            1
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0
           ],
           "minPos": [
-            -251,
-            -276.5,
+            -192.0,
+            -211.5,
             0
           ],
           "maxPos": [
-            251,
-            276.5,
+            192.0,
+            211.5,
             0
           ]
         }
@@ -130,6 +130,10 @@
     "type": "sprite-frame",
     "redirect": "e1d0fcc6-354a-559a-8f9c-b551a7fcccd5@6c48a",
     "hasAlpha": true,
-    "fixAlphaTransparencyArtifacts": false
+    "fixAlphaTransparencyArtifacts": false,
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "chicken-web"
+    }
   }
 }
