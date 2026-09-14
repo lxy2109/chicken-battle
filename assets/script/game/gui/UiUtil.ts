@@ -1,5 +1,6 @@
-import { Button, Color, Label, Node, Sprite } from "cc";
+import { Button, Color, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, v3 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
+import { oops } from "db://oops-framework/core/Oops";
 import { playGameEffect } from "./GameAudio";
 
 export function hexColor(hex: string): Color {
@@ -39,11 +40,42 @@ export function bindNodeClick(node: Node | undefined, cb: () => void, host: any)
     if (!node) return;
     let btn = node.getComponent(Button);
     if (!btn) btn = node.addComponent(Button);
+    btn.transition = Button.Transition.SCALE;
+    btn.zoomScale = 0.94;
     node.off(Button.EventType.CLICK);
     node.on(Button.EventType.CLICK, () => {
-        playGameEffect("click");
+        playGameEffect(/Back|Leave|Cancel|Home/.test(node.name) ? "close" : "click");
+        void playSparkles(node);
         cb.call(host);
     }, host);
+}
+
+/** Reuses the Guandan star texture with a small, UI-only animation. */
+let sparkleFrame: Promise<SpriteFrame> | undefined;
+export async function playSparkles(origin: Node, count = 4) {
+    // Shared for the game lifetime: a click can destroy its view while loading.
+    sparkleFrame ??= oops.res.load("bundle", "game/texture/ui/click_star/spriteFrame", SpriteFrame);
+    const frame = await sparkleFrame;
+    if (!origin.isValid) return;
+    const layer = new Node("ClickSparkles");
+    layer.layer = origin.layer;
+    layer.parent = origin;
+    for (let i = 0; i < count; i++) {
+        if (!layer.isValid) return;
+        const star = new Node("Star");
+        star.layer = layer.layer;
+        star.parent = layer;
+        star.addComponent(UITransform).setContentSize(20, 20);
+        const sprite = star.addComponent(Sprite);
+        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        sprite.spriteFrame = frame;
+        const angle = i / count * Math.PI * 2;
+        const distance = count > 4 ? 180 : 42;
+        tween(star).to(0.4, { position: v3(Math.cos(angle) * distance, Math.sin(angle) * distance, 0), scale: v3(0.2, 0.2, 1) }).start();
+        tween(star.addComponent(UIOpacity)).to(0.4, { opacity: 0 }).call(() => {
+            if (i === count - 1 && layer.isValid) layer.destroy();
+        }).start();
+    }
 }
 
 export function bindClick(view: GameComponent, name: string, cb: () => void) {

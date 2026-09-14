@@ -44,21 +44,23 @@ export function applySkinAppearance(appearance: Appearance, equippedIds: string[
     return next;
 }
 
-export function setPrice(setId: string): number {
+export function setPrice(setId: string, ownedIds: string[] = [], discount = 0): number {
     const def = setById(setId);
-    const raw = def.pieceIds.reduce((sum, id) => sum + itemById(id).price, 0);
-    return Math.floor(raw * def.discount);
+    const raw = def.pieceIds.filter(id => !ownedIds.includes(id)).reduce((sum, id) => sum + itemById(id).price, 0);
+    return Math.floor(raw * def.discount * (1 - discount));
 }
 
 /**
  * v7 商店是固定货架：每次进入都按头饰、翅膀、身体、脚部的顺序展示一件
  * 可购买的单件，不刷新、不因路线节点随机变化。套装仍由商店界面单独展示。
  */
-export function shopStock(_stage: number, ownedIds: string[]): EquipItem[] {
+export function shopStock(stage: number, ownedIds: string[]): EquipItem[] {
     const locked = new Set(ownedIds);
-    const slots: PartId[] = ["head", "wing", "body", "leg"];
+    const slots: PartId[] = ["head", "body", "wing", "neck"];
     return slots
-        .map(slot => getItems().find(item => item.slot === slot && !locked.has(item.id)))
+        .map(slot => getItems().find(item => item.slot === slot && !locked.has(item.id)
+            && !setById(item.setId).legacy && !setById(item.setId).rewardOnly
+            && setById(item.setId).unlockMap <= Math.min(5, Math.ceil(stage / 6))))
         .filter((item): item is EquipItem => !!item);
 }
 

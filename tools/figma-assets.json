@@ -1,0 +1,1092 @@
+{
+  "bg/start_figma": {
+    "uuid": "a1b2c3d4-3002-4000-8000-000000000005",
+    "source": "开始界面",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/village_figma": {
+    "uuid": "a1b2c3d4-3002-4000-8000-000000000006",
+    "source": "角色界面",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/arena_figma": {
+    "uuid": "a1b2c3d4-3002-4000-8000-000000000007",
+    "source": "自动战斗界面",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/map_figma": {
+    "uuid": "a1b2c3d4-3002-4000-8000-000000000009",
+    "source": "image 123",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/map_2_figma": {
+    "uuid": "dd2753f6-9b4c-5206-943d-4370df876f18",
+    "source": "image 129",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/map_3_figma": {
+    "uuid": "3f15ee78-39d6-5808-ac83-1d1e709de0f5",
+    "source": "image 130",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/map_4_figma": {
+    "uuid": "8d3110d7-73eb-59ec-93b3-dbd8e56c8a0c",
+    "source": "image 131",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/map_5_figma": {
+    "uuid": "148ea7bf-9750-576e-b8ec-7973cde74568",
+    "source": "image 133",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/shop_figma": {
+    "uuid": "a1b2c3d4-3002-4000-8000-000000000008",
+    "source": "image 76",
+    "box": [
+      0,
+      235,
+      1080,
+      1920
+    ]
+  },
+  "bg/result_figma": {
+    "uuid": "7fce5ecf-c0a1-538a-9512-0c654ad39b1b",
+    "source": "战斗结算",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/result_lose_figma": {
+    "uuid": "47d62c4a-8c56-5d8e-8d2a-27512c9ba96f",
+    "source": "战斗结算 (podium, without victory heading)",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/prebattle_figma": {
+    "uuid": "b2fe897d-3583-5785-bf68-e2ea99d89fb5",
+    "source": "战前准备",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "bg/reward_figma": {
+    "uuid": "4fdac55f-8fc0-595d-8290-de3e6409b83e",
+    "source": "战利品强化",
+    "box": [
+      0,
+      0,
+      1080,
+      1920
+    ]
+  },
+  "ui/figma_button_red": {
+    "uuid": "d2e14233-512b-55f2-92ce-c39567eb714c",
+    "source": "开始界面",
+    "box": [
+      292,
+      1392,
+      496,
+      231
+    ]
+  },
+  "ui/figma_button_green": {
+    "uuid": "e8898688-e721-5d24-9e0a-ae900d00ba87",
+    "source": "战斗结算",
+    "box": [
+      292,
+      1610,
+      500,
+      182
+    ]
+  },
+  "ui/figma_reward_banner": {
+    "uuid": "25c65a97-d600-5c0f-85c8-57ffd3bea320",
+    "source": "战利品强化",
+    "box": [
+      144,
+      269,
+      792,
+      202
+    ]
+  },
+  "ui/figma_reward_card": {
+    "uuid": "f376d05e-49ba-5027-8e7c-5b06e43d4fbf",
+    "source": "战利品强化",
+    "box": [
+      73,
+      559,
+      312,
+      935
+    ]
+  },
+  "ui/figma_avatar": {
+    "uuid": "a89de6aa-40db-5d62-a5d4-609a672934fc",
+    "source": "自动战斗界面",
+    "box": [
+      44,
+      43,
+      157,
+      164
+    ]
+  },
+  "ui/figma_gold": {
+    "uuid": "92b129e0-2717-527a-bcb7-aeb2ff23f5d5",
+    "source": "冒险地图",
+    "box": [
+      830,
+      35,
+      198,
+      80
+    ]
+  },
+  "chicken/figma_shadow": {
+    "uuid": "460f9703-3d4a-517e-afd4-585fc369b381",
+    "source": "角色界面-1",
+    "box": [
+      332,
+      960,
+      444,
+      136
+    ]
+  },
+  "ui/figma_match_card": {
+    "uuid": "19185826-4cd3-5844-92e6-5350bc32cf40",
+    "source": "战前准备",
+    "box": [
+      6,
+      614,
+      1073,
+      766
+    ]
+  },
+  "ui/figma_customize_panel": {
+    "uuid": "9e094c72-672b-5427-b2c1-1d0eae861277",
+    "source": "角色界面-1",
+    "box": [
+      0,
+      1100,
+      1080,
+      820
+    ]
+  },
+  "ui/figma_customize_controls": {
+    "uuid": "4581c492-3571-5910-a27a-6883af862b8a",
+    "source": "角色界面-1",
+    "box": [
+      0,
+      1100,
+      1080,
+      820
+    ]
+  },
+  "ui/figma_button_yellow": {
+    "uuid": "1e1668b6-4eaf-5a92-8d58-aa725ad98e8d",
+    "source": "角色界面-1",
+    "box": [
+      589,
+      1628,
+      356,
+      128
+    ]
+  },
+  "chicken/figma_face_dumb": {
+    "uuid": "4a03e01b-bd7e-59fd-83be-a546dac30e2c",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_face_fierce": {
+    "uuid": "1bc8abc6-904b-5055-9626-02905bc028b0",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_face_proud": {
+    "uuid": "9ea1d5de-4d2f-5df6-b26c-54bf7f368068",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_face_cute": {
+    "uuid": "dd488b30-d628-5bda-b0e5-df785ee33018",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_head": {
+    "uuid": "439beb03-5206-5597-b035-662ce90f3e88",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_head_ink": {
+    "uuid": "55b6588d-dd94-51ae-a38e-09ee08fbe2a7",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "chicken/figma_neck": {
+    "uuid": "017bbcd8-984b-56c0-9b27-fb8d0d3de8bf",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      400,
+      377,
+      199
+    ]
+  },
+  "chicken/figma_neck_ink": {
+    "uuid": "50ca44e9-30d5-54dd-9a44-0f896a332b35",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      400,
+      377,
+      199
+    ]
+  },
+  "chicken/figma_body": {
+    "uuid": "f413e124-2fd6-5a0a-b014-468c18b5b9b9",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      599,
+      377,
+      325
+    ]
+  },
+  "chicken/figma_body_ink": {
+    "uuid": "432c481b-6d9a-596a-b307-de5ba18d8571",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      599,
+      377,
+      325
+    ]
+  },
+  "chicken/figma_leg_left": {
+    "uuid": "8e6fb29e-9ff4-5ddf-b275-92391cfb0143",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      924,
+      188,
+      153
+    ]
+  },
+  "chicken/figma_leg_left_ink": {
+    "uuid": "e03044fb-f660-5910-a640-854b53fc78f7",
+    "source": "角色界面-1",
+    "box": [
+      352,
+      924,
+      188,
+      153
+    ]
+  },
+  "chicken/figma_leg_right": {
+    "uuid": "0a079377-a127-518f-86de-2bc2b64841b7",
+    "source": "角色界面-1",
+    "box": [
+      540,
+      924,
+      189,
+      153
+    ]
+  },
+  "chicken/figma_leg_right_ink": {
+    "uuid": "dc90f85f-4289-5309-9b6c-bc9838853f84",
+    "source": "角色界面-1",
+    "box": [
+      540,
+      924,
+      189,
+      153
+    ]
+  },
+  "chicken/figma_wing": {
+    "uuid": "f6887db5-4e5f-5685-98ba-8df7cbec7c19",
+    "source": "角色界面-1",
+    "box": [
+      594,
+      599,
+      135,
+      225
+    ]
+  },
+  "chicken/figma_wing_ink": {
+    "uuid": "de82f6ad-66d5-5321-aea2-f9493c118aa0",
+    "source": "角色界面-1",
+    "box": [
+      594,
+      599,
+      135,
+      225
+    ]
+  },
+  "chicken/s1_official": {
+    "uuid": "f0679bd9-1ded-5b85-ac8a-04fd6b85f7e7",
+    "source": "image 105",
+    "box": [
+      0,
+      0,
+      669,
+      1006
+    ]
+  },
+  "chicken/s2_official": {
+    "uuid": "91f5501e-14c6-577d-b176-7067b57899cb",
+    "source": "image 107",
+    "box": [
+      0,
+      0,
+      417,
+      1073
+    ]
+  },
+  "chicken/s3_official": {
+    "uuid": "fa74dab2-723d-59e7-81d7-19fe2f7d82ab",
+    "source": "image 109",
+    "box": [
+      0,
+      0,
+      485,
+      1089
+    ]
+  },
+  "chicken/s4_official": {
+    "uuid": "58413c12-3467-527a-a680-4a633af10dc0",
+    "source": "image 110",
+    "box": [
+      0,
+      0,
+      501,
+      1058
+    ]
+  },
+  "chicken/s5_official": {
+    "uuid": "00e4e80d-3a5b-580e-8948-d0553b52302a",
+    "source": "image 113",
+    "box": [
+      0,
+      0,
+      541,
+      1199
+    ]
+  },
+  "chicken/kun_boss": {
+    "uuid": "2ac36bd0-4b37-5083-a71c-243f009e3815",
+    "source": "image 39",
+    "box": [
+      0,
+      0,
+      563,
+      1030
+    ]
+  },
+  "chicken/s1_warmup": {
+    "uuid": "e8a5ad6e-f9e6-542b-838d-65ef9a3f68b9",
+    "source": "image 135",
+    "box": [
+      0,
+      0,
+      160,
+      236
+    ]
+  },
+  "chicken/s2_warmup": {
+    "uuid": "bc25a84f-92de-514e-a53f-cf25c838e0db",
+    "source": "image 136",
+    "box": [
+      0,
+      0,
+      159,
+      259
+    ]
+  },
+  "chicken/s3_warmup": {
+    "uuid": "c55d73f6-1600-5766-a79c-ec88dc26901e",
+    "source": "image 137",
+    "box": [
+      0,
+      0,
+      153,
+      213
+    ]
+  },
+  "chicken/s4_warmup": {
+    "uuid": "08ab55b8-4ee4-5774-bfa5-60ccf2eb21d7",
+    "source": "image 138",
+    "box": [
+      0,
+      0,
+      170,
+      260
+    ]
+  },
+  "chicken/s5_warmup": {
+    "uuid": "0ce3965e-c62a-588b-a88d-5e451fdf530f",
+    "source": "image 140",
+    "box": [
+      0,
+      0,
+      168,
+      223
+    ]
+  },
+  "map/stage": {
+    "uuid": "a1b2c3d4-2004-4000-8000-000000000001",
+    "source": "Group 28",
+    "box": [
+      0,
+      0,
+      115,
+      96
+    ]
+  },
+  "map/lock": {
+    "uuid": "a1b2c3d4-2004-4000-8000-000000000002",
+    "source": "Group 29",
+    "box": [
+      0,
+      0,
+      115,
+      96
+    ]
+  },
+  "map/boss": {
+    "uuid": "a1b2c3d4-2004-4000-8000-000000000005",
+    "source": "Group 31",
+    "box": [
+      0,
+      0,
+      146,
+      122
+    ]
+  },
+  "map/chest": {
+    "uuid": "a1b2c3d4-2004-4000-8000-000000000004",
+    "source": "Group 33",
+    "box": [
+      0,
+      0,
+      115,
+      96
+    ]
+  },
+  "map/shop": {
+    "uuid": "a1b2c3d4-2004-4000-8000-000000000003",
+    "source": "image 120",
+    "box": [
+      0,
+      0,
+      634,
+      650
+    ]
+  },
+  "equip/rookie_head": {
+    "uuid": "aded9dea-c489-5426-9b26-fa67f5a6a3f5",
+    "source": "image 81",
+    "box": [
+      0,
+      0,
+      368,
+      345
+    ]
+  },
+  "equip/rookie_neck": {
+    "uuid": "b2ce7a78-5789-5fe7-872a-0add52f89a5f",
+    "source": "image 82",
+    "box": [
+      0,
+      0,
+      363,
+      386
+    ]
+  },
+  "equip/rookie_wing": {
+    "uuid": "86d474e2-cd8a-59ea-ae3e-0e77b4158e2c",
+    "source": "image 78",
+    "box": [
+      0,
+      0,
+      456,
+      472
+    ]
+  },
+  "equip/rookie_leg": {
+    "uuid": "326564dc-c148-57de-8f2b-b1530870f4d4",
+    "source": "image 83",
+    "box": [
+      0,
+      0,
+      312,
+      452
+    ]
+  },
+  "equip/set_rookie": {
+    "uuid": "6a1c8bf1-734d-5ae2-af83-5fa80eb89b34",
+    "source": "image 84",
+    "box": [
+      0,
+      0,
+      380,
+      793
+    ]
+  },
+  "equip/brawler_head": {
+    "uuid": "948cdd12-78c8-5a3d-aadc-dceebac40b12",
+    "source": "image 85",
+    "box": [
+      0,
+      0,
+      338,
+      315
+    ]
+  },
+  "equip/brawler_neck": {
+    "uuid": "dd8d020f-a6a8-5237-801b-40a4fab050f2",
+    "source": "image 87",
+    "box": [
+      0,
+      0,
+      401,
+      364
+    ]
+  },
+  "equip/brawler_wing": {
+    "uuid": "e55450cf-94a4-5cd9-b0d4-5fb5e6b600dd",
+    "source": "image 86",
+    "box": [
+      0,
+      0,
+      231,
+      432
+    ]
+  },
+  "equip/brawler_leg": {
+    "uuid": "77cafbc5-3330-51dc-8b9f-1a23632dbc4c",
+    "source": "image 88",
+    "box": [
+      0,
+      0,
+      173,
+      366
+    ]
+  },
+  "equip/set_brawler": {
+    "uuid": "7e04523b-2360-5a5f-af95-7b3ccfc51e05",
+    "source": "image 89",
+    "box": [
+      0,
+      0,
+      452,
+      766
+    ]
+  },
+  "equip/medic_head": {
+    "uuid": "c421c1ab-ec77-5a25-b43c-3c78fae075b6",
+    "source": "image 90",
+    "box": [
+      0,
+      0,
+      348,
+      283
+    ]
+  },
+  "equip/medic_neck": {
+    "uuid": "88726a81-3296-5592-8f30-2cf44e664342",
+    "source": "image 92",
+    "box": [
+      0,
+      0,
+      383,
+      337
+    ]
+  },
+  "equip/medic_wing": {
+    "uuid": "6113169c-fb31-5ed6-a592-1790623bd2c2",
+    "source": "image 91",
+    "box": [
+      0,
+      0,
+      259,
+      351
+    ]
+  },
+  "equip/medic_leg": {
+    "uuid": "7ec5eb68-6046-526b-88cc-c74b287201ab",
+    "source": "image 93",
+    "box": [
+      0,
+      0,
+      288,
+      327
+    ]
+  },
+  "equip/set_medic": {
+    "uuid": "ed0e09f3-7620-5dba-87e2-82495c818719",
+    "source": "image 94",
+    "box": [
+      0,
+      0,
+      416,
+      745
+    ]
+  },
+  "equip/helicopter_head": {
+    "uuid": "40de9e0e-836a-5355-9159-4eb41eeb0d72",
+    "source": "image 95",
+    "box": [
+      0,
+      0,
+      289,
+      287
+    ]
+  },
+  "equip/helicopter_neck": {
+    "uuid": "b545eb1b-5fe6-5a0c-99f8-c2921c5e2af8",
+    "source": "image 97",
+    "box": [
+      0,
+      0,
+      414,
+      309
+    ]
+  },
+  "equip/helicopter_wing": {
+    "uuid": "19263fd0-6902-5cd8-bee6-df59f95bba7b",
+    "source": "image 96",
+    "box": [
+      0,
+      0,
+      366,
+      284
+    ]
+  },
+  "equip/helicopter_leg": {
+    "uuid": "6a4cd566-0184-5e34-a7f5-4277a87a4d66",
+    "source": "image 98",
+    "box": [
+      0,
+      0,
+      336,
+      342
+    ]
+  },
+  "equip/set_helicopter": {
+    "uuid": "10e85670-bd76-512b-9015-31bf97fa728f",
+    "source": "image 99",
+    "box": [
+      0,
+      0,
+      385,
+      811
+    ]
+  },
+  "equip/miser_head": {
+    "uuid": "624be39d-9505-585e-a220-371dff16f263",
+    "source": "image 100",
+    "box": [
+      0,
+      0,
+      333,
+      298
+    ]
+  },
+  "equip/miser_neck": {
+    "uuid": "6fb31159-0f1a-5422-99b3-24eec6bf63c5",
+    "source": "image 102",
+    "box": [
+      0,
+      0,
+      383,
+      304
+    ]
+  },
+  "equip/miser_wing": {
+    "uuid": "71912f7d-f826-5e57-ab2d-023cd8271a20",
+    "source": "image 101",
+    "box": [
+      0,
+      0,
+      413,
+      228
+    ]
+  },
+  "equip/miser_leg": {
+    "uuid": "61039d1d-3724-57fb-81cb-a59528c978c8",
+    "source": "image 103",
+    "box": [
+      0,
+      0,
+      359,
+      295
+    ]
+  },
+  "equip/set_miser": {
+    "uuid": "000c94ec-13e6-5300-beac-1428528db7e3",
+    "source": "image 104",
+    "box": [
+      0,
+      0,
+      543,
+      768
+    ]
+  },
+  "ui/figma_back": {
+    "uuid": "b49497e3-02ad-508d-b411-388fef24ac37",
+    "source": "image 79",
+    "box": [
+      56,
+      31,
+      110,
+      81
+    ]
+  },
+  "ui/figma_stat_hp": {
+    "uuid": "b9377870-bce9-53fc-945b-fa287da43384",
+    "source": "image 79",
+    "box": [
+      66,
+      400,
+      194,
+      198
+    ]
+  },
+  "ui/figma_stat_atk": {
+    "uuid": "9bd00f03-1fdd-5090-b8f2-3ed261fbcedb",
+    "source": "image 79",
+    "box": [
+      810,
+      400,
+      195,
+      198
+    ]
+  },
+  "ui/figma_stat_combo": {
+    "uuid": "65caa028-8860-5db4-b6b0-bea91d8d7b57",
+    "source": "image 79",
+    "box": [
+      66,
+      776,
+      194,
+      198
+    ]
+  },
+  "ui/figma_stat_spd": {
+    "uuid": "a92e780f-bd26-530c-951f-d1e5f9b8c5fa",
+    "source": "image 79",
+    "box": [
+      810,
+      776,
+      195,
+      198
+    ]
+  },
+  "ui/figma_equipment_panel": {
+    "uuid": "66a3e111-d39a-5112-b6a8-6ce6fb4c02d5",
+    "source": "image 79",
+    "box": [
+      0,
+      1060,
+      1080,
+      860
+    ]
+  },
+  "ui/figma_power": {
+    "uuid": "21e6bec4-761e-576c-a6d7-92788860c048",
+    "source": "image 79",
+    "box": [
+      379,
+      129,
+      289,
+      100
+    ]
+  },
+  "ui/figma_equip_slot": {
+    "uuid": "91f66b76-0791-594a-b321-d90e8544903f",
+    "source": "image 80",
+    "box": [
+      0,
+      0,
+      644,
+      644
+    ]
+  },
+  "ui/figma_hp": {
+    "uuid": "03d9dcb0-9b0e-54c3-a03d-cdea78a68dfa",
+    "source": "自动战斗界面",
+    "box": [
+      149,
+      89,
+      362,
+      66
+    ]
+  },
+  "ui/figma_customize_base": {
+    "uuid": "cb6917dc-1443-5a12-b6da-169057c3414d",
+    "source": "角色界面-1",
+    "box": [
+      0,
+      1100,
+      1080,
+      820
+    ]
+  },
+  "ui/figma_customize_buttons": {
+    "uuid": "1303dcd5-3920-5feb-afb5-1244d0066346",
+    "source": "角色界面-1",
+    "box": [
+      0,
+      1100,
+      1080,
+      820
+    ]
+  },
+  "ui/figma_customize_colors": {
+    "uuid": "876e96d2-b6d9-5df2-b303-7762d2bc8051",
+    "source": "角色界面-1",
+    "box": [
+      0,
+      1100,
+      1080,
+      820
+    ]
+  },
+  "ui/figma_tab": {
+    "uuid": "02d246bc-af01-5319-82d4-87070813b955",
+    "source": "角色界面-1",
+    "box": [
+      68,
+      1140,
+      173,
+      151
+    ]
+  },
+  "ui/figma_tab_head": {
+    "uuid": "1a17c9f0-bfe5-59f1-892a-141a8fe97109",
+    "source": "角色界面-1",
+    "box": [
+      108,
+      1144,
+      90,
+      96
+    ]
+  },
+  "ui/figma_tab_face": {
+    "uuid": "f0b12cf8-f15c-5875-b9ae-06def8a95948",
+    "source": "角色界面-1",
+    "box": [
+      291,
+      1150,
+      113,
+      92
+    ]
+  },
+  "ui/figma_tab_wing": {
+    "uuid": "37d52c3e-bb52-5954-9ba0-988f18f85ee7",
+    "source": "角色界面-1",
+    "box": [
+      488,
+      1144,
+      96,
+      100
+    ]
+  },
+  "ui/figma_tab_body": {
+    "uuid": "4c0cf0aa-fca4-5aba-81c4-e95689055489",
+    "source": "角色界面-1",
+    "box": [
+      686,
+      1140,
+      78,
+      105
+    ]
+  },
+  "ui/figma_tab_leg": {
+    "uuid": "ca2ef51d-76be-5080-83ba-5b86c88724e5",
+    "source": "角色界面-1",
+    "box": [
+      860,
+      1144,
+      102,
+      100
+    ]
+  },
+  "ui/figma_tab_set": {
+    "uuid": "1edd5866-741a-5a4c-8841-a2f28e3630b9",
+    "source": "image 79",
+    "box": [
+      882,
+      1075,
+      118,
+      97
+    ]
+  },
+  "ui/figma_expression_dumb": {
+    "uuid": "3a6d8bfa-bf72-590c-b191-3a6a1578f347",
+    "source": "角色界面",
+    "box": [
+      56,
+      1368,
+      136,
+      140
+    ]
+  },
+  "ui/figma_expression_cute": {
+    "uuid": "6131db07-18a7-59eb-8241-31416f346716",
+    "source": "角色界面",
+    "box": [
+      216,
+      1368,
+      136,
+      140
+    ]
+  },
+  "ui/figma_expression_sad": {
+    "uuid": "60b1793e-093e-50ae-81b1-0b5f07c59456",
+    "source": "角色界面",
+    "box": [
+      392,
+      1368,
+      136,
+      140
+    ]
+  },
+  "chicken/figma_face_sad": {
+    "uuid": "e3127935-dc51-5bee-8d8a-d373717a5548",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "ui/figma_expression_fierce": {
+    "uuid": "0ae71013-5694-5890-a8f5-dc4e4a5a3fc2",
+    "source": "角色界面",
+    "box": [
+      552,
+      1368,
+      136,
+      140
+    ]
+  },
+  "ui/figma_expression_proud": {
+    "uuid": "e76225a8-295d-5465-a3b1-e4008f3f63fe",
+    "source": "角色界面",
+    "box": [
+      728,
+      1368,
+      136,
+      140
+    ]
+  },
+  "ui/figma_expression_wink": {
+    "uuid": "8d30e259-a621-5189-a423-685701a643cd",
+    "source": "角色界面",
+    "box": [
+      888,
+      1368,
+      136,
+      140
+    ]
+  },
+  "chicken/figma_face_wink": {
+    "uuid": "c33b2bd6-6132-5d24-83a1-4cf57306dbfe",
+    "source": "角色界面",
+    "box": [
+      352,
+      157,
+      377,
+      243
+    ]
+  },
+  "bg/shop_weapon_figma": {
+    "uuid": "72407456-54a9-5fc4-b108-4c243e437bd8",
+    "source": "image 75",
+    "box": [
+      0,
+      235,
+      1080,
+      1920
+    ]
+  }
+}

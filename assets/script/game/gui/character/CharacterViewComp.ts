@@ -16,8 +16,8 @@ const { ccclass } = _decorator;
 
 const TABS: Array<{ name: string; part: PartId; slots: EquipItem["slot"][] }> = [
     { name: "头", part: "head", slots: ["comb", "head", "face"] },
-    { name: "脖子", part: "neck", slots: ["neck"] },
-    { name: "身体", part: "body", slots: ["body", "wing", "tail"] },
+    { name: "翅膀", part: "wing", slots: ["wing"] },
+    { name: "躯干", part: "body", slots: ["body", "neck", "tail"] },
     { name: "脚", part: "leg", slots: ["leg"] }
 ];
 
@@ -26,6 +26,7 @@ const TABS: Array<{ name: string; part: PartId; slots: EquipItem["slot"][] }> = 
 @gui.register("CharacterView", { layer: LayerType.UI, prefab: "gui/character/character" })
 export class CharacterViewComp extends CCView<ChickenRun> {
     private tab = 0;
+    private page = 0;
     private refreshId = 0;
     private equipping = false;
 
@@ -35,18 +36,26 @@ export class CharacterViewComp extends CCView<ChickenRun> {
         const me = run.playerFighter();
 
         setLabel(this, "LabTitle", me.name);
+        setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", `${combatPower(me.stats)}`);
-        await spawnChicken(this, "ChickenSlot", me.appearance, 0.76);
+        setLabel(this, "LabHp", `${me.stats.maxHp}`);
+        setLabel(this, "LabAtk", `${me.stats.atk}`);
+        setLabel(this, "LabCombo", `${me.stats.combo ?? 0}%`);
+        setLabel(this, "LabSpd", `${me.stats.spd}`);
+        await spawnChicken(this, "ChickenSlot", me.appearance, 0.95, true);
         if (!this.node.isValid) return;
         await this.fillSlots();
         for (let i = 0; i < 5; i++) bindClick(this, `BtnTab${i}`, async () => {
             if (this.equipping) return;
             this.equipping = true;
             this.tab = i;
+            this.page = 0;
             try { await this.fillSlots(); }
             finally { this.equipping = false; }
         });
         bindClick(this, "BtnBack", this.onBack.bind(this));
+        bindClick(this, "BtnPagePrev", () => { this.page = Math.max(0, this.page - 1); void this.fillSlots(); });
+        bindClick(this, "BtnPageNext", () => { this.page++; void this.fillSlots(); });
     }
 
     private async fillSlots() {
@@ -57,20 +66,27 @@ export class CharacterViewComp extends CCView<ChickenRun> {
         const entries = tab ? items.map(item => ({
             id: item.id, icon: item.id, text: item.name, available: true,
             equipped: run.equippedIds.includes(item.id)
-        })) : getSets().map(set => ({
+        })) : getSets().filter(set => !set.legacy || ownedSetCount(run.ownedIds, set.id) > 0).map(set => ({
             id: set.id, icon: set.pieceIds[0], text: set.name,
             available: set.pieceIds.every(id => run.ownedIds.includes(id)),
             equipped: set.pieceIds.every(id => run.equippedIds.includes(id))
         }));
-        for (let i = 0; i < 5; i++) setSpriteColor(this.getNode(`BtnTab${i}`), i === this.tab ? "#FFFFFF" : "#789064");
+        const pages = Math.max(1, Math.ceil(entries.length / 8));
+        this.page = Math.min(this.page, pages - 1);
+        setNodeActive(this, "BtnPagePrev", this.page > 0);
+        setNodeActive(this, "BtnPageNext", this.page < pages - 1);
+        for (let i = 0; i < 5; i++) {
+            setSpriteColor(this.getNode(`BtnTab${i}`), i === this.tab ? "#FFFFFF" : "#000000");
+            setSpriteColor(this.getNode(`EquipTabIcon${i}`), i === this.tab ? "#FFFFFF" : "#85818C");
+        }
         setLabel(this, "LabPartInfo", tab ? `${tab.name} · 强化 Lv${levelOf(run.partLevels, tab.part)} · 已拥有 ${items.length} 件` : "穿戴同套两件 / 四件可获得套装加成");
         setNodeActive(this, "LabEmpty", entries.length === 0);
         const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= 2)
-            .map(set => `${set.name} ${ownedSetCount(run.equippedIds, set.id) >= 4 ? "4" : "2"}件`).join("、");
+            .map(set => `${set.name}：${set.desc2}${ownedSetCount(run.equippedIds, set.id) >= 4 ? "；" + set.desc4 : ""}`).join("\n");
         setLabel(this, "LabSets", `点击穿戴 / 卸下，同槽位替换\n加成：${bonuses || "暂无套装加成"}`);
         for (let i = 0; i < 8; i++) {
             if (id !== this.refreshId || !this.node.isValid) return;
-            const entry = entries[i];
+            const entry = entries[this.page * 8 + i];
             setNodeActive(this, `Slot${i}`, !!entry);
             if (!entry) continue;
             setLabel(this, `LabSlot${i}`, entry.text);
@@ -91,7 +107,11 @@ export class CharacterViewComp extends CCView<ChickenRun> {
         try {
             const me = run.playerFighter();
             setLabel(this, "LabPower", `${combatPower(me.stats)}`);
-            await spawnChicken(this, "ChickenSlot", me.appearance, 0.76);
+        setLabel(this, "LabHp", `${me.stats.maxHp}`);
+        setLabel(this, "LabAtk", `${me.stats.atk}`);
+        setLabel(this, "LabCombo", `${me.stats.combo ?? 0}%`);
+        setLabel(this, "LabSpd", `${me.stats.spd}`);
+            await spawnChicken(this, "ChickenSlot", me.appearance, 0.95, true);
             if (this.node.isValid) await this.fillSlots();
         }
         finally { this.equipping = false; }

@@ -1,13 +1,12 @@
-import { Label, Node, Sprite, _decorator } from "cc";
+import { Label, Node, Sprite, UITransform, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { PREFAB_PATH, TEX, getSets } from "../../core/Catalog";
-import { combatPower, ownedSetCount, setPrice } from "../../core/EquipMath";
+import { PREFAB_PATH, TEX, getSets, itemById } from "../../core/Catalog";
+import { combatPower, ownedSetCount } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
-import { spawnChicken } from "../ChickenBinder";
 import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
@@ -26,13 +25,12 @@ interface ItemView {
 @gui.register("ShopView", { layer: LayerType.UI, prefab: "gui/shop/shop" })
 export class ShopViewComp extends CCView<ChickenRun> {
     private selected: ItemView | null = null;
+    private page = 0;
+    private pageCount = 1;
+    private refreshing = false;
 
     async start() {
         this.nodeTreeInfoLite();
-        const backgrounds = ["shop_figma", "village_figma"];
-        const index = this.ent.run.phase === "boss" ? 1 : 0;
-        await setNodeSprite(this, "shop", TEX.background(backgrounds[index % backgrounds.length]));
-        await spawnChicken(this, "ShopkeeperSlot", this.ent.run.playerFighter().appearance, 0.22, true);
         bindClick(this, "BtnBack", this.onLeave.bind(this));
         bindClick(this, "BtnCancelBuy", () => this.closePurchase());
         bindClick(this, "BtnConfirmBuy", () => {
@@ -42,7 +40,19 @@ export class ShopViewComp extends CCView<ChickenRun> {
             selected.onBuy();
         });
         bindClick(this, "BtnLeave", this.onLeave.bind(this));
+        bindClick(this, "BtnShopPrev", () => this.turnPage(-1));
+        bindClick(this, "BtnShopNext", () => this.turnPage(1));
         await this.refresh();
+    }
+
+    private async turnPage(direction: number) {
+        if (this.refreshing) return;
+        const page = Math.max(0, Math.min(this.pageCount - 1, this.page + direction));
+        if (page === this.page) return;
+        this.page = page;
+        this.refreshing = true;
+        try { await this.refresh(); }
+        finally { this.refreshing = false; }
     }
 
     private async refresh() {
@@ -52,41 +62,55 @@ export class ShopViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
         setLabel(this, "LabDesc", "点击商品查看效果与价格，确认后购买");
 
+        const sets = getSets().filter(set => !set.legacy && !set.rewardOnly);
+        this.pageCount = Math.max(1, sets.length);
+        this.page = Math.min(this.page, this.pageCount - 1);
+        const set = sets[this.page];
+        const goods: ItemView[] = [];
+        if (set) {
+            const owned = ownedSetCount(run.ownedIds, set.id);
+            const price = run.setPrice(set.id);
+            const unlocked = set.unlockMap <= run.currentMap().id;
+            goods.push({
+                title: set.name,
+                desc: owned >= set.pieceIds.length ? "已集齐" : `${unlocked ? "补齐未拥有部件" : `第${set.unlockMap}图解锁`}\n2件 ${set.desc2}\n4件 ${set.desc4}`,
+                price, icon: `game/texture/equip/set_${set.id}/spriteFrame`,
+                affordable: unlocked && run.gold >= price && owned < set.pieceIds.length,
+                onBuy: () => this.buySet(set.id)
+            });
+            for (const id of set.pieceIds) {
+                const item = itemById(id);
+                const owned = run.ownedIds.includes(id);
+                const price = run.itemPrice(id);
+                goods.push({
+                    title: item.name,
+                    desc: `${owned ? "已拥有\n" : !unlocked ? `第${set.unlockMap}图解锁\n` : ""}${item.desc}`,
+                    price, icon: TEX.equip(id),
+                    affordable: unlocked && !owned && run.gold >= price,
+                    onBuy: () => this.buyItem(id)
+                });
+            }
+        }
+        await setNodeSprite(this, "shop", TEX.background(this.page % 2 ? "shop_weapon_figma" : "shop_figma"));
+        if (!this.node.isValid) return;
+        setLabel(this, "LabShopPage", `${set?.name || "商店"} · ${this.page + 1} / ${this.pageCount}`);
+        setSpriteColor(this.getNode("BtnShopPrev"), this.page > 0 ? "#FFFFFF" : "#777777");
+        setSpriteColor(this.getNode("BtnShopNext"), this.page < this.pageCount - 1 ? "#FFFFFF" : "#777777");
         const itemSlot = this.getNode("ItemSlot");
         clearChildren(itemSlot);
-        if (itemSlot) {
-            for (const item of run.shopItems) {
-                await this.addCard(itemSlot, {
-                    title: item.name,
-                    desc: item.desc,
-                price: item.price,
-                icon: TEX.equip(item.id),
-                affordable: run.gold >= item.price,
-                onBuy: () => this.buyItem(item.id)
-                }, PREFAB_PATH.shopItem);
+        if (!itemSlot) return;
+        this.refreshing = true;
+        try {
+            for (const item of goods) {
+                if (!itemSlot.isValid) return;
+                await this.addCard(itemSlot, item, PREFAB_PATH.shopItem);
             }
-        }
-
-        const setSlot = this.getNode("SetSlot");
-        clearChildren(setSlot);
-        if (setSlot) {
-            for (const set of getSets()) {
-                const owned = ownedSetCount(run.ownedIds, set.id);
-                const price = setPrice(set.id);
-                await this.addCard(setSlot, {
-                    title: set.name,
-                    desc: owned >= set.pieceIds.length ? "已集齐" : `补齐整套 ${set.pieceIds.length} 件`,
-                    price,
-                    icon: TEX.equip(set.pieceIds[0]),
-                    affordable: run.gold >= price && owned < set.pieceIds.length,
-                    onBuy: () => this.buySet(set.id)
-                }, PREFAB_PATH.shopSetItem);
-            }
-        }
+        } finally { this.refreshing = false; }
     }
 
     private async addCard(parent: Node, view: ItemView, prefab: string) {
         const node = await this.createPrefabNode(prefab);
+        if (!parent.isValid) { node.destroy(); return; }
         node.parent = parent;
 
         const text = (target: Node | null, value: string) => {
@@ -98,10 +122,18 @@ export class ShopViewComp extends CCView<ChickenRun> {
         text(node.getChildByName("PriceRow")?.getChildByName("LabPrice") ?? null, `${view.price}`);
 
         const icon = node.getChildByName("IconSlot")?.getChildByName("Icon")?.getComponent(Sprite);
-        if (icon) await this.setSprite(icon, view.icon);
+        if (icon) {
+            await this.setSprite(icon, view.icon);
+            if (icon.isValid && icon.spriteFrame) {
+                const transform = icon.getComponent(UITransform)!;
+                const rect = icon.spriteFrame.rect;
+                const ratio = Math.min(transform.width / rect.width, transform.height / rect.height);
+                transform.setContentSize(rect.width * ratio, rect.height * ratio);
+            }
+        }
 
         // 先展示价格和效果，确认后仍由 RunState 校验余额和已购状态。
-        bindNodeClick(node, () => this.showPurchase(view), this);
+        if (node.isValid) bindNodeClick(node, () => this.showPurchase(view), this);
     }
 
     private showPurchase(view: ItemView) {

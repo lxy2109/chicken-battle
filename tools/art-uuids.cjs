@@ -12,8 +12,8 @@ function alloc(group, names) {
     return out;
 }
 
-/** 鸡的拆件，沿用最初分配的 uuid，顺序不可动。 */
-const CHICKEN = ["body", "head", "neck", "comb", "wing", "tail", "leg", "beak", "eyes", "shadow"];
+/** Original placeholder rig retired; Figma parts are recorded in figma-assets.json. */
+const CHICKEN = [];
 
 /** 九宫格拉伸的容器类素材。 */
 const UI_SLICED = [

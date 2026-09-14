@@ -137,7 +137,7 @@ function advance(run) {
 function growToBoss(seed) {
     const run = fresh(seed);
     let guard = 0;
-    while (run.phase !== "boss" && guard++ < 40) advance(run);
+    while (run.currentRoute().encounter !== "final" && guard++ < 60) advance(run);
     return run;
 }
 
@@ -178,7 +178,7 @@ const cases = [];
 
     const kun = fresh(11);
     kun.phase = "boss";
-    kun.routeNode = 6;
+    kun.routeNode = 31;
     kun.ownedIds = GEAR;
     kun.equipSet("stone_crown");
     kun.equipItem("iron_wing");

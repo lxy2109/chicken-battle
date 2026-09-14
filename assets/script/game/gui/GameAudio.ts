@@ -1,16 +1,23 @@
 import { oops } from "db://oops-framework/core/Oops";
 import { RunScreen } from "../core/Types";
 
-/** 填入 bundle 内 AudioClip 路径（不带扩展名）。当前无音频素材，空路径保持静音。 */
+/** bundle 内 AudioClip 路径，不带扩展名。 */
 export const GAME_AUDIO = {
-    music: { home: "", battle: "" },
-    effects: { click: "", hit: "", critical: "", heal: "", win: "", lose: "" }
+    music: { home: "game/audio/home", battle: "game/audio/battle", village: "game/audio/village" },
+    effects: {
+        click: "game/audio/click", close: "game/audio/close", hit: "game/audio/hit",
+        peck: "game/audio/peck", wing: "game/audio/wing", skill: "game/audio/skill",
+        critical: "game/audio/critical", heal: "", start: "game/audio/start",
+        win: "game/audio/win", lose: "game/audio/lose"
+    }
 };
 
 let musicPath = "";
+let lastCombatEffect = 0;
 
 export function playScreenMusic(screen: RunScreen) {
-    const path = screen === "battle" ? GAME_AUDIO.music.battle : GAME_AUDIO.music.home;
+    const path = screen === "battle" ? GAME_AUDIO.music.battle
+        : screen === "customize" ? GAME_AUDIO.music.home : GAME_AUDIO.music.village;
     if (path === musicPath) return;
     musicPath = path;
     if (path) oops.audio.playMusic(path, { bundle: "bundle", loop: true, volume: 0.35 });
@@ -18,6 +25,12 @@ export function playScreenMusic(screen: RunScreen) {
 }
 
 export function playGameEffect(key: keyof typeof GAME_AUDIO.effects) {
+    if (["hit", "peck", "wing", "skill", "critical"].includes(key)) {
+        const now = Date.now();
+        if (now - lastCombatEffect < 900) return;
+        lastCombatEffect = now;
+    }
     const path = GAME_AUDIO.effects[key];
-    if (path) void oops.audio.playEffect(path, { bundle: "bundle", volume: 0.65 });
+    if (path) void oops.audio.playEffect(path, { bundle: "bundle", volume: 0.5 })
+        .catch(error => console.warn("[GameAudio]", key, error));
 }

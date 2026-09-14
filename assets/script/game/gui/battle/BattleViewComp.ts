@@ -10,6 +10,8 @@ import { ChickenActor } from "../../battle/ChickenActor";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH } from "../../core/Catalog";
 import { BattleSession } from "../../core/BattleSession";
+import { DanmakuPool } from "../../core/Danmaku";
+import { BattleDanmaku } from "./BattleDanmaku";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -74,8 +76,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     /** 双方最近一击用的招式，伤害事件回来时靠它决定震屏力度。 */
     private styleOf: Record<BattleSide, StrikeStyle> = { player: "peck", enemy: "peck" };
     private logLeft = 0;
-    private danmakuElapsed = 0;
-    private danmakuIndex = 0;
+    private danmaku?: BattleDanmaku;
 
     async start() {
         this.nodeTreeInfoLite();
@@ -86,9 +87,17 @@ export class BattleViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabLog", "");
+        const layer = this.getNode("DanmakuLayer");
+        const encounter = run.currentRoute().encounter;
+        if (layer) this.danmaku = new BattleDanmaku(layer,
+            new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.name));
 
-        this.playerNode = await spawnChicken(this, "PlayerSlot", me.appearance, 0.72);
-        this.enemyNode = await spawnChicken(this, "EnemySlot", foe.appearance, 0.72, true);
+        for (const [slot, appearance] of [["PlayerPortrait", me.appearance], ["EnemyPortrait", foe.appearance]] as const) {
+            const portrait = await spawnChicken(this, slot, appearance, 0.6, true);
+            portrait?.setPosition(0, -100, 0);
+        }
+        this.playerNode = await spawnChicken(this, "PlayerSlot", me.appearance, 0.9);
+        this.enemyNode = await spawnChicken(this, "EnemySlot", foe.appearance, 0.9, true);
         const arena = this.getNode("Arena");
         if (arena && this.playerNode) {
             this.playerNode.parent = arena;
@@ -142,6 +151,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         await this.wait(0.95);
         if (this.closed) return;
         this.trig("toStart");
+        playGameEffect("start");
         await this.spawnFx(PREFAB_PATH.fxStart, "player", "开战！", 0.55);
         this.trig("toCombat");
     }
@@ -150,17 +160,8 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (this.closed || !this.running) return;
         for (const ev of this.session.tick(dt)) this.dispatch(ev);
         this.easeBars(dt);
-        this.danmakuElapsed += dt;
-        if (this.danmakuElapsed >= 5) {
-            this.danmakuElapsed = 0;
-            const comments = ["村口擂台，强鸡出击！", "稳住，下一招就是机会！", "这身手，有鸡王的气势！"];
-            const line = this.getNode("LabDanmaku");
-            if (line) {
-                setLabel(this, "LabDanmaku", comments[this.danmakuIndex++ % comments.length]);
-                line.setPosition(640, line.position.y, 0);
-                tween(line).to(4.5, { position: v3(-640, line.position.y, 0) }).start();
-            }
-        }
+        this.danmaku?.tick(dt, this.session.hp("player") <= this.session.maxHp("player") / 2
+            || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
         if (this.logLeft > 0) {
             this.logLeft -= dt;
             if (this.logLeft <= 0) setLabel(this, "LabLog", "");
@@ -221,7 +222,9 @@ export class BattleViewComp extends CCView<ChickenRun> {
     }
 
     private onHit(from: BattleSide, to: BattleSide, dmg: number, crit: boolean) {
-        playGameEffect(crit ? "critical" : "hit");
+        const style = this.styleOf[from];
+        playGameEffect(crit ? "critical" : style === "peck" || style === "combo" ? "peck"
+            : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
         this.actor(to)?.flinch();
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
@@ -237,6 +240,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     private async finish(win: boolean) {
         if (!this.running) return;
         this.running = false;
+        this.danmaku?.clear();
         playGameEffect(win ? "win" : "lose");
         this.stopTick();
         this.trig(win ? "toWin" : "toLose");
@@ -378,6 +382,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
 
     reset() {
         this.closed = true;
+        this.danmaku?.clear();
         this.running = false;
         this.stopTick();
         this.playerActor?.stopRoam();

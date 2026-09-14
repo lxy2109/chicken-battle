@@ -43,6 +43,7 @@ interface LiveFighter {
     busy: boolean;
     /** 已经出了几次手，交给决策去轮换招式动作 */
     beats: number;
+    streak: number;
 }
 
 interface PendingStrike {
@@ -55,12 +56,13 @@ function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
     return {
         name: snap.name,
         stats,
-        atkCd: intervalOf(stats.spd) * pace * 0.5,
+        atkCd: stats.firstStrike ? 0 : intervalOf(stats.spd) * pace * 0.5,
         healCd: 0,
         skillCd: 0,
         lockUsed: false,
         busy: false,
-        beats: 0
+        beats: 0,
+        streak: 0
     };
 }
 
@@ -192,7 +194,8 @@ export class BattleSession {
             out.push({ type: "action", side, kind: d.kind, style });
 
             if (d.kind === "heal") {
-                const amount = actor.stats.healPerTurn;
+                const amount = Math.min(actor.stats.maxHp - actor.stats.hp,
+                    Math.round(actor.stats.healPerTurn * (1 + (actor.stats.healBonus || 0))));
                 actor.stats.hp = Math.min(actor.stats.maxHp, actor.stats.hp + amount);
                 actor.healCd = HEAL_CD;
                 actor.atkCd = this.interval(actor);
@@ -223,6 +226,7 @@ export class BattleSession {
         if (this.phase === "over") return [];
 
         if (!hit) {
+            actor.streak = 0;
             const miss: BattleEvent[] = [{ type: "miss", side }];
             this.events.push(...miss);
             return miss;
@@ -230,7 +234,9 @@ export class BattleSession {
 
         const victim = this.live(p.to);
         const crit = this.rng.chance(actor.stats.crit);
-        const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit, this.dmgScale, this.rng);
+        const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit,
+            this.dmgScale * (1 + Math.min(5, actor.streak) * (actor.stats.streakBonus || 0)), this.rng);
+        actor.streak += 1;
         const result = applyDamage(victim, dmg);
         victim.atkCd += HIT_STAGGER * this.pace;
 

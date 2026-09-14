@@ -4,7 +4,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { getColorPalette, getFaceList } from "../../core/Catalog";
+import { getColorPalette, getFaceList, getPlayer } from "../../core/Catalog";
 import { Appearance, FaceId, PART_TEXT, PARTS, PartId, defaultAppearance } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -13,7 +13,7 @@ import { bindClick, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
-const CUSTOMIZE_PARTS: PartId[] = ["head", "neck", "body", "wing", "leg"];
+const CUSTOMIZE_PARTS: Array<PartId | "face"> = ["head", "face", "wing", "body", "leg"];
 const COLOR_INDEXES = [0, 1, 9, 4, 7, 5];
 
 @ccclass("CustomizeViewComp")
@@ -21,11 +21,12 @@ const COLOR_INDEXES = [0, 1, 9, 4, 7, 5];
 @gui.register("CustomizeView", { layer: LayerType.UI, prefab: "gui/customize/customize" })
 export class CustomizeViewComp extends CCView<ChickenRun> {
     private draft: Appearance = defaultAppearance();
-    private part: PartId = "body";
+    private part: PartId | "face" = "head";
     private nameRoll = 0;
 
     start() {
         this.nodeTreeInfoLite();
+        setLabel(this, "LabStory", getPlayer().storyIntro);
         this.draft = {
             face: this.ent.run.appearance.face,
             colors: { ...this.ent.run.appearance.colors }
@@ -48,7 +49,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
             try {
                 this.ent.RunModel.clearSave();
                 this.draft = defaultAppearance();
-                this.part = "body";
+                this.part = "head";
                 setNodeActive(this, "ClearSaveModal", false);
                 setLabel(this, "BtnStartLab", "开始");
                 setLabel(this, "LabSaveHint", "本地存档已清除");
@@ -67,6 +68,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
         }
         getFaceList().forEach((face, i) => bindClick(this, `BtnFace${i}`, () => this.selectFace(face)));
         for (const part of CUSTOMIZE_PARTS) {
+            if (part === "face") continue;
             for (let i = 0; i < COLOR_INDEXES.length; i++) {
                 bindClick(this, `BtnColor${part.charAt(0).toUpperCase() + part.slice(1)}${i}`, () => this.selectColor(part, i));
             }
@@ -74,7 +76,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
         this.refresh();
     }
 
-    private selectPart(part: PartId) {
+    private selectPart(part: PartId | "face") {
         this.part = part;
         this.refresh();
     }
@@ -86,20 +88,30 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
 
     private selectColor(part: PartId, i: number) {
         this.part = part;
-        this.draft.colors[part] = getColorPalette()[COLOR_INDEXES[i]];
+        const color = getColorPalette()[COLOR_INDEXES[i]];
+        this.draft.colors[part] = color;
+        if (part === "head") this.draft.colors.comb = color;
+        if (part === "body") {
+            this.draft.colors.neck = color;
+            this.draft.colors.tail = color;
+        }
         this.refresh();
     }
 
     private async refresh() {
         setLabel(this, "LabTitle", "自定义你的专属战鸡");
         setLabel(this, "LabName", this.ent.run.playerName);
-        setLabel(this, "LabPart", `正在染：${PART_TEXT[this.part]}`);
+        setLabel(this, "LabPart", this.part === "face" ? "选择表情" : this.part === "body" ? "正在染：躯干与脖子" : `正在染：${PART_TEXT[this.part]}`);
+        setNodeActive(this, "ColorOptions", this.part !== "face");
+        setNodeActive(this, "FaceOptions", this.part === "face");
+        getFaceList().forEach((face, i) => setSpriteColor(this.getNode(`BtnFace${i}`), face === this.draft.face ? "#FFFFFF" : "#898596"));
         for (const part of CUSTOMIZE_PARTS) {
             const suffix = part.charAt(0).toUpperCase() + part.slice(1);
             setNodeActive(this, "ColorRow" + suffix, part === this.part);
-            setSpriteColor(this.getNode("BtnPart" + suffix), part === this.part ? "#FFFFFF" : "#82B96B");
+            setSpriteColor(this.getNode("BtnPart" + suffix), part === this.part ? "#FFFFFF" : "#000000");
+            setSpriteColor(this.getNode("TabIcon" + suffix), part === this.part ? "#FFFFFF" : "#85818C");
         }
-        await spawnChicken(this, "ChickenSlot", this.draft, 1.05);
+        await spawnChicken(this, "ChickenSlot", this.draft, 4 / 3, true);
     }
 
     private async onEnter() {
@@ -109,7 +121,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
 
     private onReset() {
         this.draft = defaultAppearance();
-        this.part = "body";
+        this.part = "head";
         void this.refresh();
     }
 

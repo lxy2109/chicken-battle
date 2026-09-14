@@ -5,6 +5,7 @@ import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { combatPower } from "../../core/EquipMath";
+import { getPlayer } from "../../core/Catalog";
 import { Stats } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -40,6 +41,7 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
         const foe = run.enemyFighter();
 
         setLabel(this, "LabTitle", run.currentRoute().name);
+        setLabel(this, "LabStory", run.currentRoute().encounter === "final" ? getPlayer().hintBoss : getPlayer()[`story${run.currentMap().id}`]);
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabPlayerPower", `${combatPower(me.stats)}`);

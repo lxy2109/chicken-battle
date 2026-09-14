@@ -8,10 +8,18 @@
  * 用法: node tools/verify-assets.cjs
  */
 const http = require("http");
-const { FILES } = require("./import-art.cjs");
-const art = require("./art-uuids.cjs");
-const CHECK_FILES = FILES.concat(["start_figma", "village_figma", "arena_figma", "shop_figma", "map_figma"]
-    .map(name => [null, `assets/bundle/game/texture/bg/${name}.png`, art[`bg_${name}`]]));
+const fs = require("fs");
+const path = require("path");
+const ROOT = path.resolve(__dirname, '..');
+function textures(dir) {
+    return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap(entry => {
+        const file = dir + '/' + entry.name;
+        if (entry.isDirectory()) return textures(file);
+        if (!file.endsWith('.png')) return [];
+        return [[null, file, JSON.parse(fs.readFileSync(path.join(ROOT, file + '.meta'), 'utf8')).uuid]];
+    });
+}
+const CHECK_FILES = textures('assets/bundle/game/texture');
 
 const PORT = Number(process.env.MCP_PORT || 3100);
 

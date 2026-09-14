@@ -3,6 +3,8 @@ import path from "path";
 import { BattleBrain } from "../assets/script/game/battle/BattleBrain";
 import { AiFighter, decideAction, decide } from "../assets/script/game/core/BattleAI";
 import { BattleSession } from "../assets/script/game/core/BattleSession";
+import { DanmakuPool } from "../assets/script/game/core/Danmaku";
+import { Rng } from "../assets/script/game/core/Rng";
 import { getItems, getRoute, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
 import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
@@ -25,7 +27,7 @@ function tableDir(): string {
 
 function loadTables() {
     const dir = tableDir();
-    const names = ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward"];
+    const names = ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "Danmaku"];
     const all: Record<string, any> = {};
     for (const name of names) {
         const full = path.join(dir, name + ".json");
@@ -57,9 +59,9 @@ function run() {
     ok("配置表可读", () => {
         assert(getItems().length >= 16, "应有散件");
         assert(getSets().length >= 4, "应有套装");
-        assert(getRoute().length === 30, "五张地图应有30个独立节点");
+        assert(getRoute().length === 31, "五图各六战加最终挑战，共31场");
         for (let mapId = 1; mapId <= 5; mapId++) {
-            assert(getRoute().filter(n => n.mapId === mapId).map(n => n.kind).join(",") === "battle,battle,shop,battle,shop,boss", "每图应是三战两店一王");
+            assert(getRoute().filter(n => n.mapId === mapId && n.encounter !== "final").map(n => n.kind).join(",") === "battle,battle,battle,battle,battle,boss", "每图五轮热身加正式赛");
         }
     });
     ok("自定义外观", () => {
@@ -119,12 +121,13 @@ function run() {
     });
 
     ok("旧商店节点存档恢复下一战斗关，并保留货架和待弹出事件", () => {
-        for (const shop of getRoute().filter(node => node.kind === "shop")) {
+        for (const shop of [3, 5, 9, 11, 15, 17, 21, 23, 27, 29].map(id => ({ id }))) {
             const run = new RunState(45);
             run.routeNode = shop.id + 1; run.phase = getRoute().find(node => node.id === run.routeNode)!.kind;
             run.gold = 500; run.openShop(); run.buyItem(run.shopItems[0].id);
             const stock = run.shopItems.map(item => item.id).join(",");
             const old = JSON.parse(encodeRun(run));
+            old.version = 1;
             old.progress.routeNode = shop.id; old.progress.shopLoadedAt = shop.id;
             delete old.progress.shopPending;
             const restored = decodeRun(JSON.stringify(old));
@@ -149,14 +152,14 @@ function run() {
         run.pickReward(run.upgrades[0].id);
         assert(run.routeNode === 2 && run.phase === "battle", "节点1胜利进入节点2");
         run.settle(true);
-        assert(run.routeNode === 4 && run.phase === "battle" && run.shopPending, "第二战结算即开放第三战并记录弹出");
+        assert(run.routeNode === 3 && run.phase === "battle" && run.shopPending, "第二战结算即开放第三战并记录弹出");
         run.afterResult();
         run.pickReward(run.upgrades[0].id);
-        assert(run.routeNode === 4 && run.phase === "battle", "弹出商店不占用关卡进度");
+        assert(run.routeNode === 3 && run.phase === "battle", "弹出商店不占用关卡进度");
         assert(run.screen === "shop" && !run.shopPending, "商店自动弹出一次");
         run.leaveShop();
         run.enterFight();
-        assert(String(run.screen) === "prebattle" && run.routeNode === 4, "无需购买便可挑战第三战");
+        assert(String(run.screen) === "prebattle" && run.routeNode === 3, "无需购买便可挑战第三战");
     });
 
     ok("商店套装折扣与2/4件加成", () => {
@@ -181,7 +184,7 @@ function run() {
         const run = new RunState(40);
         const base = run.playerFighter();
         run.gold = 1000;
-        run.buySet("iron_beak");
+        run.ownedIds.push(...getSets().find(s => s.id === "iron_beak")!.pieceIds);
         assert(JSON.stringify(run.playerFighter().stats) === JSON.stringify(base.stats), "未穿戴不加属性");
         assert(Object.keys(run.playerFighter().appearance.equipment!).length === 0, "购买不自动改变外观");
         assert(run.equipSet("iron_beak"), "已购整套可以穿戴");
@@ -196,7 +199,7 @@ function run() {
     ok("同槽装备替换、未拥有不能穿戴，套装按穿戴件数触发", () => {
         const run = new RunState(41);
         assert(!run.equipItem("iron_head") && !run.equipSet("iron_beak"), "未购买不能装备");
-        run.gold = 1000; run.buySet("iron_beak"); run.buySet("stone_crown");
+        run.gold = 1000; run.ownedIds.push(...getSets().find(s => s.id === "iron_beak")!.pieceIds); run.ownedIds.push(...getSets().find(s => s.id === "stone_crown")!.pieceIds);
         run.equipItem("iron_head"); run.equipItem("iron_comb");
         assert(JSON.stringify(run.playerFighter().stats) === JSON.stringify(buildStats(["iron_head", "iron_comb"])), "背包有整套但只触发两件加成");
         run.equipItem("stone_head");
@@ -209,7 +212,7 @@ function run() {
 
     ok("穿戴实时存档，战败保留装备，卸下可恢复原外观", () => {
         const run = new RunState(42);
-        run.gold = 1000; run.buySet("kunkun");
+        run.gold = 1000; run.ownedIds.push(...getSets().find(s => s.id === "kunkun")!.pieceIds);
         const base = run.playerFighter().appearance;
         let saved = "";
         run.onChanged = () => { saved = encodeRun(run); };
@@ -239,18 +242,30 @@ function run() {
         }
     });
 
+    ok("Figma装备部位迁移保留旧持有物并消除新槽冲突", () => {
+        const run = new RunState(43);
+        run.ownedIds = ["iron_body", "rookie_neck", "rookie_head"];
+        run.equippedIds = run.ownedIds.slice();
+        const old = JSON.parse(encodeRun(run));
+        old.version = 2;
+        const restored = decodeRun(JSON.stringify(old));
+        assert(restored.ownedIds.length === 3, "改部位不丢失持有装备");
+        assert(restored.equippedIds.join(",") === "rookie_neck,rookie_head", "新身体槽保留最后穿戴的道袍");
+        assert(JSON.parse(encodeRun(restored)).version === 3, "保存升级后的版本");
+    });
+
     ok("决战前商店弹出时鸡王已开放，返回不额外推进", () => {
         const run = new RunState(4);
         run.confirmAppearance(defaultAppearance());
-        run.routeNode = 4;
+        run.routeNode = 5;
         run.settle(true);
-        assert(run.routeNode === 6 && run.phase === "boss", "第三战胜利即开放BOSS");
+        assert(run.routeNode === 6 && run.phase === "boss", "第五轮热身胜利即开放正式赛");
         run.afterResult();
         run.pickReward(run.upgrades[0].id);
         assert(run.screen === "shop", "决战前仍弹出商店");
         run.leaveShop();
         assert(run.routeNode === 6 && run.phase === "boss", "第二个商店后应是鸡王");
-        assert(run.enemyFighter().name.indexOf("坤坤") >= 0, "对手应是坤坤");
+        assert(run.enemyFighter().name === "菜鸡", "第一图正式赛对手应是菜鸡");
         run.settle(true);
         run.afterResult();
         assert(run.screen === "map" && run.routeNode === 7, "首图鸡王胜利后进入第二图");
@@ -264,9 +279,9 @@ function run() {
         run.ownedIds = ["iron_head"];
         run.levelUp("head");
         let guard = 0;
-        while (run.screen !== "ending" && guard++ < 40) {
+        while (run.screen !== "ending" && guard++ < 60) {
             const map = run.currentMap().id;
-            assert(run.route().length === 4 && run.route().every(n => n.mapId === map && n.kind !== "shop"), "地图只显示本图四个战斗关卡");
+            assert(run.route().length === (map === 5 ? 7 : 6) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图六场，末图额外开放最终挑战");
             if (run.screen === "shop") {
                 run.leaveShop();
             } else {
@@ -275,7 +290,7 @@ function run() {
                 if (run.screen === "reward") run.pickReward(run.upgrades[0].id);
             }
         }
-        assert(run.screen === "ending" && run.routeNode === 30, "只有第30节点结束后才总通关");
+        assert(run.screen === "ending" && run.routeNode === 31, "只有最终坤坤挑战胜利才总通关");
         assert(run.ownedIds.includes("iron_head") && (run.partLevels.head || 0) >= 1 && run.gold > 100, "换图保留装备强化金币");
         const retry = new RunState(25);
         retry.routeNode = 12;
@@ -308,7 +323,7 @@ function run() {
     });
 
     ok("小关结束自动保存下一节点与待选强化，无需点击结算按钮", () => {
-        for (const id of [1, 2, 4]) {
+        for (const id of [1, 2, 5]) {
             const run = new RunState(37);
             run.routeNode = id; run.stage = id; run.screen = "battle";
             let saved = "";
@@ -342,10 +357,10 @@ function run() {
         assert(restored.partLevels[selected.part!] === 1, "仅选中的部位加一级");
     });
 
-    ok("BOSS失败立即保存回退但永久养成和首通记录不变", () => {
+    ok("正式赛失败重置成长，但装备金币和首通记录不变", () => {
         const run = new RunState(33);
         run.gold = 1000;
-        run.buySet("iron_beak");
+        run.ownedIds.push(...getSets().find(s => s.id === "iron_beak")!.pieceIds);
         run.levelUp("head");
         run.completedMaps = [1];
         run.claimedGoldNodes = [1, 2, 4, 6, 7, 8, 10];
@@ -358,7 +373,11 @@ function run() {
         run.settle(false);
         const restored = decodeRun(saved);
         assert(restored.routeNode === 7 && restored.stage === 7 && restored.phase === "battle", "结算时已回退第二图起点");
-        assert(JSON.stringify(JSON.parse(saved).permanent) === before, "失败不清永久养成和首通账本");
+        const prior = JSON.parse(before);
+        const after = JSON.parse(saved).permanent;
+        assert(Object.keys(after.partLevels).length === 0, "正式赛失败清除部位成长");
+        prior.partLevels = {};
+        assert(JSON.stringify(after) === JSON.stringify(prior), "金币装备与首通账本保留");
         restored.afterResult();
         if (restored.upgrades.length) restored.pickReward(restored.upgrades[0].id);
         restored.enterFight();
@@ -397,7 +416,7 @@ function run() {
         assert(restored.routeNode === 7 && restored.screen === "map", "恢复胜利结算后进入下一大关");
         restored.afterResult();
         assert(restored.routeNode === 7, "重复继续不能跳过下图第一关");
-        restored.routeNode = 30; restored.phase = "boss"; restored.screen = "battle";
+        restored.routeNode = 31; restored.phase = "boss"; restored.screen = "battle";
         restored.settle(true);
         const finalResult = decodeRun(encodeRun(restored));
         assert(finalResult.completedMaps.includes(5) && finalResult.screen === "result", "最终关不点按钮也已保存通关");
@@ -696,6 +715,128 @@ function run() {
         run.equipItem("iron_wing");
         const boss = seconds(run.playerFighter(), run.enemyFighter(), true);
         assert(boss > 10 && boss < 50, `鸡王战 ${boss.toFixed(1)}s 超出预期`);
+    });
+
+    ok("新装备购买解锁、缺件价格和铁公鸡优惠一致", () => {
+        const run = new RunState(80);
+        run.gold = 3000;
+        assert(!run.buySet("champion") && !run.buyItem("champion_head"), "奖励不能免费购买");
+        assert(!run.buySet("miser"), "未到解锁地图不能绕过UI购买");
+        assert(run.buySet("rookie") && run.equipSet("rookie"), "新手套可购买并穿戴");
+        assert(run.playerFighter().stats.retainGrowth === 1, "四件保留成长生效");
+        run.routeNode = 13;
+        assert(run.buySet("miser") && run.equipSet("miser"), "第三图铁公鸡解锁");
+        const gold = run.gold, price = run.itemPrice("medic_head");
+        assert(run.buyItem("medic_head") && gold - run.gold === price, "显示价和实扣一致");
+        const missingPrice = run.setPrice("medic");
+        assert(missingPrice < setPrice("medic"), "补齐不收费已拥有部件且享装备折扣");
+        const before = run.gold;
+        assert(run.buySet("medic") && before - run.gold === missingPrice, "整套确认按缺件折扣收费");
+        run.screen = "battle";
+        const reward = getRoute().find(n => n.id === 13)!.goldWin!;
+        run.settle(true);
+        assert(run.lastGoldGain === Math.floor(reward * 1.2), "两件金币加成按首通发放");
+        const once = run.gold; run.settle(true);
+        assert(run.gold === once, "金币加成仍幂等");
+    });
+
+    ok("小学鸡四件只保留随机一项成长，热身失败保留全部", () => {
+        const run = new RunState(81);
+        run.ownedIds = getSets().find(s => s.id === "rookie")!.pieceIds.slice();
+        run.equipSet("rookie");
+        run.partLevels = { head: 2, leg: 3 };
+        run.screen = "battle";
+        run.settle(false);
+        assert(run.partLevels.head === 2 && run.partLevels.leg === 3, "热身失败不清成长");
+        run.routeNode = 6; run.phase = "boss"; run.screen = "battle";
+        run.settle(false);
+        assert(Object.keys(run.partLevels).length === 1, "只保留一个部位");
+        assert(run.partLevels.head === 2 || run.partLevels.leg === 3, "保留该部位全部等级");
+        assert(decodeRun(encodeRun(run)).routeNode === 1, "正式赛失败回到本图起点");
+    });
+
+    ok("最终挑战在五图完成后仍可进入，奖励唯一且旧结局可迁移", () => {
+        const run = new RunState(82);
+        run.routeNode = 31; run.phase = "boss"; run.screen = "map"; run.completedMaps = [1, 2, 3, 4, 5];
+        run.enterFight(); run.startBattle();
+        assert(String(run.screen) === "battle", "地图完成记录不阻挡坤坤");
+        run.settle(false);
+        assert(run.routeNode === 31, "最终失败可重新准备直接重试");
+        run.afterResult(); if (run.upgrades.length) run.pickReward(run.upgrades[0].id);
+        run.enterFight(); run.startBattle(); run.settle(true);
+        assert(run.ownedIds.length === 4 && run.ownedIds.every(id => id.startsWith("champion_")), "发放四件奖励");
+        run.afterResult();
+        assert(String(run.screen) === "ending", "最终胜利进入结局");
+        const saved = encodeRun(run); run.settle(true);
+        assert(encodeRun(run) === saved, "重复最终结算不重复奖励");
+        const old = JSON.parse(saved); old.version = 1; old.progress.routeNode = 30;
+        old.progress.lastBattleNode = 30; old.permanent.claimedGoldNodes = [30]; old.permanent.ownedIds = [];
+        const migrated = decodeRun(JSON.stringify(old));
+        assert(migrated.routeNode === 31 && migrated.screen === "map", "旧结局开放新增坤坤挑战");
+    });
+
+    ok("先手、连续命中增伤及落空重置", () => {
+        const run = new RunState(83);
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 100, crit: 0, firstStrike: 1, streakBonus: 0.08 };
+        e.stats = { ...e.stats, hp: 10000, maxHp: 10000, def: 0 };
+        const battle = new BattleSession(p, e, 83, false, () => ({ kind: "attack", style: "peck" }));
+        battle.beginCombat();
+        const first = battle.tick(0.01).filter(ev => ev.type === "action");
+        assert(first.length === 1 && first[0].type === "action" && first[0].side === "player", "先手立即行动且敌方尚未行动");
+        const damages: number[] = [];
+        for (const hit of [true, true, true, false, true]) {
+            if (!battle.striking("player")) battle.tick(2);
+            const event = battle.resolveStrike("player", hit).find(ev => ev.type === "hit");
+            if (event?.type === "hit") damages.push(event.dmg);
+        }
+        assert(damages[2] > damages[1] && damages[1] > damages[0], "连续命中伤害逐渐增加");
+        assert(damages[3] === damages[0], "落空清空增伤");
+    });
+
+    ok("医学奇鸡治疗增幅、复活和钢鸡锁血", () => {
+        const run = new RunState(84);
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = buildStats(getSets().find(s => s.id === "medic")!.pieceIds);
+        p.stats.hp = 1;
+        const healing = new BattleSession(p, e, 84, false);
+        healing.beginCombat();
+        const heal = healing.tick(1).find(ev => ev.type === "heal" && ev.side === "player");
+        assert(heal?.type === "heal" && heal.amount === 10, "8点基础治疗乘1.3后取整10");
+        for (const set of ["medic", "concrete"]) {
+            const player = run.playerFighter(), foe = run.enemyFighter();
+            player.stats = buildStats(getSets().find(s => s.id === set)!.pieceIds);
+            player.stats.hp = 1;
+            foe.stats.atk = 10000;
+            const battle = new BattleSession(player, foe, 84, false, () => ({ kind: "attack", style: "peck" }));
+            battle.beginCombat(); battle.tick(2);
+            const result = battle.resolveStrike("enemy", true);
+            assert(result.some(ev => ev.type === (set === "medic" ? "revive" : "lock")), "首次致命伤触发对应保命效果");
+            battle.tick(2); battle.resolveStrike("enemy", true);
+            assert(battle.done && !battle.win, "每场仅能触发一次");
+        }
+    });
+
+    ok("弹幕去重、普通混合概率与坤坤80%", () => {
+        const rng = new Rng(85);
+        const common = JSON.parse(fs.readFileSync(path.join(tableDir(), "Danmaku.json"), "utf8")).common as string[];
+        const pool = new DanmakuPool("official", "菜鸡", () => rng.next());
+        const last: string[] = []; let universal = 0;
+        for (let i = 0; i < 5000; i++) {
+            const text = pool.next(last.slice(-3))!;
+            assert(!!text && !last.slice(-8).includes(text), "在屏与最近8条不能重复");
+            if (common.includes(text)) universal++;
+            last.push(text);
+        }
+        assert(universal / 5000 > 0.66 && universal / 5000 < 0.74, "普通70%万能池");
+        const boss = new DanmakuPool("boss", "鸡王坤坤", () => rng.next());
+        let meme = 0;
+        for (let i = 0; i < 5000; i++) {
+            const text = boss.next(["鸡你太美"])!;
+            assert(!common.includes(text), "Boss只使用专属池");
+            if (text === "鸡你太美") meme++;
+        }
+        assert(meme / 5000 > 0.77 && meme / 5000 < 0.83, "坤坤80%主题弹幕，允许重复");
     });
 
     if (fail.length) {

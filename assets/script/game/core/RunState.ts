@@ -11,13 +11,13 @@ import {
 /**
  * 一局的唯一流程状态。
  *
- * 每图三场小怪与一场 BOSS；配表中的商店只触发弹出，不占关卡进度。
+ * 每图五轮热身与一场正式赛，五图后挑战坤坤；商店只触发弹出，不占关卡进度。
  * 战斗结束即更新并保存进度；结算页展示金币，之后选择强化（BOSS 胜利除外）。
  * 商店货架由 EquipMath 固定生成，不存在刷新或随机换货。
  */
 export class RunState {
     gold = 0;
-    /** 首通领取记录和大关通关记录不参与 BOSS 战败回退。 */
+    /** 首通领取记录和大关通关记录不参与正式赛战败回退。 */
     claimedGoldNodes: number[] = [];
     completedMaps: number[] = [];
     lastBattleNode = 1;
@@ -34,7 +34,7 @@ export class RunState {
     screen: RunScreen = "customize";
     appearance: Appearance = defaultAppearance();
     /** 自定义页的名称只属于本局，不修改 Player 配表。 */
-    playerName = "村口鸡";
+    playerName = "无名鸡";
     ownedIds: string[] = [];
     /** 背包与穿戴分开；同一装备槽最多一件。 */
     equippedIds: string[] = [];
@@ -95,7 +95,8 @@ export class RunState {
 
     enterFight() {
         if (this.screen === "result" || this.screen === "reward") return;
-        if (this.completedMaps.includes(this.currentMap().id) || this.upgrades.length > 0) return;
+        if ((this.completedMaps.includes(this.currentMap().id) && this.currentRoute().encounter !== "final") || this.upgrades.length > 0) return;
+        if (this.currentRoute().encounter === "final" && this.claimedGoldNodes.includes(this.routeNode)) return;
         this.shopPending = false;
         if (this.phase === "battle" || this.phase === "boss") this.screen = "prebattle";
         this.onChanged?.();
@@ -103,24 +104,34 @@ export class RunState {
 
     startBattle() {
         if (this.screen === "result" || this.screen === "reward") return;
-        if (this.completedMaps.includes(this.currentMap().id) || this.upgrades.length > 0) return;
+        if ((this.completedMaps.includes(this.currentMap().id) && this.currentRoute().encounter !== "final") || this.upgrades.length > 0) return;
+        if (this.currentRoute().encounter === "final" && this.claimedGoldNodes.includes(this.routeNode)) return;
         if (this.phase === "battle" || this.phase === "boss") this.screen = "battle";
         this.onChanged?.();
     }
 
     settle(win: boolean) {
         // 结算回调重复到达时，金币和强化牌都只能产生一次。
-        if (this.screen === "result" || this.screen === "reward" || this.completedMaps.includes(this.currentMap().id)) return;
+        if (this.screen === "result" || this.screen === "reward"
+            || (this.completedMaps.includes(this.currentMap().id) && this.currentRoute().encounter !== "final")
+            || (this.currentRoute().encounter === "final" && this.claimedGoldNodes.includes(this.routeNode))) return;
         this.lastWin = win;
         const node = this.currentRoute();
         this.lastBattleNode = node.id;
         this.lastFirstClear = win && !this.claimedGoldNodes.includes(node.id);
-        this.lastGoldGain = this.lastFirstClear ? (node.goldWin || 0) : 0;
+        const equippedStats = buildStats(this.equippedIds);
+        this.lastGoldGain = this.lastFirstClear ? Math.floor((node.goldWin || 0) * (1 + (equippedStats.goldBonus || 0))) : 0;
         if (this.lastFirstClear) this.claimedGoldNodes.push(node.id);
         this.gold += this.lastGoldGain;
         this.shopPending = false;
         // 结算只显示金币；强化牌在点击“获得强化”后才进入下一屏。
         this.rewards = [];
+        if (!win && node.kind === "boss") {
+            const grown = Object.keys(this.partLevels) as PartId[];
+            const keep = equippedStats.retainGrowth && grown.length ? this.rng().pick(grown) : undefined;
+            this.partLevels = keep ? { [keep]: this.partLevels[keep] } : {};
+            this.bonus = {};
+        }
         if (!(this.phase === "boss" && win)) {
             this.upgrades = rollUpgrades(this.routeNode, this.seed + this.rewardRolls * 131, this.partLevels);
             this.rewardRolls += 1;
@@ -129,8 +140,13 @@ export class RunState {
             this.upgrades = [];
         }
         if (node.kind === "boss") {
-            if (win) this.completedMaps.push(this.currentMap().id);
-            else {
+            if (win) {
+                if (!this.completedMaps.includes(this.currentMap().id)) this.completedMaps.push(this.currentMap().id);
+                if (node.encounter === "final") {
+                    for (const id of setById("champion").pieceIds) if (!this.ownedIds.includes(id)) this.ownedIds.push(id);
+                }
+            }
+            else if (node.encounter !== "final") {
                 const first = this.route()[0];
                 this.routeNode = first.id;
                 this.stage = first.id;
@@ -174,7 +190,7 @@ export class RunState {
         const following = getRoute().filter(node => node.id > this.routeNode);
         const next = following.find(node => node.kind !== "shop");
         if (!next) return;
-        this.shopPending = following.some(node => node.id < next.id && node.kind === "shop");
+        this.shopPending = !!this.currentRoute().shopAfter || following.some(node => node.id < next.id && node.kind === "shop");
         this.routeNode = next.id;
         this.stage = this.routeNode;
         this.phase = next.kind;
@@ -217,8 +233,11 @@ export class RunState {
 
     buyItem(id: string): boolean {
         const item = itemById(id);
-        if (this.ownedIds.indexOf(id) >= 0 || this.gold < item.price) return false;
-        this.gold -= item.price;
+        const set = setById(item.setId);
+        const price = this.itemPrice(id);
+        if (set.rewardOnly || set.legacy || set.unlockMap > this.currentMap().id
+            || this.ownedIds.indexOf(id) >= 0 || this.gold < price) return false;
+        this.gold -= price;
         this.ownedIds.push(id);
         this.shopItems = this.shopItems.filter(shopItem => shopItem.id !== id);
         this.onChanged?.();
@@ -228,14 +247,22 @@ export class RunState {
     buySet(setId: string): boolean {
         const def = setById(setId);
         const missing = def.pieceIds.filter(id => this.ownedIds.indexOf(id) < 0);
-        const price = setPrice(setId);
-        if (missing.length === 0 || this.gold < price) return false;
+        const price = this.setPrice(setId);
+        if (def.rewardOnly || def.legacy || def.unlockMap > this.currentMap().id || missing.length === 0 || this.gold < price) return false;
         this.gold -= price;
         for (const id of missing) this.ownedIds.push(id);
         const bought = new Set(missing);
         this.shopItems = this.shopItems.filter(shopItem => !bought.has(shopItem.id));
         this.onChanged?.();
         return true;
+    }
+
+    itemPrice(id: string): number {
+        return Math.floor(itemById(id).price * (1 - (buildStats(this.equippedIds).shopDiscount || 0)));
+    }
+
+    setPrice(id: string): number {
+        return setPrice(id, this.ownedIds, buildStats(this.equippedIds).shopDiscount || 0);
     }
 
     equipItem(id: string): boolean {
@@ -268,7 +295,7 @@ export class RunState {
 
     mapHint(): string {
         const node = this.currentRoute();
-        if (node.kind === "boss") return this.currentMap().id === MAPS[MAPS.length - 1].id ? "击败鸡王，完成挑战" : "击败鸡王，前往下一图";
+        if (node.kind === "boss") return node.encounter === "final" ? "全村注视着你：挑战鸡王坤坤！" : "赢下正式赛，继续争霸之路";
         return this.claimedGoldNodes.includes(node.id) ? "本关首通金币已领取" : `首通奖励 ${node.goldWin || 0} 金币`;
     }
 

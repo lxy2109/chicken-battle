@@ -25,6 +25,9 @@ export class MapViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabPower", `战力 ${combatPower(run.playerFighter().stats)}`);
         setLabel(this, "LabRouteTitle", run.currentRoute().name.split(" · ").pop()!);
         setLabel(this, "LabHint", run.mapHint());
+        // Portrait uses the player's chosen colours/expression, cropped to the visible head.
+        const avatar = await spawnChicken(this, "MapAvatarSlot", run.appearance, 0.76, true);
+        if (avatar?.isValid) avatar.setPosition(33.6, -128.6, 0);
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
         bindClick(this, "BtnHome", () => goScreen(this, "customize"));
@@ -38,9 +41,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         const nodes = run.route();
         const current = run.routeNode;
         const battleNodes = nodes.filter(node => node.kind === "battle");
-        const preview = battleNodes.find(node => node.id >= current) || battleNodes[battleNodes.length - 1];
-        if (preview?.enemyId) await spawnChicken(this, "MapEnemySlot", enemyToFighter(preview.enemyId).appearance, 0.25);
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             const node = battleNodes[i];
             const view = this.getNode(`BtnStage${i + 1}`);
             setNodeActive(this, `BtnStage${i + 1}`, !!node);
@@ -53,10 +54,11 @@ export class MapViewComp extends CCView<ChickenRun> {
             view.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
             setLabel(this, `LabStageNum${i + 1}`, cleared ? "✓" : `${run.currentMap().id}-${i + 1}`);
             setLabel(this, `LabStageName${i + 1}`, node.name.split(" · ").pop()!);
+            if (node.enemyId) await spawnChicken(this, `StageEnemySlot${i + 1}`, enemyToFighter(node.enemyId).appearance, 0.24);
             bindClick(this, `BtnStage${i + 1}`, () => this.onBattleNode(node.id));
         }
 
-        const boss = nodes.find(node => node.kind === "boss");
+        const boss = nodes.find(node => node.kind === "boss" && node.id >= current) || nodes.filter(node => node.kind === "boss").slice(-1)[0];
         const bossView = this.getNode("BtnBoss");
         if (boss && bossView) {
             if (boss.enemyId) await spawnChicken(this, "MapBossSlot", enemyToFighter(boss.enemyId).appearance, 0.32, true);
@@ -65,13 +67,17 @@ export class MapViewComp extends CCView<ChickenRun> {
             await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
             bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
-            setLabel(this, "LabBossName", active ? "鸡王 · 决战" : "鸡王");
+            setLabel(this, "LabBossName", boss.encounter === "final" ? "坤坤 · 最终战" : "BOSS正式赛");
             bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
         }
     }
 
     private async onBattleNode(id: number) {
         const run = this.ent.run;
+        if (run.currentRoute().encounter === "final" && run.claimedGoldNodes.includes(run.routeNode)) {
+            await goScreen(this, "ending");
+            return;
+        }
         if (id !== run.routeNode) {
             this.warn(id < run.routeNode ? "本关已完成" : "请先挑战当前关卡");
             return;

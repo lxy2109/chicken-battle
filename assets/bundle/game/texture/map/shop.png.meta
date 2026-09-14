@@ -46,17 +46,17 @@
       ],
       "subMetas": {},
       "userData": {
-        "trimType": "auto",
+        "trimType": "none",
         "trimThreshold": 1,
         "rotated": false,
         "offsetX": 0.0,
         "offsetY": 0.0,
         "trimX": 0,
         "trimY": 0,
-        "width": 247,
-        "height": 256,
-        "rawWidth": 247,
-        "rawHeight": 256,
+        "width": 634,
+        "height": 650,
+        "rawWidth": 634,
+        "rawHeight": 650,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -64,24 +64,24 @@
         "isUuid": true,
         "imageUuidOrDatabaseUri": "a1b2c3d4-2004-4000-8000-000000000003@6c48a",
         "atlasUuid": "",
-        "packable": true,
+        "packable": false,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
         "pivotY": 0.5,
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -123.5,
-            -128.0,
+            -317.0,
+            -325.0,
             0,
-            123.5,
-            -128.0,
+            317.0,
+            -325.0,
             0,
-            -123.5,
-            128.0,
+            -317.0,
+            325.0,
             0,
-            123.5,
-            128.0,
+            317.0,
+            325.0,
             0
           ],
           "indexes": [
@@ -94,12 +94,12 @@
           ],
           "uv": [
             0,
-            256,
-            247,
-            256,
+            650,
+            634,
+            650,
             0,
             0,
-            247,
+            634,
             0
           ],
           "nuv": [
@@ -113,13 +113,13 @@
             1.0
           ],
           "minPos": [
-            -123.5,
-            -128.0,
+            -317.0,
+            -325.0,
             0
           ],
           "maxPos": [
-            123.5,
-            128.0,
+            317.0,
+            325.0,
             0
           ]
         }

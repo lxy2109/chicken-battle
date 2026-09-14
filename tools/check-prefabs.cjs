@@ -44,6 +44,13 @@ const TARGETS = [
 /** 所有合法的 spriteFrame uuid：素材表里的每张图 + 内置纯白图。 */
 function knownFrames() {
     const set = new Set([WHITE]);
+    for (const [name, asset] of Object.entries(require('./figma-assets.json'))) {
+        const file = path.join(ROOT, 'assets/bundle/game/texture', name + '.png');
+        if (!fs.existsSync(file)) throw new Error('Missing Figma asset: ' + file);
+        const meta = JSON.parse(fs.readFileSync(file + '.meta', 'utf8'));
+        if (meta.uuid !== asset.uuid) throw new Error('Figma UUID mismatch: ' + name);
+        set.add(meta.subMetas.f9941.uuid);
+    }
     for (const key of Object.keys(uuids)) {
         if (typeof uuids[key] === "string") set.add(uuids.frame(uuids[key]));
     }
@@ -122,10 +129,10 @@ function checkOne(rel, frames, variant) {
             const hw = t._contentSize.width / 2;
             const hh = t._contentSize.height / 2;
             const over = [];
-            if (x - hw < -DESIGN.w / 2) over.push(`左出 ${Math.round(DESIGN.w / 2 + x - hw)}`);
-            if (x + hw > DESIGN.w / 2) over.push(`右出 ${Math.round(x + hw - DESIGN.w / 2)}`);
-            if (y - hh < -DESIGN.h / 2) over.push(`下出 ${Math.round(DESIGN.h / 2 + y - hh)}`);
-            if (y + hh > DESIGN.h / 2) over.push(`上出 ${Math.round(y + hh - DESIGN.h / 2)}`);
+            if (x - hw < -DESIGN.w / 2 - 0.01) over.push(`左出 ${Math.round(DESIGN.w / 2 + x - hw)}`);
+            if (x + hw > DESIGN.w / 2 + 0.01) over.push(`右出 ${Math.round(x + hw - DESIGN.w / 2)}`);
+            if (y - hh < -DESIGN.h / 2 - 0.01) over.push(`下出 ${Math.round(DESIGN.h / 2 + y - hh)}`);
+            if (y + hh > DESIGN.h / 2 + 0.01) over.push(`上出 ${Math.round(y + hh - DESIGN.h / 2)}`);
             if (over.length) problems.push(`${rel}: 节点 ${n._name} 越界 (${over.join(", ")})`);
         }
 

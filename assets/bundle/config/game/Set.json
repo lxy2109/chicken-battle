@@ -22,7 +22,8 @@
         "b4crit": 0.08,
         "b4healPerTurn": 0,
         "b4revive": 0,
-        "b4lockHp": 0
+        "b4lockHp": 0,
+        "legacy": true
     },
     "stone_crown": {
         "id": "stone_crown",
@@ -47,7 +48,8 @@
         "b4crit": 0,
         "b4healPerTurn": 0,
         "b4revive": 0,
-        "b4lockHp": 0
+        "b4lockHp": 0,
+        "legacy": true
     },
     "gale": {
         "id": "gale",
@@ -72,7 +74,8 @@
         "b4crit": 0.1,
         "b4healPerTurn": 0,
         "b4revive": 0,
-        "b4lockHp": 0
+        "b4lockHp": 0,
+        "legacy": true
     },
     "kunkun": {
         "id": "kunkun",
@@ -97,6 +100,126 @@
         "b4crit": 0,
         "b4healPerTurn": 10,
         "b4revive": 1,
-        "b4lockHp": 1
+        "b4lockHp": 1,
+        "legacy": true
+    },
+    "rookie": {
+        "id": "rookie",
+        "name": "诸葛亮套",
+        "pieceIds": [
+            "rookie_head",
+            "rookie_neck",
+            "rookie_wing",
+            "rookie_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "菜得耐打：生命+20",
+        "desc4": "这把不算：正式赛失败保留一项随机部位成长",
+        "unlockMap": 1,
+        "rewardOnly": false,
+        "b2maxHp": 20,
+        "b4retainGrowth": 1
+    },
+    "helicopter": {
+        "id": "helicopter",
+        "name": "直升鸡套",
+        "pieceIds": [
+            "helicopter_head",
+            "helicopter_neck",
+            "helicopter_wing",
+            "helicopter_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "闻鸡起舞：敏捷+4",
+        "desc4": "鸡不可失：开战时优先行动一次",
+        "unlockMap": 1,
+        "rewardOnly": false,
+        "b2spd": 4,
+        "b4firstStrike": 1
+    },
+    "brawler": {
+        "id": "brawler",
+        "name": "关羽套",
+        "pieceIds": [
+            "brawler_head",
+            "brawler_neck",
+            "brawler_wing",
+            "brawler_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "嘴硬：攻击+4",
+        "desc4": "鸡飞蛋打：连续命中每次增伤8%，最多5层，落空重置",
+        "unlockMap": 2,
+        "rewardOnly": false,
+        "b2atk": 4,
+        "b4streakBonus": 0.08
+    },
+    "medic": {
+        "id": "medic",
+        "name": "医疗鸡套",
+        "pieceIds": [
+            "medic_head",
+            "medic_neck",
+            "medic_wing",
+            "medic_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "多喝热水：治疗效果+30%",
+        "desc4": "汤还热着：每场战斗增加一次复活机会",
+        "unlockMap": 2,
+        "rewardOnly": false,
+        "b2healBonus": 0.3,
+        "b4revive": 1
+    },
+    "concrete": {
+        "id": "concrete",
+        "name": "钢鸡混凝土套",
+        "pieceIds": [
+            "concrete_head",
+            "concrete_neck",
+            "concrete_wing",
+            "concrete_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "皮实：生命+20，防御+3",
+        "desc4": "还能抢救：每场一次，致命伤害时保留1点生命",
+        "unlockMap": 3,
+        "rewardOnly": false,
+        "b2maxHp": 20,
+        "b2def": 3,
+        "b4lockHp": 1,
+        "legacy": true
+    },
+    "miser": {
+        "id": "miser",
+        "name": "铁公鸡套",
+        "pieceIds": [
+            "miser_head",
+            "miser_neck",
+            "miser_wing",
+            "miser_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "一毛不少：首通战斗金币+20%",
+        "desc4": "老板再便宜点：装备购买额外85折",
+        "unlockMap": 3,
+        "rewardOnly": false,
+        "b2goldBonus": 0.2,
+        "b4shopDiscount": 0.15
+    },
+    "champion": {
+        "id": "champion",
+        "name": "鸡王中王套",
+        "pieceIds": [
+            "champion_head",
+            "champion_neck",
+            "champion_wing",
+            "champion_leg"
+        ],
+        "discount": 0.8,
+        "desc2": "不是每根肠都能称王，但这只鸡可以。",
+        "desc4": "通关奖励：专属加冕结算效果",
+        "unlockMap": 0,
+        "rewardOnly": true
     }
 }

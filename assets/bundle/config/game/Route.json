@@ -1,242 +1,342 @@
 {
     "1": {
         "id": 1,
+        "mapId": 1,
         "kind": "battle",
-        "name": "东篱村 · 东篱小怪",
-        "enemyId": "s1_official",
-        "goldWin": 50,
+        "encounter": "warmup",
+        "name": "鸡鸣村 · 热身赛1",
+        "enemyId": "s1_warmup",
+        "goldWin": 40,
         "goldLose": 0,
-        "mapId": 1
+        "shopAfter": false
     },
     "2": {
         "id": 2,
+        "mapId": 1,
         "kind": "battle",
-        "name": "东篱村 · 麦场小怪",
-        "enemyId": "s2_official",
-        "goldWin": 80,
+        "encounter": "warmup",
+        "name": "鸡鸣村 · 热身赛2",
+        "enemyId": "s1_warmup",
+        "goldWin": 50,
         "goldLose": 0,
-        "mapId": 1
+        "shopAfter": true
     },
     "3": {
         "id": 3,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 1
+        "mapId": 1,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "鸡鸣村 · 热身赛3",
+        "enemyId": "s1_warmup",
+        "goldWin": 60,
+        "goldLose": 0,
+        "shopAfter": false
     },
     "4": {
         "id": 4,
+        "mapId": 1,
         "kind": "battle",
-        "name": "东篱村 · 祠堂小怪",
-        "enemyId": "s3_official",
-        "goldWin": 120,
+        "encounter": "warmup",
+        "name": "鸡鸣村 · 热身赛4",
+        "enemyId": "s1_warmup",
+        "goldWin": 70,
         "goldLose": 0,
-        "mapId": 1
+        "shopAfter": false
     },
     "5": {
         "id": 5,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 1
+        "mapId": 1,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "鸡鸣村 · 热身赛5",
+        "enemyId": "s1_warmup",
+        "goldWin": 80,
+        "goldLose": 0,
+        "shopAfter": true
     },
     "6": {
         "id": 6,
+        "mapId": 1,
         "kind": "boss",
-        "name": "东篱村 · 鸡王",
-        "enemyId": "kun_boss",
-        "goldWin": 200,
+        "encounter": "official",
+        "name": "鸡鸣村 · 菜鸡正式赛",
+        "enemyId": "s1_official",
+        "goldWin": 140,
         "goldLose": 0,
-        "mapId": 1
+        "shopAfter": false
     },
     "7": {
         "id": 7,
+        "mapId": 2,
         "kind": "battle",
-        "name": "青竹溪 · 东篱小怪",
-        "enemyId": "s1_official",
-        "goldWin": 50,
+        "encounter": "warmup",
+        "name": "青竹溪 · 热身赛1",
+        "enemyId": "s2_warmup",
+        "goldWin": 40,
         "goldLose": 0,
-        "mapId": 2
+        "shopAfter": false
     },
     "8": {
         "id": 8,
+        "mapId": 2,
         "kind": "battle",
-        "name": "青竹溪 · 麦场小怪",
-        "enemyId": "s2_official",
-        "goldWin": 80,
+        "encounter": "warmup",
+        "name": "青竹溪 · 热身赛2",
+        "enemyId": "s2_warmup",
+        "goldWin": 50,
         "goldLose": 0,
-        "mapId": 2
+        "shopAfter": true
     },
     "9": {
         "id": 9,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 2
+        "mapId": 2,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "青竹溪 · 热身赛3",
+        "enemyId": "s2_warmup",
+        "goldWin": 60,
+        "goldLose": 0,
+        "shopAfter": false
     },
     "10": {
         "id": 10,
+        "mapId": 2,
         "kind": "battle",
-        "name": "青竹溪 · 祠堂小怪",
-        "enemyId": "s3_official",
-        "goldWin": 120,
+        "encounter": "warmup",
+        "name": "青竹溪 · 热身赛4",
+        "enemyId": "s2_warmup",
+        "goldWin": 70,
         "goldLose": 0,
-        "mapId": 2
+        "shopAfter": false
     },
     "11": {
         "id": 11,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 2
+        "mapId": 2,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "青竹溪 · 热身赛5",
+        "enemyId": "s2_warmup",
+        "goldWin": 80,
+        "goldLose": 0,
+        "shopAfter": true
     },
     "12": {
         "id": 12,
+        "mapId": 2,
         "kind": "boss",
-        "name": "青竹溪 · 鸡王",
-        "enemyId": "kun_boss",
-        "goldWin": 200,
+        "encounter": "official",
+        "name": "青竹溪 · 肯德鸡正式赛",
+        "enemyId": "s2_official",
+        "goldWin": 160,
         "goldLose": 0,
-        "mapId": 2
+        "shopAfter": false
     },
     "13": {
         "id": 13,
+        "mapId": 3,
         "kind": "battle",
-        "name": "金穗田 · 东篱小怪",
-        "enemyId": "s1_official",
-        "goldWin": 50,
+        "encounter": "warmup",
+        "name": "金穗田 · 热身赛1",
+        "enemyId": "s3_warmup",
+        "goldWin": 40,
         "goldLose": 0,
-        "mapId": 3
+        "shopAfter": false
     },
     "14": {
         "id": 14,
+        "mapId": 3,
         "kind": "battle",
-        "name": "金穗田 · 麦场小怪",
-        "enemyId": "s2_official",
-        "goldWin": 80,
+        "encounter": "warmup",
+        "name": "金穗田 · 热身赛2",
+        "enemyId": "s3_warmup",
+        "goldWin": 50,
         "goldLose": 0,
-        "mapId": 3
+        "shopAfter": true
     },
     "15": {
         "id": 15,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 3
+        "mapId": 3,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "金穗田 · 热身赛3",
+        "enemyId": "s3_warmup",
+        "goldWin": 60,
+        "goldLose": 0,
+        "shopAfter": false
     },
     "16": {
         "id": 16,
+        "mapId": 3,
         "kind": "battle",
-        "name": "金穗田 · 祠堂小怪",
-        "enemyId": "s3_official",
-        "goldWin": 120,
+        "encounter": "warmup",
+        "name": "金穗田 · 热身赛4",
+        "enemyId": "s3_warmup",
+        "goldWin": 70,
         "goldLose": 0,
-        "mapId": 3
+        "shopAfter": false
     },
     "17": {
         "id": 17,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 3
+        "mapId": 3,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "金穗田 · 热身赛5",
+        "enemyId": "s3_warmup",
+        "goldWin": 80,
+        "goldLose": 0,
+        "shopAfter": true
     },
     "18": {
         "id": 18,
+        "mapId": 3,
         "kind": "boss",
-        "name": "金穗田 · 鸡王",
-        "enemyId": "kun_boss",
-        "goldWin": 200,
+        "encounter": "official",
+        "name": "金穗田 · 哈鸡米正式赛",
+        "enemyId": "s3_official",
+        "goldWin": 180,
         "goldLose": 0,
-        "mapId": 3
+        "shopAfter": false
     },
     "19": {
         "id": 19,
+        "mapId": 4,
         "kind": "battle",
-        "name": "古祠镇 · 东篱小怪",
-        "enemyId": "s1_official",
-        "goldWin": 50,
+        "encounter": "warmup",
+        "name": "古祠镇 · 热身赛1",
+        "enemyId": "s4_warmup",
+        "goldWin": 40,
         "goldLose": 0,
-        "mapId": 4
+        "shopAfter": false
     },
     "20": {
         "id": 20,
+        "mapId": 4,
         "kind": "battle",
-        "name": "古祠镇 · 麦场小怪",
-        "enemyId": "s2_official",
-        "goldWin": 80,
+        "encounter": "warmup",
+        "name": "古祠镇 · 热身赛2",
+        "enemyId": "s4_warmup",
+        "goldWin": 50,
         "goldLose": 0,
-        "mapId": 4
+        "shopAfter": true
     },
     "21": {
         "id": 21,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 4
+        "mapId": 4,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "古祠镇 · 热身赛3",
+        "enemyId": "s4_warmup",
+        "goldWin": 60,
+        "goldLose": 0,
+        "shopAfter": false
     },
     "22": {
         "id": 22,
+        "mapId": 4,
         "kind": "battle",
-        "name": "古祠镇 · 祠堂小怪",
-        "enemyId": "s3_official",
-        "goldWin": 120,
+        "encounter": "warmup",
+        "name": "古祠镇 · 热身赛4",
+        "enemyId": "s4_warmup",
+        "goldWin": 70,
         "goldLose": 0,
-        "mapId": 4
+        "shopAfter": false
     },
     "23": {
         "id": 23,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 4
+        "mapId": 4,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "古祠镇 · 热身赛5",
+        "enemyId": "s4_warmup",
+        "goldWin": 80,
+        "goldLose": 0,
+        "shopAfter": true
     },
     "24": {
         "id": 24,
+        "mapId": 4,
         "kind": "boss",
-        "name": "古祠镇 · 鸡王",
-        "enemyId": "kun_boss",
+        "encounter": "official",
+        "name": "古祠镇 · 新一鸡正式赛",
+        "enemyId": "s4_official",
         "goldWin": 200,
         "goldLose": 0,
-        "mapId": 4
+        "shopAfter": false
     },
     "25": {
         "id": 25,
+        "mapId": 5,
         "kind": "battle",
-        "name": "鸡王山 · 东篱小怪",
-        "enemyId": "s1_official",
-        "goldWin": 50,
+        "encounter": "warmup",
+        "name": "鸡王山 · 热身赛1",
+        "enemyId": "s5_warmup",
+        "goldWin": 40,
         "goldLose": 0,
-        "mapId": 5
+        "shopAfter": false
     },
     "26": {
         "id": 26,
+        "mapId": 5,
         "kind": "battle",
-        "name": "鸡王山 · 麦场小怪",
-        "enemyId": "s2_official",
-        "goldWin": 80,
+        "encounter": "warmup",
+        "name": "鸡王山 · 热身赛2",
+        "enemyId": "s5_warmup",
+        "goldWin": 50,
         "goldLose": 0,
-        "mapId": 5
+        "shopAfter": true
     },
     "27": {
         "id": 27,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 5
+        "mapId": 5,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "鸡王山 · 热身赛3",
+        "enemyId": "s5_warmup",
+        "goldWin": 60,
+        "goldLose": 0,
+        "shopAfter": false
     },
     "28": {
         "id": 28,
+        "mapId": 5,
         "kind": "battle",
-        "name": "鸡王山 · 祠堂小怪",
-        "enemyId": "s3_official",
-        "goldWin": 120,
+        "encounter": "warmup",
+        "name": "鸡王山 · 热身赛4",
+        "enemyId": "s5_warmup",
+        "goldWin": 70,
         "goldLose": 0,
-        "mapId": 5
+        "shopAfter": false
     },
     "29": {
         "id": 29,
-        "kind": "shop",
-        "name": "鸡友杂货铺",
-        "mapId": 5
+        "mapId": 5,
+        "kind": "battle",
+        "encounter": "warmup",
+        "name": "鸡王山 · 热身赛5",
+        "enemyId": "s5_warmup",
+        "goldWin": 80,
+        "goldLose": 0,
+        "shopAfter": true
     },
     "30": {
         "id": 30,
+        "mapId": 5,
         "kind": "boss",
-        "name": "鸡王山 · 鸡王",
-        "enemyId": "kun_boss",
-        "goldWin": 200,
+        "encounter": "official",
+        "name": "鸡王山 · 缝纫鸡正式赛",
+        "enemyId": "s5_official",
+        "goldWin": 220,
         "goldLose": 0,
-        "mapId": 5
+        "shopAfter": false
+    },
+    "31": {
+        "id": 31,
+        "mapId": 5,
+        "kind": "boss",
+        "encounter": "final",
+        "name": "鸡鸣村 · 鸡王坤坤最终挑战",
+        "enemyId": "kun_boss",
+        "goldWin": 300,
+        "goldLose": 0
     }
 }

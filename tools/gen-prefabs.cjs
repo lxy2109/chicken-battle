@@ -9,6 +9,8 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 const uuids = require("./art-uuids.cjs");
+const figmaAssets = require("./figma-assets.json");
+const F = Object.fromEntries(Object.entries(figmaAssets).map(([key, value]) => [key, value.uuid + "@f9941"]));
 
 const ROOT = path.resolve(__dirname, "..");
 /**
@@ -147,7 +149,7 @@ class Builder {
     }
 
     label(nodeId, text, opt = {}) {
-        const font = Math.max(28, opt.font || 28);
+        const font = Math.max(14, opt.font || 28);
         const col = opt.color || INK.dark;
         const outline = opt.outline || false;
         const w = opt.w || 240;
@@ -196,8 +198,8 @@ class Builder {
                 _resizeMode: 0, _layoutType: opt.type == null ? 2 : opt.type,
                 _cellSize: size(opt.cellW || 310, opt.cellH || 120),
                 _startAxis: 0,
-                _paddingLeft: opt.pad || 6, _paddingRight: opt.pad || 6,
-                _paddingTop: opt.pad || 6, _paddingBottom: opt.pad || 6,
+                _paddingLeft: opt.pad ?? 6, _paddingRight: opt.pad ?? 6,
+                _paddingTop: opt.pad ?? 6, _paddingBottom: opt.pad ?? 6,
                 _spacingX: opt.gapX == null ? 12 : opt.gapX,
                 _spacingY: opt.gapY == null ? 12 : opt.gapY,
                 _verticalDirection: 1, _horizontalDirection: 0,
@@ -237,15 +239,14 @@ class Builder {
 //#region 通用构件
 
 const BTN = {
-    yellow: { frame: SF.btn_yellow, ink: INK.dark, outline: false },
-    green: { frame: SF.btn_green, ink: INK.cream, outline: true },
-    red: { frame: SF.btn_red, ink: INK.cream, outline: true },
+    yellow: { frame: F['ui/figma_button_yellow'], ink: INK.cream, outline: true },
+    green: { frame: F['ui/figma_button_green'], ink: INK.cream, outline: true },
+    red: { frame: F['ui/figma_button_red'], ink: INK.cream, outline: true },
     orange: { frame: SF.btn_orange, ink: INK.cream, outline: true }
 };
 
 /** 主按钮：九宫格底图 + 居中文字，文字节点名为 <name>Lab。 */
 function labBtn(b, parent, name, text, x, y, w = 320, h = 84, kind = "yellow") {
-    h = Math.max(88, h);
     const skin = BTN[kind] || BTN.yellow;
     const id = b.node({ name, parent, x, y, w, h });
     b.sprite(id, [255, 255, 255, 255], 1, skin.frame);
@@ -285,15 +286,22 @@ function textNode(b, parent, name, text, x, y, opt = {}) {
 const DESIGN_SCALE = 2 / 3;
 function layoutBox(x, y, w, h) {
     return {
-        x: Math.round((x + w / 2 - 540) * DESIGN_SCALE),
-        y: Math.round((960 - y - h / 2) * DESIGN_SCALE),
-        w: Math.round(w * DESIGN_SCALE),
-        h: Math.round(h * DESIGN_SCALE)
+        x: (x + w / 2 - 540) * DESIGN_SCALE,
+        y: (960 - y - h / 2) * DESIGN_SCALE,
+        w: w * DESIGN_SCALE,
+        h: h * DESIGN_SCALE
     };
 }
 
 function placeNode(b, parent, name, x, y, w, h, extra = {}) {
     return b.node(Object.assign({ name, parent }, layoutBox(x, y, w, h), extra));
+}
+
+function figmaImage(b, parent, name, asset, box) {
+    const r = box || figmaAssets[asset].box;
+    const id = placeNode(b, parent, name, ...r);
+    b.sprite(id, [255, 255, 255, 255], 0, F[asset]);
+    return id;
 }
 
 function placeCard(b, parent, name, x, y, w, h, frame = SF.panel_white) {
@@ -328,9 +336,9 @@ function iconNode(b, parent, name, frame, x, y, s) {
     return id;
 }
 
-/** 固定 720×1280 的底板，Widget 只负责居中，不随窗口拉伸。 */
+/** Internal combat coordinates stay 720x1280; the project uses the Figma 1080x1920 canvas. */
 function panel(b, name, bg = SF.bg_home) {
-    const root = b.node({ name, w: 720, h: 1280, x: 0, y: 0 });
+    const root = b.node({ name, w: 720, h: 1280, x: 0, y: 0, sx: 1.5, sy: 1.5 });
     b.widget(root);
     b.sprite(root, [255, 255, 255, 255], 0, bg);
     return root;
@@ -370,32 +378,37 @@ function makeCustomize() {
     const b = new Builder("customize");
     const root = panel(b, "customize", SF.bg_village_figma);
     const edit = b.node({ name: "CustomizePanel", parent: root, w: 720, h: 1280, active: false });
-    placeText(b, edit, "LabTitle", "自定义你的专属战鸡", 230, 50, 620, 76, { font: 34, color: INK.cream, outline: true });
-    placeNode(b, edit, "ChickenSlot", 310, 310, 460, 690);
-    placeCard(b, edit, "ControlCard", 0, 1090, 1080, 830, SF.panel_green);
-    const parts = [["Head", "头部"], ["Neck", "脖子"], ["Body", "身体"], ["Wing", "翅膀"], ["Leg", "脚部"]];
-    parts.forEach(([part, label], i) => {
-        placeButton(b, edit, "BtnPart" + part, label, 40 + i * 202, 1080, 190, 98, "green");
-        const row = placeNode(b, edit, "ColorRow" + part, 0, 0, 1080, 1920, { active: part === "Body" });
+    placeText(b, edit, "LabStory", "", 100, 100, 880, 130, { font: 22, color: INK.cream, outline: true });
+    placeNode(b, edit, "ChickenSlot", 275.5, 157, 530, 920);
+    figmaImage(b, edit, "ControlCard", 'ui/figma_customize_base');
+    figmaImage(b, edit, "Controls", 'ui/figma_customize_buttons');
+    const colors = b.node({ name: "ColorOptions", parent: edit, w: 720, h: 1280 });
+    figmaImage(b, colors, "ColorChips", 'ui/figma_customize_colors');
+    const parts = ["Head", "Face", "Wing", "Body", "Leg"];
+    parts.forEach((part, i) => {
+        const tab = figmaImage(b, edit, "BtnPart" + part, 'ui/figma_tab', [68 + i * 190, 1140, 173, 151]);
+        b.button(tab);
+        iconNode(b, tab, "TabIcon" + part, F['ui/figma_tab_' + part.toLowerCase()], 0, 13, 65);
+        if (part === "Face") return;
+        const row = b.node({ name: "ColorRow" + part, parent: colors, w: 720, h: 1280, active: part === "Head" });
         for (let k = 0; k < 6; k++) {
-            const r = layoutBox(110 + k * 155, 1275, 90, 90);
-            const chip = colorBtn(b, row, "BtnColor" + part + k, r.x, r.y, palette([0, 1, 9, 4, 7, 5][k]));
-            b.objs[chip]._lscale = vec3(1.75, 1.75, 1);
+            const chip = placeNode(b, row, "BtnColor" + part + k, 124 + k * 149, 1328, 112, 112);
+            b.button(chip);
         }
     });
-    placeText(b, edit, "LabPart", "正在染：躯干", 100, 1198, 880, 48, { font: 23 });
-    placeCard(b, edit, "FaceCard", 70, 1390, 940, 140, SF.panel_cream);
-    placeText(b, edit, "FaceLabel", "表情", 100, 1425, 160, 55, { font: 23 });
-    ["凶", "呆", "傲", "萌"].forEach((t, i) => placeButton(b, edit, "BtnFace" + i, t, 290 + i * 166, 1410, 138, 96, "yellow"));
-    placeCard(b, edit, "NameCard", 70, 1560, 940, 112, SF.panel_cream);
-    placeText(b, edit, "LabName", "村口鸡", 100, 1580, 590, 70, { font: 27, align: 0 });
-    placeButton(b, edit, "BtnRandomName", "随机", 750, 1580, 218, 72, "yellow");
-    placeButton(b, edit, "BtnReset", "重置", 70, 1740, 220, 120, "orange");
-    placeButton(b, edit, "BtnRandomSet", "随机装扮", 320, 1740, 320, 120, "green");
-    placeButton(b, edit, "BtnEnter", "确定", 670, 1740, 340, 120, "yellow");
+    placeText(b, edit, "LabPart", "", 100, 1480, 880, 45, { font: 23, color: INK.cream });
+    const faces = b.node({ name: "FaceOptions", parent: edit, w: 720, h: 1280, active: false });
+    ['dumb', 'cute', 'sad', 'fierce', 'proud', 'wink'].forEach((face, i) => {
+        const tab = figmaImage(b, faces, "BtnFace" + i, 'ui/figma_expression_' + face);
+        b.button(tab);
+    });
+    const random = placeNode(b, edit, "BtnRandomSet", 160, 1590, 350, 200);
+    b.button(random);
+    const enter = placeNode(b, edit, "BtnEnter", 580, 1590, 350, 200);
+    b.button(enter);
     const start = b.node({ name: "StartPanel", parent: root, w: 720, h: 1280 });
     b.sprite(start, [255, 255, 255, 255], 0, SF.bg_start_figma);
-    placeButton(b, start, "BtnStart", "开始", 300, 1400, 480, 210, "red");
+    placeButton(b, start, "BtnStart", "开始", 292, 1392, 496, 231, "red");
     placeButton(b, start, "BtnClearSave", "清除本地存档", 330, 1680, 420, 105, "yellow");
     placeText(b, start, "LabSaveHint", "进度与养成自动保存到本机", 120, 1820, 840, 75, { font: 18, color: INK.cream, outline: true });
     const clear = b.node({ name: "ClearSaveModal", parent: root, w: 720, h: 1280, active: false });
@@ -418,105 +431,104 @@ function palette(i) {
 }
 
 /** 关卡节点在地图上的落点，按原型从上到下推进。 */
-// 地图仅显示三场小怪与 BOSS；商店为独立的统一入口。
+// 每张地图五轮热身与一场正式赛；第五星图结束后进入坤坤挑战。
 // 坐标由 1080×1920 标注换算到 720×1280 设计区，节点只向前开放。
-const MAP_NODES = [[122, -385], [-91, -218], [128, -44]];
-const MAP_BOSS = [-218, 350];
+const MAP_NODES = [[134.333, -452.667], [-96.333, -274], [145, -93.333], [-10.333, 30.667], [85.667, 215.333]];
+const MAP_BOSS = [-126.667, 326.667];
 
 function makeMap() {
     const b = new Builder("map");
     const root = panel(b, "map", SF.bg_map_figma);
     placeText(b, root, "LabTitle", "选择关卡", 250, 100, 580, 90, { font: 36, color: INK.cream, outline: true });
-    placeButton(b, root, "BtnCharacter", "角色", 40, 35, 160, 130, "green");
-    placeButton(b, root, "BtnHome", "返回首页", 40, 189, 240, 132, "green");
-    const gold = placeCard(b, root, "GoldCard", 810, 45, 225, 76, SF.bar_track);
-    iconNode(b, gold, "GoldIcon", SF.icon_coin, -49, 0, 38);
-    textNode(b, gold, "LabGold", "0", 20, 0, { font: 23, w: 90, h: 34, color: INK.cream, outline: true });
-    placeCard(b, root, "RouteInfo", 310, 210, 460, 230, SF.panel_cream);
-    placeText(b, root, "LabRouteTitle", "当前路线", 330, 225, 420, 60, { font: 30 });
-    placeText(b, root, "LabPower", "战力 0", 330, 290, 420, 60, { font: 30 });
-    placeText(b, root, "LabHint", "", 320, 355, 440, 70, { font: 28 });
-    placeNode(b, root, "MapEnemySlot", 130, 1130, 170, 220);
-    placeNode(b, root, "MapBossSlot", 785, 670, 170, 220);
+    const avatar = figmaImage(b, root, "BtnCharacter", 'ui/figma_avatar', [40, 25, 180, 188]);
+    b.button(avatar);
+    const portrait = b.node({ name: "MapAvatarSlot", parent: avatar, x: 0, y: 3, w: 84, h: 84 });
+    b.addComp(portrait, null, { type: "cc.Mask", fields: { _type: 1, _segments: 64 } });
+    placeButton(b, root, "BtnHome", "首页", 40, 225, 160, 72, "green");
+    figmaImage(b, root, "GoldCard", 'ui/figma_gold');
+    placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
+    placeText(b, root, "LabRouteTitle", "", 250, 210, 580, 60, { font: 26, color: INK.cream, outline: true });
+    placeText(b, root, "LabPower", "", 250, 275, 580, 50, { font: 24, color: INK.cream, outline: true });
+    placeText(b, root, "LabHint", "", 110, 1750, 860, 32, { font: 22, color: INK.cream, outline: true });
     MAP_NODES.forEach(([x, y], i) => {
         const n = i + 1;
-        const id = b.node({ name: "BtnStage" + n, parent: root, x, y, w: 100, h: 88 });
+        const id = b.node({ name: "BtnStage" + n, parent: root, x, y, w: 76.667, h: 64 });
         b.sprite(id, [255, 255, 255, 255], 0, SF.node_stage);
         b.button(id);
-        textNode(b, id, "LabStageNum" + n, String(n), 0, 4, { font: 27, w: 64, h: 36, color: INK.cream, outline: true });
-        textNode(b, root, "LabStageName" + n, "", x, y - 68, { font: 28, w: 170, h: 40, color: INK.cream, outline: true });
+        textNode(b, id, "LabStageNum" + n, String(n), 0, -31, { font: 27, w: 66, h: 36, color: INK.cream, outline: true });
     });
-    const shop = b.node({ name: "BtnShop", parent: root, x: 245, y: 90, w: 104, h: 90 });
+    const shop = b.node({ name: "BtnShop", parent: root, x: 239.667, y: -301.333, w: 240.667, h: 272 });
     b.sprite(shop, [255, 255, 255, 255], 0, SF.node_shop);
     b.button(shop);
-    textNode(b, root, "LabShopName", "鸡友杂货铺", 245, 24, { font: 19, w: 170, h: 30, color: INK.cream, outline: true });
-    const boss = b.node({ name: "BtnBoss", parent: root, x: MAP_BOSS[0], y: MAP_BOSS[1], w: 108, h: 88 });
+    textNode(b, root, "LabShopName", "小卖部", 252, -164, { font: 19, w: 136, h: 30, color: INK.cream, outline: true });
+    const boss = b.node({ name: "BtnBoss", parent: root, x: MAP_BOSS[0], y: MAP_BOSS[1], w: 97.333, h: 81.333 });
     b.sprite(boss, [255, 255, 255, 255], 0, SF.node_boss);
     b.button(boss);
     textNode(b, root, "LabBossName", "鸡王", MAP_BOSS[0], MAP_BOSS[1] - 68, { font: 28, w: 180, h: 40, color: INK.cream, outline: true });
-    placeButton(b, root, "BtnChallenge", "开始挑战", 220, 1730, 640, 130, "yellow");
+    // Draw all enemy previews after platforms and buildings, feet on the platform tops.
+    MAP_NODES.forEach(([x, y], i) => b.node({ name: "StageEnemySlot" + (i + 1), parent: root, x, y: y + 67, w: 80, h: 112 }));
+    b.node({ name: "MapBossSlot", parent: root, x: MAP_BOSS[0], y: MAP_BOSS[1] + 88, w: 106, h: 148 });
+    placeButton(b, root, "BtnChallenge", "开始挑战", 220, 1810, 640, 100, "yellow");
     writePrefab("assets/bundle/gui/map/map.prefab", b.finish(root));
 }
 
 function makeCharacter() {
     const b = new Builder("character");
-    const root = panel(b, "character", SF.bg_village_figma);
-    placeText(b, root, "LabTitle", "我的战鸡", 260, 45, 560, 72, { font: 30, color: INK.cream, outline: true });
-    placeButton(b, root, "BtnBack", "返回", 40, 35, 170, 100, "green");
-    const power = placeCard(b, root, "PowerCard", 360, 155, 360, 96, SF.banner_red);
-    iconNode(b, power, "PowerIcon", SF.icon_power, -86, 0, 48);
-    textNode(b, power, "LabPower", "0", 25, 0, { font: 34, w: 150, h: 48, color: INK.gold, outline: true });
-    placeNode(b, root, "ChickenSlot", 320, 270, 440, 520);
-    const equipment = placeNode(b, root, "EquipCard", 0, 840, 1080, 1079);
-    b.sprite(equipment, [34, 32, 47, 255]);
-    ["头", "脖子", "身体", "脚", "套装"].forEach((name, i) =>
-        placeButton(b, root, "BtnTab" + i, name, 25 + i * 210, 860, 190, 132, "green"));
-    placeText(b, root, "LabPartInfo", "", 50, 1000, 980, 65, { font: 28, color: INK.cream });
+    const root = panel(b, "character", SF.bg_arena_figma);
+    const back = figmaImage(b, root, "BtnBack", 'ui/figma_back');
+    b.button(back);
+    figmaImage(b, root, "GoldCard", 'ui/figma_gold');
+    placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
+    figmaImage(b, root, "PowerCard", 'ui/figma_power');
+    placeText(b, root, "LabPower", "0", 485, 149, 155, 70, { font: 36, color: INK.gold, outline: true });
+    placeNode(b, root, "ChickenSlot", 340, 330, 400, 660);
+    for (const [key, art] of [['Hp', 'hp'], ['Atk', 'atk'], ['Combo', 'combo'], ['Spd', 'spd']]) {
+        const box = figmaAssets['ui/figma_stat_' + art].box;
+        figmaImage(b, root, key + 'Card', 'ui/figma_stat_' + art);
+        placeText(b, root, 'Lab' + key, '', box[0] + 20, box[1] + 137, box[2] - 40, 50, { font: 24 });
+    }
+    figmaImage(b, root, "EquipCard", 'ui/figma_equipment_panel');
+    const tabBackdrop = placeNode(b, root, "TabBackdrop", 0, 1060, 1080, 120);
+    b.sprite(tabBackdrop, [35, 33, 47, 255]);
+    for (let i = 0; i < 5; i++) {
+        const tab = figmaImage(b, root, "BtnTab" + i, 'ui/figma_tab', [84 + i * 190, 1060, 180, 120]);
+        b.button(tab);
+        if (i < 4) iconNode(b, tab, "EquipTabIcon" + i, F['ui/figma_tab_' + ['head', 'wing', 'body', 'leg'][i]], 0, 0, 54);
+        else iconNode(b, tab, "EquipTabIcon4", F['ui/figma_tab_set'], 0, 0, 54);
+    }
+    placeText(b, root, "LabPartInfo", "", 60, 1175, 740, 50, { font: 22, color: INK.cream });
+    placeButton(b, root, "BtnPagePrev", "‹", 855, 1175, 75, 55, "green");
+    placeButton(b, root, "BtnPageNext", "›", 960, 1175, 75, 55, "green");
     for (let i = 0; i < 8; i++) {
-        const slot = placeCard(b, root, "Slot" + i, 45 + i % 2 * 510, 1080 + Math.floor(i / 2) * 180, 480, 164, SF.panel_cream);
+        const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1243 + Math.floor(i / 4) * 270, 180, 180]);
         b.button(slot);
-        iconNode(b, slot, "SlotIcon" + i, SF.icon_star, -110, 0, 72);
-        textNode(b, slot, "LabSlot" + i, "", 42, 23, { font: 30, w: 212, h: 40 });
-        textNode(b, slot, "LabSlotState" + i, "", 42, -22, { font: 28, w: 212, h: 36 });
+        iconNode(b, slot, "SlotIcon" + i, SF.icon_star, 0, 0, 96);
+        textNode(b, slot, "LabSlot" + i, "", 0, -78, { font: 18, w: 150, h: 32, color: INK.cream });
+        textNode(b, slot, "LabSlotState" + i, "", 0, 44, { font: 16, w: 110, h: 24, color: INK.cream, outline: true });
     }
     const empty = placeText(b, root, "LabEmpty", "该部位暂无装备", 100, 1450, 880, 100, { font: 25, color: INK.cream });
     b.objs[empty]._active = false;
-    placeText(b, root, "LabSets", "", 60, 1800, 960, 110, { font: 28, color: INK.cream });
+    placeText(b, root, "LabSets", "", 60, 1800, 960, 110, { font: 24, color: INK.cream });
     writePrefab("assets/bundle/gui/character/character.prefab", b.finish(root));
 }
 
 function makePrebattle() {
     const b = new Builder("prebattle");
-    const root = panel(b, "prebattle", SF.bg_arena_figma);
-    const dim = b.node({ name: "Dim", parent: root, w: 720, h: 1280 });
-    b.sprite(dim, [15, 17, 25, 158]);
-    const sign = placeCard(b, root, "StageSign", 315, 300, 450, 200, SF.banner_wood);
-    textNode(b, sign, "LabTitle", "战前准备", 0, 0, { font: 34, w: 270, h: 70, color: INK.cream, outline: true });
-    const keys = ["Hp", "Atk", "Spd", "Combo", "Crit"];
-    const names = ["生命", "攻击", "敏捷", "连击", "暴击"];
-    const icons = [SF.icon_hp, SF.icon_atk, SF.icon_spd, SF.icon_feather, SF.icon_power];
+    const root = panel(b, "prebattle", F['bg/prebattle_figma']);
+    placeText(b, root, "LabTitle", "1-1", 335, 462, 390, 98, { font: 34, color: INK.cream, outline: true });
+    figmaImage(b, root, "MatchCard", 'ui/figma_match_card');
+    const keys = ["Power", "Hp", "Atk", "Spd", "Combo", "Crit"];
+    const tones = [[92, 209, 50, 255], [255, 80, 80, 255], [255, 185, 51, 255], [60, 181, 230, 255], [201, 102, 230, 255], [255, 221, 25, 255]];
     for (const side of ["Player", "Enemy"]) {
         const left = side === "Player";
-        const x = left ? 30 : 560;
-        const area = placeCard(b, root, side + "Card", x, 575, 490, 770, SF.panel_white);
-        const sprite = b.objs[area]._components.map(r => b.objs[r.__id__]).find(c => c.__type__ === "cc.Sprite");
-        sprite._color = left ? color(255, 185, 58) : color(170, 116, 240);
-        placeNode(b, root, side + "Slot", x + 35, 600, 130, 170);
-        placeText(b, root, "Lab" + side + "Name", left ? "我方" : "对手", x + 180, 590, 275, 120, { font: 28, color: INK.cream, outline: true });
-        placeText(b, root, "Lab" + side + "Power", "0", x + 190, 720, 260, 60, { font: 34, color: INK.cream, outline: true });
-        keys.forEach((key, i) => {
-            const row = placeCard(b, root, side + "Stat" + key, x + 28, 800 + i * 83, 435, 72, SF.bar_track);
-            iconNode(b, row, side + "Icon" + key, icons[i], -117, 0, 32);
-            textNode(b, row, side + "StatName" + key, names[i], -37, 0, { font: 16, w: 110, h: 30, color: INK.cream });
-            textNode(b, row, "Lab" + side + key, "0", 95, 0, { font: 23, w: 80, h: 32, color: INK.gold });
-        });
-        placeText(b, root, left ? "LabExtra" : "LabEnemyExtra", "", x + 30, 1220, 430, 120, { font: 28, color: INK.cream, outline: true });
+        placeNode(b, root, side + "Slot", left ? 59 : 901, left ? 679 : 742, left ? 152 : 106, left ? 142 : 103);
+        placeText(b, root, "Lab" + side + "Name", "", left ? 256 : 790, left ? 675 : 691, left ? 204 : 222, 52, { font: 26, color: INK.cream, outline: true });
+        keys.forEach((key, i) => placeText(b, root, "Lab" + side + key, "0", left ? 125 : 867,
+            614 + (left ? [251, 336, 422, 510, 595, 681][i] : [269, 348, 430, 511, 590, 669][i]),
+            left ? 144 : 135, 44, { font: 25, color: tones[i], outline: true }));
     }
-    const vs = placeNode(b, root, "VsBadge", 430, 440, 220, 160);
-    b.sprite(vs, [255, 255, 255, 255], 0, SF.badge_vs);
-    placeText(b, root, "LabDiff", "VS", 430, 460, 220, 90, { font: 48, color: INK.gold, outline: true, outlineWidth: 4 });
-    keys.forEach((key, i) => placeText(b, root, "LabDiff" + key, "", 45 + i % 3 * 330, 1385 + Math.floor(i / 3) * 70, 310, 60, { font: 28, color: INK.cream, outline: true }));
-    placeButton(b, root, "BtnFight", "开始", 350, 1600, 380, 170, "red");
+    placeButton(b, root, "BtnFight", "开始", 343.583, 1431, 396.833, 187.042, "red");
+    placeText(b, root, "LabStory", "", 100, 1730, 880, 150, { font: 22, color: INK.cream, outline: true });
     writePrefab("assets/bundle/gui/prebattle/prebattle.prefab", b.finish(root));
 }
 
@@ -526,61 +538,54 @@ const BATTLE_HOME = { player: [-160, -76], enemy: [160, -76] };
 function makeBattle() {
     const b = new Builder("battle");
     const root = panel(b, "battle", SF.bg_arena_figma);
-    placeText(b, root, "LabTitle", "自动战斗", 380, 260, 320, 60, { font: 23, color: INK.cream, outline: true });
     for (const side of ["Player", "Enemy"]) {
-        const x = side === "Player" ? -178 : 178;
-        const bar = b.node({ name: "Bar" + side, parent: root, x, y: 520, w: 290, h: 48 });
-        b.sprite(bar, [255, 255, 255, 255], 1, SF.bar_track);
-        const fill = b.node({ name: "Bar" + side + "Fill", parent: bar, w: 264, h: 26 });
-        b.sprite(fill, [244, 46, 63, 255], 3, WHITE, 1);
-        textNode(b, root, "Lab" + side + "Name", "", x, 571, { font: 22, w: 280, h: 34, color: INK.cream, outline: true });
-        textNode(b, bar, "Lab" + side + "Hp", "0/0", 0, 0, { font: 17, w: 240, h: 26, color: INK.cream, outline: true });
+        const left = side === "Player";
+        const r = layoutBox(left ? 149 : 579, 89, 362, 66);
+        const bar = b.node({ name: "Bar" + side, parent: root, ...r });
+        b.sprite(bar, [90, 90, 90, 255], 0, F['ui/figma_hp']);
+        const fill = b.node({ name: "Bar" + side + "Fill", parent: bar, w: r.w, h: r.h });
+        b.sprite(fill, [255, 255, 255, 255], 3, F['ui/figma_hp'], 1);
+        textNode(b, bar, "Lab" + side + "Hp", "0/0", 0, 0, { font: 17, w: 210, h: 30, color: INK.cream, outline: true });
+        figmaImage(b, root, side + "AvatarFrame", 'ui/figma_avatar', [left ? 44 : 889, 43, 157, 164]);
+        const portrait = placeNode(b, root, side + "Portrait", left ? 57 : 902, 61, 124, 126);
+        b.addComp(portrait, null, { type: "cc.Mask", fields: { _type: 1, _segments: 64 } });
+        placeText(b, root, "Lab" + side + "Name", "", left ? 149 : 579, 210, 362, 45, { font: 22, color: INK.cream, outline: true });
     }
-    const arena = b.node({ name: "Arena", parent: root, x: 0, y: 0, w: 680, h: 830 });
+    const arena = b.node({ name: "Arena", parent: root, w: 720, h: 1280 });
     b.node({ name: "PlayerSlot", parent: arena, x: BATTLE_HOME.player[0], y: BATTLE_HOME.player[1], w: 40, h: 40 });
     b.node({ name: "EnemySlot", parent: arena, x: BATTLE_HOME.enemy[0], y: BATTLE_HOME.enemy[1], w: 40, h: 40 });
     placeText(b, root, "LabLog", "", 75, 1550, 930, 100, { font: 28, color: INK.cream, outline: true, outlineWidth: 3 });
-    placeText(b, root, "LabBattleHint", "战鸡自动出招", 230, 1790, 620, 54, { font: 20, color: INK.cream, outline: true });
-    placeText(b, root, "LabDanmaku", "", 140, 400, 800, 65, { font: 23, color: INK.cream, outline: true });
+    const danmaku = b.node({ name: "DanmakuLayer", parent: root, y: 405, w: 720, h: 160 });
+    b.addComp(danmaku, null, { type: "cc.Mask", fields: { _type: 0 } });
     b.node({ name: "FxLayer", parent: root, w: 720, h: 1280 });
     writePrefab("assets/bundle/gui/battle/battle.prefab", b.finish(root));
 }
 
 function makeResult() {
     const b = new Builder("result");
-    const root = panel(b, "result", SF.bg_village_figma);
-    const dim = b.node({ name: "Dim", parent: root, w: 720, h: 1280 });
-    b.sprite(dim, [18, 14, 28, 170]);
-    const confetti = b.node({ name: "Confetti", parent: root, w: 720, h: 1280 });
-    b.sprite(confetti, [255, 255, 255, 200], 0, SF.confetti);
-    const burst = placeNode(b, root, "Burst", 90, 130, 900, 430);
-    b.sprite(burst, [255, 255, 255, 255], 0, SF.burst_win);
-    placeText(b, root, "LabTitle", "胜利", 200, 300, 680, 100, { font: 52, color: INK.gold, outline: true, outlineWidth: 4 });
-    placeNode(b, root, "ChickenSlot", 300, 660, 480, 540);
-    const podium = placeCard(b, root, "Podium", 250, 1200, 580, 140, SF.banner_wood);
-    textNode(b, podium, "LabHeader", "战斗结算", 0, 0, { font: 30, w: 340, h: 50, color: INK.cream, outline: true });
-    placeText(b, root, "LabDesc", "本局获得", 180, 1390, 420, 60, { font: 24, color: INK.cream });
-    const gain = placeNode(b, root, "GainCard", 580, 1380, 320, 80);
-    iconNode(b, gain, "GoldIcon", SF.icon_coin, -70, 0, 46);
-    textNode(b, gain, "LabGold", "+0", 25, 0, { font: 34, w: 150, h: 48, color: INK.gold, outline: true });
-    placeText(b, root, "LabHint", "", 100, 1480, 880, 150, { font: 28, color: INK.cream, outline: true });
-    placeButton(b, root, "BtnNext", "选择强化", 280, 1650, 520, 145, "green");
+    const root = panel(b, "result", F['bg/result_figma']);
+    const loss = placeNode(b, root, "LossBanner", 65, 70, 950, 415, { active: false });
+    b.sprite(loss, [255, 255, 255, 255], 0, SF.burst_lose);
+    placeNode(b, root, "ChickenSlot", 272, 544, 539, 734);
+    placeText(b, root, "LabHeader", "", 375, 1330, 330, 95, { font: 30, color: INK.cream, outline: true });
+    placeText(b, root, "LabDesc", "本局获得", 210, 1470, 440, 56, { font: 24, color: INK.cream });
+    placeText(b, root, "LabGold", "+0", 650, 1470, 220, 56, { font: 30, color: INK.gold, outline: true });
+    placeButton(b, root, "BtnNext", "选择强化", 292, 1610, 500, 182, "green");
+    placeText(b, root, "LabHint", "", 70, 1805, 940, 100, { font: 22, color: INK.cream, outline: true });
     writePrefab("assets/bundle/gui/result/result.prefab", b.finish(root));
 }
 
 function makeReward() {
     const b = new Builder("reward");
-    const root = panel(b, "reward", SF.bg_arena_figma);
-    const dim = b.node({ name: "Dim", parent: root, w: 720, h: 1280 });
-    b.sprite(dim, [20, 17, 24, 165]);
-    const banner = placeCard(b, root, "RewardBanner", 170, 320, 740, 120, SF.banner_wood);
-    textNode(b, banner, "LabTitle", "战利品强化", 0, 0, { font: 29, w: 450, h: 54, color: INK.cream, outline: true });
-    placeText(b, root, "LabHint", "选择一项强化", 120, 475, 840, 55, { font: 22, color: INK.cream, outline: true });
-    const r = layoutBox(55, 640, 970, 820);
+    const root = panel(b, "reward", F['bg/reward_figma']);
+    figmaImage(b, root, "RewardBanner", 'ui/figma_reward_banner');
+    placeText(b, root, "LabTitle", "选择强化", 350, 305, 390, 100, { font: 40, color: INK.cream, outline: true });
+    placeText(b, root, "LabHint", "选择一项强化", 220, 471, 640, 55, { font: 28, color: INK.cream, outline: true });
+    const r = layoutBox(73, 559, 912, 935);
     const cards = b.node({ name: "CardSlot", parent: root, x: r.x, y: r.y, w: r.w, h: r.h });
-    b.layout(cards, { type: 3, cols: 3, cellW: 200, cellH: 547, gapX: 16, gapY: 8, pad: 4 });
-    placeText(b, root, "LabDesc", "点击卡片查看选择，再确认强化", 100, 1510, 880, 50, { font: 19, color: INK.cream, outline: true });
-    placeButton(b, root, "BtnConfirm", "选择强化", 300, 1680, 480, 150, "green");
+    b.layout(cards, { type: 3, cols: 3, cellW: 208, cellH: 623.333, gapX: -8, gapY: 0, pad: 0 });
+    placeText(b, root, "LabDesc", "", 100, 1500, 880, 50, { font: 19, color: INK.cream, outline: true });
+    placeButton(b, root, "BtnConfirm", "下一关", 294, 1584, 500, 182, "green");
     const skip = b.node({ name: "BtnSkip", parent: root, w: 1, h: 1, active: false });
     b.button(skip);
     writePrefab("assets/bundle/gui/reward/reward.prefab", b.finish(root));
@@ -589,24 +594,17 @@ function makeReward() {
 function makeShop() {
     const b = new Builder("shop");
     const root = panel(b, "shop", SF.bg_shop_figma);
-    const gold = placeCard(b, root, "GoldCard", 760, 30, 280, 80, SF.bar_track);
-    textNode(b, gold, "LabGold", "金币 0", 0, 0, { font: 21, w: 165, h: 38, color: INK.gold });
-    placeButton(b, root, "BtnBack", "返回", 40, 30, 170, 100, "green");
-    placeText(b, root, "LabPower", "战力 0", 260, 45, 400, 48, { font: 21, color: INK.cream, outline: true });
-    const sign = placeCard(b, root, "ShopSign", 210, 260, 720, 250, SF.banner_wood);
-    textNode(b, sign, "LabTitle", "鸡友杂货铺", 0, 0, { font: 40, w: 390, h: 80, color: INK.cream, outline: true });
-    placeNode(b, root, "ShopkeeperSlot", 820, 410, 150, 120);
-    placeCard(b, root, "SetArea", 45, 550, 990, 510, SF.panel_cream);
-    placeText(b, root, "LabSets", "套装", 75, 565, 930, 60, { font: 30, align: 0 });
-    const sr = layoutBox(45, 635, 990, 418);
-    const sets = b.node({ name: "SetSlot", parent: root, x: sr.x, y: sr.y, w: sr.w, h: sr.h });
-    b.layout(sets, { type: 3, cols: 2, cellW: 316, cellH: 128, gapX: 12, gapY: 10, pad: 6 });
-    placeCard(b, root, "ItemArea", 45, 1070, 990, 600, SF.panel_cream);
-    placeText(b, root, "LabItems", "单件商品", 75, 1085, 930, 60, { font: 30, align: 0 });
-    const ir = layoutBox(60, 1160, 960, 470);
+    figmaImage(b, root, "GoldCard", 'ui/figma_gold');
+    placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
+    const back = figmaImage(b, root, "BtnBack", 'ui/figma_back');
+    b.button(back);
+    const ir = layoutBox(242, 990, 696, 540);
     const items = b.node({ name: "ItemSlot", parent: root, x: ir.x, y: ir.y, w: ir.w, h: ir.h });
-    b.layout(items, { type: 3, cols: 2, cellW: 304, cellH: 140, gapX: 16, gapY: 10, pad: 6 });
-    placeText(b, root, "LabDesc", "", 80, 1670, 920, 55, { font: 17, color: INK.cream, outline: true });
+    b.layout(items, { type: 3, cols: 3, cellW: 148, cellH: 166, gapX: 10, gapY: 16, pad: 0 });
+    placeButton(b, root, "BtnShopPrev", "‹", 70, 1150, 120, 160, "yellow");
+    placeButton(b, root, "BtnShopNext", "›", 950, 1150, 120, 160, "yellow");
+    placeText(b, root, "LabShopPage", "1 / 1", 200, 1560, 680, 55, { font: 26, color: INK.cream, outline: true });
+    placeText(b, root, "LabDesc", "", 160, 1630, 760, 70, { font: 22, color: INK.cream, outline: true });
     placeButton(b, root, "BtnLeave", "返回地图", 300, 1760, 480, 120, "yellow");
     const modal = b.node({ name: "PurchaseModal", parent: root, w: 720, h: 1280, active: false });
     b.sprite(modal, [0, 0, 0, 185]);
@@ -636,11 +634,12 @@ function makeEnding() {
     b.node({ name: "ChickenSlot", parent: root, x: 0, y: 90, w: 260, h: 300 });
 
     const gain = card(b, root, "GainCard", 0, -200, 580, 156, SF.panel_cream);
-    textNode(b, gain, "LabDesc", "你打败了坤坤。", 0, 34, { font: 26, w: 520, h: 40, color: INK.dark });
+    textNode(b, gain, "LabDesc", "", 0, 34, { font: 22, w: 520, h: 60, color: INK.dark });
     iconNode(b, gain, "GoldIcon", SF.icon_coin, -104, -32, 52);
     textNode(b, gain, "LabGold", "0", 24, -32, { font: 32, w: 220, h: 44, color: INK.dark, align: 0 });
 
     textNode(b, root, "LabHint", "", 0, -332, { font: 22, w: 600, h: 34, color: INK.cream, outline: true });
+    labBtn(b, root, "BtnCharacter", "查看奖励套装", 0, -438, 400, 88, "yellow");
     labBtn(b, root, "BtnRestart", "返回首页", 0, -546, 400, 88, "green");
     writePrefab("assets/bundle/gui/ending/ending.prefab", b.finish(root));
 }
@@ -651,26 +650,26 @@ function makeEnding() {
 
 function makeChicken() {
     const b = new Builder("chicken");
-    const root = b.node({ name: "chicken", w: 260, h: 420 });
-    const parts = [
-        ["Shadow", 0, -168, 170, 32, SF.shadow, [255, 255, 255, 160], 1],
-        ["Tail", -78, -6, 100, 110, SF.tail, [255, 255, 255, 255], 1],
-        ["LegL", -34, -132, 44, 100, SF.leg, [255, 255, 255, 255], 1],
-        ["LegR", 30, -128, 44, 100, SF.leg, [255, 255, 255, 255], -1],
-        ["Body", 0, -32, 158, 148, SF.body, [255, 255, 255, 255], 1],
-        ["Neck", 8, 78, 46, 130, SF.neck, [255, 255, 255, 255], 1],
-        ["Wing", 52, -16, 100, 86, SF.wing, [255, 255, 255, 255], 1],
-        ["Head", 16, 158, 108, 108, SF.head, [255, 255, 255, 255], 1],
-        ["Comb", 10, 214, 58, 46, SF.comb, [255, 255, 255, 255], 1],
-        ["Beak", 62, 150, 52, 34, SF.beak, [255, 255, 255, 255], 1],
-        ["Eyes", 24, 166, 60, 42, SF.eyes, [255, 255, 255, 255], 1]
-    ];
-    for (const p of parts) {
-        const id = b.node({ name: p[0], parent: root, x: p[1], y: p[2], w: p[3], h: p[4], sx: p[7] });
-        b.sprite(id, p[6], 0, p[5]);
+    const root = b.node({ name: "chicken", w: 260, h: 460 });
+    const shadow = b.node({ name: 'Shadow', parent: root, x: -6.75, y: -205.5, w: 222, h: 68 });
+    b.sprite(shadow, [90, 90, 90, 80], 0, F['chicken/figma_shadow']);
+    const parts = [['Head', 'head'], ['Neck', 'neck'], ['Body', 'body'], ['LegL', 'leg_left'], ['LegR', 'leg_right'], ['Wing', 'wing']];
+    for (const [name, part] of parts) {
+        const key = 'chicken/figma_' + part;
+        const [x, y, w, h] = figmaAssets[key].box;
+        const id = b.node({ name, parent: root, x: -(x + w / 2 - 540.5) / 2,
+            y: (617 - y - h / 2) / 2, w: w / 2, h: h / 2, sx: -1 });
+        b.sprite(id, [255, 255, 255, 255], 0, F[key]);
+        const ink = b.node({ name: name + 'Ink', parent: id, w: w / 2, h: h / 2 });
+        b.sprite(ink, [255, 255, 255, 255], 0, F[key + '_ink']);
+        if (name === 'Head') {
+            const face = b.node({ name: 'Face', parent: id, w: w / 2, h: h / 2 });
+            b.sprite(face, [255, 255, 255, 255], 0, F['chicken/figma_face_dumb']);
+        }
     }
-    const face = b.node({ name: "Face", parent: root, x: 26, y: 166, w: 48, h: 32 });
-    b.label(face, "凶", { font: 20, w: 48, h: 32, color: INK.dark });
+    // Attachment anchors used by existing equipment and combat animation.
+    for (const [name, x, y, w, h] of [['Tail', -75, -90, 70, 80], ['Comb', 50, 210, 60, 40]])
+        b.node({ name, parent: root, x, y, w, h });
     writePrefab("assets/bundle/game/prefab/chicken.prefab", b.finish(root));
 }
 
@@ -692,53 +691,38 @@ function makeTauntBubble() {
 
 /** 套装条目：左图标与大字说明，整张卡片点击查看购买介绍。 */
 function makeShopSetItem() {
-    const b = new Builder("shop_set_item");
-    const root = b.node({ name: "shop_set_item", w: 316, h: 128 });
-    b.sprite(root, [255, 255, 255, 255], 1, SF.panel_white);
-    b.button(root);
-
-    const slot = b.node({ name: "IconSlot", parent: root, x: -114, w: 86, h: 86 });
-    b.sprite(slot, [255, 255, 255, 255], 1, SF.slot_frame);
-    const icon = b.node({ name: "Icon", parent: slot, w: 62, h: 62 });
-    b.sprite(icon, [255, 255, 255, 255], 0, WHITE);
-
-    textNode(b, root, "LabTitle", "商品", 44, 39, { font: 30, w: 210, h: 38, color: INK.dark });
-    textNode(b, root, "LabDesc", "描述", 44, -1, { font: 28, w: 210, h: 34, color: INK.mute });
-    const price = b.node({ name: "PriceRow", parent: root, x: 44, y: -41, w: 210, h: 34 });
-    iconNode(b, price, "PriceIcon", SF.icon_coin, -45, 0, 30);
-    textNode(b, price, "LabPrice", "0", 28, 0, { font: 28, w: 100, h: 34, color: INK.dark, align: 0 });
-    writePrefab("assets/bundle/game/prefab/shop_set_item.prefab", b.finish(root));
+    makeShelfItem('shop_set_item', 120, 94);
 }
 
-/** 单件条目：两列大卡，整张卡片点击查看购买介绍。 */
 function makeShopItem() {
-    const b = new Builder("shop_item");
-    const root = b.node({ name: "shop_item", w: 304, h: 140 });
-    b.sprite(root, [255, 255, 255, 255], 1, SF.panel_white);
+    makeShelfItem('shop_item', 148, 166);
+}
+
+/** Place the actual products directly in the painted wooden shelf compartments. */
+function makeShelfItem(name, width, height) {
+    const b = new Builder(name);
+    const root = b.node({ name, w: width, h: height });
+    b.sprite(root, [255, 255, 255, 255], 1, SF.panel_cream);
     b.button(root);
-
-    const slot = b.node({ name: "IconSlot", parent: root, x: -101, y: 0, w: 88, h: 88 });
-    b.sprite(slot, [255, 255, 255, 255], 1, SF.slot_frame);
-    const icon = b.node({ name: "Icon", parent: slot, w: 66, h: 66 });
-    b.sprite(icon, [255, 255, 255, 255], 0, WHITE);
-
-    textNode(b, root, "LabTitle", "商品", 47, 39, { font: 30, w: 200, h: 40, color: INK.dark });
-    textNode(b, root, "LabDesc", "点击查看", 47, -2, { font: 28, w: 200, h: 36, color: INK.mute });
-    const price = b.node({ name: "PriceRow", parent: root, x: 47, y: -43, w: 200, h: 36 });
-    iconNode(b, price, "PriceIcon", SF.icon_coin, -38, 0, 24);
-    textNode(b, price, "LabPrice", "0", 24, 0, { font: 28, w: 110, h: 36, color: INK.dark, align: 0 });
-    writePrefab("assets/bundle/game/prefab/shop_item.prefab", b.finish(root));
+    const slot = b.node({ name: "IconSlot", parent: root, y: 0, w: width - 24, h: height - 64 });
+    b.sprite(slot, [255, 255, 255, 255], 0, F['ui/figma_equip_slot']);
+    const icon = b.node({ name: "Icon", parent: slot, w: width - 40, h: height - 78 });
+    b.sprite(icon);
+    textNode(b, root, "LabTitle", "", 0, height / 2 - 18, { font: 19, w: width - 12, h: 28, color: INK.dark });
+    const price = b.node({ name: "PriceRow", parent: root, y: -height / 2 + 18, w: width - 12, h: 28 });
+    iconNode(b, price, "Coin", SF.icon_coin, -42, 0, 22);
+    textNode(b, price, "LabPrice", "0", 10, 0, { font: 21, w: width - 50, h: 28, color: INK.dark });
+    writePrefab("assets/bundle/game/prefab/" + name + ".prefab", b.finish(root));
 }
 
 /** 三选一奖励卡：整行大卡。 */
 function makeRewardCard() {
     const b = new Builder("reward_card");
-    const root = b.node({ name: "reward_card", w: 200, h: 547 });
-    b.sprite(root, [255, 255, 255, 255], 1, SF.panel_cream);
+    const root = b.node({ name: "reward_card", w: 208, h: 623.333 });
+    b.sprite(root, [255, 255, 255, 255], 0, F['ui/figma_reward_card']);
     b.button(root);
 
-    const banner = b.node({ name: "TitleBanner", parent: root, y: 218, w: 200, h: 96 });
-    b.sprite(banner, [255, 255, 255, 255], 1, SF.banner_wood);
+    const banner = b.node({ name: "TitleBanner", parent: root, y: 218, w: 180, h: 60 });
     const slot = b.node({ name: "IconSlot", parent: root, x: 0, y: 102, w: 130, h: 130 });
     b.sprite(slot, [255, 255, 255, 255], 1, SF.slot_frame);
     iconNode(b, slot, "Icon", SF.icon_star, 0, 0, 76);

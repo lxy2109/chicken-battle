@@ -1,10 +1,11 @@
-import { getRoute, itemById } from "./Catalog";
+import { getRoute, itemById, setById } from "./Catalog";
+import { shopStock } from "./EquipMath";
 import { RunState } from "./RunState";
 
 export const RUN_SAVE_KEY = "chicken_battle_save_v1";
 
 export interface RunSaveData {
-    version: 1;
+    version: 1 | 2 | 3;
     permanent: Pick<RunState, "gold" | "claimedGoldNodes" | "completedMaps" | "appearance" | "playerName" | "ownedIds" | "bonus" | "partLevels"> & { equippedIds?: string[] };
     progress: Pick<RunState, "routeNode" | "screen" | "lastWin" | "lastGoldGain" | "lastBattleNode" | "lastFirstClear" | "upgrades" | "rewards" | "rewardRolls" | "seed" | "shopLoadedAt"> & { shopItemIds: string[]; shopPending?: boolean };
 }
@@ -12,7 +13,7 @@ export interface RunSaveData {
 /** 一个 JSON 同时写入养成与进度，避免金币已发放、首通标记尚未保存的半份存档。 */
 export function encodeRun(run: RunState): string {
     const data: RunSaveData = {
-        version: 1,
+        version: 3,
         permanent: {
             gold: run.gold, claimedGoldNodes: run.claimedGoldNodes, completedMaps: run.completedMaps,
             appearance: run.appearance, playerName: run.playerName, ownedIds: run.ownedIds,
@@ -34,7 +35,7 @@ export function decodeRun(raw: string): RunState {
     const data: RunSaveData = JSON.parse(raw);
     const p = data?.permanent, q = data?.progress;
     let node = q && getRoute().find(n => n.id === q.routeNode);
-    if (data?.version !== 1 || !p || !q || !node || !Number.isFinite(p.gold) || p.gold < 0
+    if (![1, 2, 3].includes(data?.version) || !p || !q || !node || !Number.isFinite(p.gold) || p.gold < 0
         || !Array.isArray(p.ownedIds) || !Array.isArray(p.claimedGoldNodes) || !Array.isArray(p.completedMaps)
         || !p.appearance?.colors || !p.partLevels || !p.bonus || typeof p.playerName !== "string"
         || !Array.isArray(q.upgrades) || !Array.isArray(q.rewards) || !Array.isArray(q.shopItemIds)
@@ -47,8 +48,15 @@ export function decodeRun(raw: string): RunState {
         node = getRoute().find(n => n.id === node!.id + 1) || node;
     }
     // 旧商店节点迁移到已开放的下一战斗关；保留未展示的商店弹出与原货架。
-    const oldShopId = node.kind === "shop" ? node.id : 0;
+    const oldShopId = data.version === 1 && [3, 5].includes((node.id - 1) % 6 + 1) ? node.id : 0;
     if (oldShopId) node = getRoute().find(n => n.id > oldShopId && n.kind !== "shop")!;
+    // A completed old run still has the newly added final challenge available.
+    if (data.version === 1 && p.completedMaps.includes(5)) {
+        node = getRoute().find(n => n.encounter === "final")!;
+        q.screen = "map";
+        q.upgrades = [];
+        q.rewards = [];
+    }
     const run = new RunState(q.seed);
     run.gold = p.gold;
     run.claimedGoldNodes = p.claimedGoldNodes;
@@ -58,14 +66,25 @@ export function decodeRun(raw: string): RunState {
     run.ownedIds = p.ownedIds;
     // 确认装备仍存在于当前配置；损坏数据交给调用层提示并保留原存档。
     run.ownedIds.forEach(itemById);
+    const savedSlot = (id: string) => {
+        const item = itemById(id);
+        return data.version < 3 && ["rookie", "helicopter", "brawler", "medic", "miser"].includes(item.setId)
+            ? id.slice(id.lastIndexOf("_") + 1) : item.slot;
+    };
     if (p.equippedIds !== undefined && (!Array.isArray(p.equippedIds)
         || p.equippedIds.some(id => !run.ownedIds.includes(id))
-        || new Set(p.equippedIds.map(id => itemById(id).slot)).size !== p.equippedIds.length)) {
+        || new Set(p.equippedIds.map(savedSlot)).size !== p.equippedIds.length)) {
         throw new Error("本地存档穿戴数据无效");
     }
     // 旧存档没有穿戴字段：每槽保留最后购买的一件；已手动卸下的空列表保持为空。
     run.equippedIds = p.equippedIds ?? run.ownedIds.filter((id, index, ids) =>
         !ids.slice(index + 1).some(other => itemById(other).slot === itemById(id).slot));
+    if (data.version < 3) {
+        // Figma robes/accessories moved to body/neck. Keep ownership and the
+        // last equipped item when two formerly different slots now coincide.
+        run.equippedIds = run.equippedIds.filter((id, index, ids) =>
+            !ids.slice(index + 1).some(other => itemById(other).slot === itemById(id).slot));
+    }
     run.bonus = p.bonus;
     run.partLevels = p.partLevels;
     run.routeNode = node.id;
@@ -81,6 +100,10 @@ export function decodeRun(raw: string): RunState {
     run.rewardRolls = q.rewardRolls;
     run.shopLoadedAt = oldShopId && q.shopLoadedAt === oldShopId ? node.id : q.shopLoadedAt;
     run.shopItems = q.shopItemIds.map(itemById).filter(item => !run.ownedIds.includes(item.id));
+    if (data.version === 1 && run.shopItems.some(item => setById(item.setId).legacy)) {
+        run.shopItems = shopStock(run.routeNode, run.ownedIds);
+    }
+    if (data.version === 2) run.shopItems = run.shopItems.filter(item => !setById(item.setId).legacy);
     run.shopPending = oldShopId ? q.screen === "result" || q.screen === "reward" : (q.shopPending ?? false);
     return run;
 }

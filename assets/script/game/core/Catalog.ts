@@ -17,7 +17,7 @@ export const PREFAB_PATH = {
 export const TEX = {
     background: (name: string) => `game/texture/bg/${name}/spriteFrame`,
     /** 装备图标文件名与 Item.json 的 id 一致。 */
-    equip: (itemId: string) => `game/texture/equip/${itemId}/spriteFrame`,
+    equip: (itemId: string) => `game/texture/equip/${itemById(itemId).icon || itemId}/spriteFrame`,
     icon: (name: string) => `game/texture/icon/${name}/spriteFrame`,
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`
@@ -25,11 +25,11 @@ export const TEX = {
 
 /** 场景先复用现有背景；美术交付后只替换这里的资源路径。 */
 export const MAPS = [
-    { id: 1, name: "东篱村", background: "map_figma" },
-    { id: 2, name: "青竹溪", background: "map_figma" },
-    { id: 3, name: "金穗田", background: "map_figma" },
-    { id: 4, name: "古祠镇", background: "map_figma" },
-    { id: 5, name: "鸡王山", background: "map_figma" }
+    { id: 1, name: "鸡鸣村", background: "map_figma" },
+    { id: 2, name: "青竹溪", background: "map_2_figma" },
+    { id: 3, name: "金穗田", background: "map_3_figma" },
+    { id: 4, name: "古祠镇", background: "map_4_figma" },
+    { id: 5, name: "鸡王山", background: "map_5_figma" }
 ];
 
 export const PART_NODE: Record<PartId, string> = {
@@ -55,6 +55,8 @@ export function getRoute(): RouteNode[] {
     try {
         return tableRows("Route").map(row => ({
             id: Number(row.id),
+            encounter: row.encounter,
+            shopAfter: !!row.shopAfter,
             mapId: Number(row.mapId) || 1,
             kind: String(row.kind || row.type) as RouteNode["kind"],
             name: String(row.name || "路线节点"),
@@ -111,7 +113,7 @@ export function getColorPalette(): string[] {
 }
 
 export function getFaceList(): FaceId[] {
-    return tableRows("Part").filter(r => r.type === "face").map(r => r.value as FaceId);
+    return tableRows("Part").filter(r => r.type === "face").sort((a, b) => a.order - b.order).map(r => r.value as FaceId);
 }
 
 export function getUpgrades(): UpgradeDef[] {
@@ -139,6 +141,7 @@ export function enemyTaunts(id: string): string[] {
 export function enemyToFighter(id: string) {
     const e = getEnemy(id);
     const appearance: Appearance = {
+        illustration: id,
         face: e.face,
         colors: {
             comb: e.comb,
@@ -189,6 +192,9 @@ function texts(...xs: any[]): string[] {
 function packStats(row: any, prefix = ""): Partial<Stats> {
     const n = (k: string) => Number(row[prefix + k] || 0);
     const out: Partial<Stats> = {};
+    for (const key of ["firstStrike", "streakBonus", "healBonus", "goldBonus", "shopDiscount", "retainGrowth"] as const) {
+        if (n(key)) out[key] = n(key);
+    }
     if (n("maxHp")) out.maxHp = n("maxHp");
     if (n("atk")) out.atk = n("atk");
     if (n("def")) out.def = n("def");
@@ -218,6 +224,7 @@ function toUpgrade(row: any): UpgradeDef {
 
 function toItem(row: any): EquipItem {
     return {
+        icon: row.icon,
         id: String(row.id),
         name: row.name,
         desc: row.desc,
@@ -242,6 +249,11 @@ function toSet(row: any): SetDef {
         id: String(row.id),
         name: row.name,
         pieceIds: pieces.map((v: any) => String(v)),
+        desc2: row.desc2 || "",
+        desc4: row.desc4 || "",
+        unlockMap: Number(row.unlockMap) || 1,
+        rewardOnly: !!row.rewardOnly,
+        legacy: !!row.legacy,
         bonus2: packStats(row, "b2"),
         bonus4: packStats(row, "b4"),
         discount: Number(row.discount) || 1

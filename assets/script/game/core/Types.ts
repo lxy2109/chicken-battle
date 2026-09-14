@@ -2,7 +2,7 @@
 export type PartId = "comb" | "head" | "neck" | "body" | "wing" | "tail" | "leg";
 
 /** 表情 */
-export type FaceId = "fierce" | "dumb" | "proud" | "cute";
+export type FaceId = "fierce" | "dumb" | "proud" | "cute" | "sad" | "wink";
 
 /** 外观特殊效果 */
 export type SpecialId = "none" | "heal" | "revive" | "lockHp";
@@ -13,7 +13,9 @@ export const FACE_TEXT: Record<FaceId, string> = {
     fierce: "凶",
     dumb: "呆",
     proud: "傲",
-    cute: "萌"
+    cute: "萌",
+    sad: "委屈",
+    wink: "眨眼"
 };
 
 export const PART_TEXT: Record<PartId, string> = {
@@ -27,6 +29,12 @@ export const PART_TEXT: Record<PartId, string> = {
 };
 
 export interface Stats {
+    firstStrike?: number;
+    streakBonus?: number;
+    healBonus?: number;
+    goldBonus?: number;
+    shopDiscount?: number;
+    retainGrowth?: number;
     hp: number;
     maxHp: number;
     atk: number;
@@ -41,6 +49,8 @@ export interface Stats {
 }
 
 export interface Appearance {
+    /** Figma enemy illustration; player customization uses the articulated parts. */
+    illustration?: string;
     colors: Record<PartId, string>;
     face: FaceId;
     /** 当前穿戴的装备图片，随战斗快照交给角色部位渲染。 */
@@ -54,6 +64,7 @@ export interface Appearance {
 }
 
 export interface EquipItem {
+    icon?: string;
     id: string;
     name: string;
     desc: string;
@@ -68,6 +79,11 @@ export interface EquipItem {
 }
 
 export interface SetDef {
+    desc2: string;
+    desc4: string;
+    unlockMap: number;
+    rewardOnly: boolean;
+    legacy: boolean;
     id: string;
     name: string;
     pieceIds: string[];
@@ -118,6 +134,8 @@ export type StagePhase = "battle" | "shop" | "boss" | "warmup" | "official";
 export type RouteNodeKind = "battle" | "shop" | "boss";
 
 export interface RouteNode {
+    encounter?: "warmup" | "official" | "final";
+    shopAfter?: boolean;
     id: number;
     mapId?: number;
     kind: RouteNodeKind;
@@ -207,6 +225,9 @@ export function addPartial(a: Partial<Stats>, b: Partial<Stats>): Partial<Stats>
 
 export function addStats(base: Stats, extra: Partial<Stats>): Stats {
     const out = cloneStats(base);
+    for (const key of ["firstStrike", "streakBonus", "healBonus", "goldBonus", "shopDiscount", "retainGrowth"] as const) {
+        out[key] = (out[key] ?? 0) + (extra[key] ?? 0);
+    }
     out.maxHp += extra.maxHp ?? extra.hp ?? 0;
     out.hp += extra.hp ?? extra.maxHp ?? 0;
     out.atk += extra.atk ?? 0;
@@ -225,13 +246,13 @@ export function defaultAppearance(): Appearance {
     return {
         colors: {
             comb: "#B91C1C",
-            head: "#E23B3B",
+            head: "#F03E53",
             // 脖子原先跟着躯干上色，独立成部位后沿用同一个色，视觉上不变。
-            neck: "#E23B3B",
-            body: "#E23B3B",
-            wing: "#8B5A2B",
+            neck: "#F03E53",
+            body: "#F03E53",
+            wing: "#AD8E6A",
             tail: "#7B4B2A",
-            leg: "#C4A35A"
+            leg: "#C5A077"
         },
         face: "fierce"
     };
