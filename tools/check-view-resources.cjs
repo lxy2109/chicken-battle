@@ -7,13 +7,24 @@ const root = path.resolve(__dirname, '..');
 const ts = require(path.join(root, 'extensions/oops-plugin-framework/node_modules/typescript'));
 const pending = [];
 let opens = 0;
-const node = { children: [], name: 'map', setScale() {}, getComponent: () => ({}) };
+let boundBackground;
+let shows = 0;
+const node = { children: [], name: 'map', setScale() {}, getComponent: () => ({
+    async setSprite(target, resource) {
+        await Promise.resolve();
+        boundBackground = resource;
+    }
+}) };
 const oops = {
     res: {
         loadDir(bundle, dir, type, done) { pending.push({ dir, done }); },
         loadAny(bundle, paths, progress, done) { pending.push({ paths, done }); }
     },
-    gui: { async open() { opens++; return node; }, show() {} }
+    gui: { async open() { opens++; return node; }, show() {
+        assert.equal(boundBackground, `game/texture/bg/${entity.run.currentMap().background}/spriteFrame`,
+            'current background must be bound before show');
+        shows++;
+    } }
 };
 const gui = { internal: { getKey: ctor => ctor.key, getConfig: () => ({ prefab: 'gui/map/map' }) } };
 const exportsObject = {};
@@ -49,5 +60,14 @@ const ctor = { key: 'MapView' };
     pending.splice(0).forEach(r => r.done(null));
     await again;
     assert.equal(opens, 2);
-    console.log('PASS view resource gate: delayed downloads, current map, failure, retry and cache reuse');
+    for (let id = 1; id <= 5; id++) {
+        const background = id === 1 ? 'map_figma' : `map_${id}_figma`;
+        entity.run.currentMap = () => ({ background });
+        boundBackground = undefined;
+        const opening = exportsObject.openRunView(entity, ctor);
+        pending.splice(0).forEach(r => r.done(null));
+        await opening;
+    }
+    assert.equal(shows, 7);
+    console.log('PASS view resource gate: delayed downloads, failure, retry, cache reuse and all five backgrounds before display');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -23,7 +23,7 @@ export class ResultViewComp extends CCView<ChickenRun> {
         const boss = battleNode.kind === "boss";
         setLabel(this, "LabHeader", run.playerFighter().name);
         setLabel(this, "BtnNextLab", win && boss
-            ? (run.routeNode > run.lastBattleNode ? "前往下一关" : "查看总战绩") : run.upgrades.length ? "选择强化" : "返回地图");
+            ? (battleNode.encounter === "final" ? "查看总战绩" : "返回地图") : run.upgrades.length ? "选择强化" : "返回地图");
         setLabel(this, "LabTitle", win ? "胜利" : "失败");
         setLabel(this, "LabGold", `+${run.lastGoldGain}`);
         setLabel(this, "LabDesc", run.lastFirstClear ? "首通奖励" : win ? "首通奖励已领取" : "本局获得");

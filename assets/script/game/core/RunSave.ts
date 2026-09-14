@@ -45,7 +45,9 @@ export function decodeRun(raw: string): RunState {
     }
     // 兼容旧版仍停在胜利节点、等待按钮推进的结算/强化存档。
     if (q.lastWin && (q.screen === "result" || q.screen === "reward") && node.id === q.lastBattleNode) {
-        node = getRoute().find(n => n.id === node!.id + 1) || node;
+        const next = getRoute().find(n => n.id === node!.id + 1);
+        // 跨地图的 BOSS 胜利停在原图，等待玩家点击“前往新地图”。
+        if (next && (next.mapId || 1) === (node.mapId || 1)) node = next;
     }
     // 旧商店节点迁移到已开放的下一战斗关；保留未展示的商店弹出与原货架。
     const oldShopId = data.version === 1 && [3, 5].includes((node.id - 1) % 6 + 1) ? node.id : 0;

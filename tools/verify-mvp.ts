@@ -268,7 +268,8 @@ function run() {
         assert(run.enemyFighter().name === "菜鸡", "第一图正式赛对手应是菜鸡");
         run.settle(true);
         run.afterResult();
-        assert(run.screen === "map" && run.routeNode === 7, "首图鸡王胜利后进入第二图");
+        assert(run.screen === "map" && run.routeNode === 6 && run.nextMap?.id === 2, "首图鸡王胜利后留在原图等待点击");
+        assert(run.enterNextMap() && run.routeNode === 7, "点击前往新地图后进入第二图");
         assert(run.rewards.length === 0 && run.upgrades.length === 0, "赢了鸡王直接通关，不该再发牌");
     });
 
@@ -284,6 +285,8 @@ function run() {
             assert(run.route().length === (map === 5 ? 7 : 6) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图六场，末图额外开放最终挑战");
             if (run.screen === "shop") {
                 run.leaveShop();
+            } else if (run.nextMap) {
+                assert(run.enterNextMap(), "通关后由按钮推进新地图");
             } else {
                 run.settle(true);
                 run.afterResult();
@@ -399,7 +402,7 @@ function run() {
         assert(run.gold > first && run.lastFirstClear, "下一新小关正常首通发奖");
     });
 
-    ok("BOSS胜利自动保存通关锁定和下一图，不依赖按钮", () => {
+    ok("BOSS胜利保存通关但停在原图，读档和重复点击不会自动跳图", () => {
         const run = new RunState(35);
         run.routeNode = 6;
         run.phase = "boss";
@@ -409,12 +412,19 @@ function run() {
         run.settle(true);
         const restored = decodeRun(saved);
         assert(restored.completedMaps.includes(1), "结算页关闭也已经保存大关通关");
-        assert(restored.routeNode === 7 && restored.phase === "battle", "结算回调中已推进并保存下图首关");
+        assert(restored.routeNode === 6 && restored.phase === "boss", "结算和读档均留在原图BOSS");
+        assert(!restored.enterNextMap(), "结算页不能直接跳图");
         restored.enterFight();
         assert(restored.screen === "result", "通关后不能重复挑战BOSS");
         restored.afterResult();
-        assert(restored.routeNode === 7 && restored.screen === "map", "恢复胜利结算后进入下一大关");
+        assert(restored.routeNode === 6 && restored.screen === "map" && restored.nextMap?.id === 2, "恢复胜利结算后等待前往新地图");
         restored.afterResult();
+        assert(restored.routeNode === 6, "重复结算按钮不会自动切图");
+        const waiting = decodeRun(encodeRun(restored));
+        assert(waiting.nextMap?.id === 2 && waiting.routeNode === 6, "地图页重进仍保留待切图状态");
+        restored.enterFight();
+        assert(restored.screen === "map", "已通关BOSS不能再次挑战");
+        assert(restored.enterNextMap() && !restored.enterNextMap(), "前往新地图只生效一次");
         assert(restored.routeNode === 7, "重复继续不能跳过下图第一关");
         restored.routeNode = 31; restored.phase = "boss"; restored.screen = "battle";
         restored.settle(true);
@@ -433,7 +443,7 @@ function run() {
             const old = JSON.parse(encodeRun(run));
             old.progress.routeNode = id;
             const restored = decodeRun(JSON.stringify(old));
-            const next = getRoute().find(node => node.id > id && node.kind !== "shop")?.id ?? id;
+            const next = [6, 24].includes(id) ? id : getRoute().find(node => node.id > id && node.kind !== "shop")?.id ?? id;
             assert(restored.routeNode === next, "读档即修正旧结算进度");
             assert(decodeRun(encodeRun(restored)).routeNode === restored.routeNode, "重复读档不跳关");
         }

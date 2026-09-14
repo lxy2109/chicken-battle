@@ -81,6 +81,20 @@ export class RunState {
         return MAPS.find(map => map.id === (this.currentRoute().mapId || 1))!;
     }
 
+    get nextMap() {
+        const map = this.currentMap();
+        return this.currentRoute().kind === "boss" && this.completedMaps.includes(map.id)
+            ? MAPS.find(next => next.id === map.id + 1) : undefined;
+    }
+
+    enterNextMap() {
+        if (this.screen !== "map" || !this.nextMap) return false;
+        this.advanceRoute();
+        this.shopPending = false;
+        this.onChanged?.();
+        return true;
+    }
+
     confirmAppearance(appearance: Appearance) {
         this.appearance = { face: appearance.face, colors: { ...appearance.colors } };
         this.screen = "map";
@@ -156,7 +170,7 @@ export class RunState {
             }
         }
         // 进度与首通金币一起落盘，不依赖结算或强化页按钮。
-        if (win) this.advanceRoute();
+        if (win && !this.nextMap) this.advanceRoute();
         this.screen = "result";
         this.onChanged?.();
     }
@@ -164,7 +178,7 @@ export class RunState {
     afterResult() {
         if (this.screen !== "result") return;
         if (routeNode(this.lastBattleNode).kind === "boss" && this.lastWin) {
-            this.screen = this.routeNode > this.lastBattleNode ? "map" : "ending";
+            this.screen = routeNode(this.lastBattleNode).encounter === "final" ? "ending" : "map";
             this.onChanged?.();
             return;
         }
@@ -294,6 +308,7 @@ export class RunState {
     }
 
     mapHint(): string {
+        if (this.nextMap) return `本地图已通关，点击下方前往${this.nextMap.name}`;
         const node = this.currentRoute();
         if (node.kind === "boss") return node.encounter === "final" ? "全村注视着你：挑战鸡王坤坤！" : "赢下正式赛，继续争霸之路";
         return this.claimedGoldNodes.includes(node.id) ? "本关首通金币已领取" : `首通奖励 ${node.goldWin || 0} 金币`;

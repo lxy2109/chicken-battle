@@ -1,4 +1,4 @@
-import { Color, Graphics, Label, Node, Sprite, UITransform, _decorator } from "cc";
+import { BlockInputEvents, Color, Graphics, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, view, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -29,11 +29,16 @@ const MAP_FEET: Record<string, [number, number]> = {
 @ecs.register("MapView", false)
 @gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map" })
 export class MapViewComp extends CCView<ChickenRun> {
+    private switchingMap = false;
+
     async start() {
         this.nodeTreeInfoLite();
+        await this.refreshMap();
+    }
+
+    private async refreshMap() {
         const run = this.ent.run;
         setLabel(this, "LabTitle", `${run.currentMap().id}/5 · ${run.currentMap().name}`);
-        await this.setSprite(this.node.getComponent(Sprite)!, TEX.background(run.currentMap().background));
         const placement = run.currentMap().shop;
         const shop = this.getNode("BtnShop")!;
         const x = (placement.x - 540) / 1.5;
@@ -48,12 +53,13 @@ export class MapViewComp extends CCView<ChickenRun> {
         label.isBold = true;
         label.color = new Color(255, 228, 145);
         sign.getComponent(UITransform)!.setContentSize(136, 40);
-        const plaque = new Node("ShopSignBackdrop");
+        const plaque = this.node.getChildByName("ShopSignBackdrop") || new Node("ShopSignBackdrop");
         plaque.layer = this.node.layer;
         plaque.parent = this.node;
         plaque.setPosition(sign.position);
-        plaque.addComponent(UITransform).setContentSize(136, 40);
-        const graphic = plaque.addComponent(Graphics);
+        (plaque.getComponent(UITransform) || plaque.addComponent(UITransform)).setContentSize(136, 40);
+        const graphic = plaque.getComponent(Graphics) || plaque.addComponent(Graphics);
+        graphic.clear();
         graphic.fillColor = new Color(73, 40, 21, 245);
         graphic.strokeColor = new Color(255, 204, 94);
         graphic.lineWidth = 2;
@@ -71,8 +77,8 @@ export class MapViewComp extends CCView<ChickenRun> {
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
         bindClick(this, "BtnHome", () => goScreen(this, "customize"));
-        setLabel(this, "BtnChallengeLab", "开始挑战");
-        bindClick(this, "BtnChallenge", () => this.onBattleNode(run.routeNode));
+        setLabel(this, "BtnChallengeLab", run.nextMap ? "前往新地图" : "开始挑战");
+        bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : this.onBattleNode(run.routeNode));
         bindClick(this, "BtnShop", this.onShop.bind(this));
         bindClick(this, "LabShopName", this.onShop.bind(this));
     }
@@ -81,6 +87,8 @@ export class MapViewComp extends CCView<ChickenRun> {
         const run = this.ent.run;
         const nodes = run.route();
         const current = run.routeNode;
+        const entrances = run.currentMap().entrances;
+        const mapBox = this.node.getComponent(UITransform)!;
         const battleNodes = nodes.filter(node => node.kind === "battle");
         for (let i = 0; i < 5; i++) {
             const node = battleNodes[i];
@@ -88,6 +96,8 @@ export class MapViewComp extends CCView<ChickenRun> {
             setNodeActive(this, `BtnStage${i + 1}`, !!node);
             setNodeActive(this, `LabStageName${i + 1}`, !!node);
             if (!node || !view) continue;
+            const [x, y] = entrances[i];
+            view.setPosition((x - mapBox.anchorX) * mapBox.width, (1 - y - mapBox.anchorY) * mapBox.height, 0);
             const cleared = node.id < current;
             const active = node.id === current;
             await setNodeSprite(this, `BtnStage${i + 1}`, TEX.mapNode(cleared ? "chest" : active ? "stage" : "lock"));
@@ -102,8 +112,11 @@ export class MapViewComp extends CCView<ChickenRun> {
         const boss = nodes.find(node => node.kind === "boss" && node.id >= current) || nodes.filter(node => node.kind === "boss").slice(-1)[0];
         const bossView = this.getNode("BtnBoss");
         if (boss && bossView) {
-            const active = boss.id === current;
-            const cleared = boss.id < current;
+            const [x, y] = entrances[5];
+            bossView.setPosition((x - mapBox.anchorX) * mapBox.width, (1 - y - mapBox.anchorY) * mapBox.height, 0);
+            this.getNode("LabBossName")!.setPosition(bossView.position.x, bossView.position.y - 68, 0);
+            const cleared = boss.id < current || run.claimedGoldNodes.includes(boss.id);
+            const active = boss.id === current && !cleared;
             await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
             bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
@@ -128,7 +141,12 @@ export class MapViewComp extends CCView<ChickenRun> {
     }
 
     private async onBattleNode(id: number) {
+        if (this.switchingMap) return;
         const run = this.ent.run;
+        if (run.nextMap) {
+            this.warn("本地图已通关，请点击下方前往新地图");
+            return;
+        }
         if (run.currentRoute().encounter === "final" && run.claimedGoldNodes.includes(run.routeNode)) {
             await goScreen(this, "ending");
             return;
@@ -147,6 +165,7 @@ export class MapViewComp extends CCView<ChickenRun> {
     }
 
     private async onShop() {
+        if (this.switchingMap) return;
         const run = this.ent.run;
         run.openShop();
         await goScreen(this, "shop");
@@ -163,7 +182,58 @@ export class MapViewComp extends CCView<ChickenRun> {
     };
 
     private async onCharacter() {
+        if (this.switchingMap) return;
         await goScreen(this, "character");
+    }
+
+    private async onNextMap() {
+        const run = this.ent.run;
+        const next = run.nextMap;
+        if (!next || this.switchingMap) return;
+        this.switchingMap = true;
+        const curtain = new Node("MapTransition");
+        curtain.layer = this.node.layer;
+        curtain.parent = this.node.parent;
+        curtain.setPosition(this.node.position);
+        curtain.setScale(this.node.scale);
+        const size = view.getVisibleSize();
+        const width = Math.max(720, size.width / this.node.scale.x);
+        const height = Math.max(1280, size.height / this.node.scale.y);
+        curtain.addComponent(UITransform).setContentSize(width, height);
+        curtain.addComponent(BlockInputEvents);
+        const graphics = curtain.addComponent(Graphics);
+        graphics.fillColor = new Color(24, 35, 27);
+        graphics.rect(-width / 2, -height / 2, width, height);
+        graphics.fill();
+        const title = new Node("MapName");
+        title.layer = curtain.layer;
+        title.parent = curtain;
+        title.addComponent(UITransform).setContentSize(640, 100);
+        const label = title.addComponent(Label);
+        label.string = `前往 · ${next.name}`;
+        label.fontSize = 42;
+        label.lineHeight = 56;
+        label.horizontalAlign = Label.HorizontalAlign.CENTER;
+        label.color = new Color(255, 228, 145);
+        const opacity = curtain.addComponent(UIOpacity);
+        opacity.opacity = 0;
+        try {
+            await Promise.all([
+                new Promise<void>(resolve => tween(opacity).to(0.4, { opacity: 255 }).call(() => resolve()).start()),
+                this.load("bundle", TEX.background(next.background), SpriteFrame)
+            ]);
+            // 遮幕合拢、资源准备好之后，才提交新地图进度并刷新整张地图。
+            await this.setSprite(this.node.getComponent(Sprite)!, TEX.background(next.background));
+            if (!run.enterNextMap()) return;
+            await this.refreshMap();
+            await new Promise<void>(resolve => tween(opacity).delay(0.3).to(0.45, { opacity: 0 }).call(() => resolve()).start());
+        } catch (error) {
+            console.error("[MapView] 切换地图失败", error);
+            this.warn("地图加载失败，请重试");
+        } finally {
+            curtain.destroy();
+            this.switchingMap = false;
+        }
     }
 
     reset() {

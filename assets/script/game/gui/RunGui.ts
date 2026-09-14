@@ -1,9 +1,10 @@
 import { revealUI } from "./UiUtil";
-import { Node, SpriteFrame, view } from "cc";
+import { Node, Sprite, SpriteFrame, view } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { oops } from "db://oops-framework/core/Oops";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { ECSCtor, ECSView } from "db://oops-framework/module/common/CCEntity";
+import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { ChickenRun } from "../chicken/ChickenRun";
 
 const preparedDirectories = new Map<string, Promise<void>>();
@@ -54,6 +55,11 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         comp = node.addComponent(ctor as any) as unknown as ecs.Comp;
     }
     entity.add(comp);
+    // 在显示地图之前完成背景绑定，避免先露出预制体的第一张地图。
+    if (key === "MapView") {
+        await (comp as unknown as GameComponent).setSprite(node.getComponent(Sprite)!,
+            `game/texture/bg/${backgrounds[0]}/spriteFrame`);
+    }
     oops.gui.show(key);
     const entrances: Record<string, string[]> = {
         customize: ["BtnStart", "LabSaveHint"],
