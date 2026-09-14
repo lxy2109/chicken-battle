@@ -7,9 +7,17 @@
     "genMipmaps": false,
     "userPreset": {
       "chicken-web": {
-        "name": "Chicken Web (WebP 85)",
+        "name": "Chicken Web + Android (ASTC 6x6 / WebP 85)",
         "options": {
           "web": {
+            "webp": {
+              "quality": 85
+            }
+          },
+          "android": {
+            "astc_6x6": {
+              "quality": "medium"
+            },
             "webp": {
               "quality": 85
             }
