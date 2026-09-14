@@ -406,6 +406,21 @@ function makeCustomize() {
     b.button(random);
     const enter = placeNode(b, edit, "BtnEnter", 580, 1590, 350, 200);
     b.button(enter);
+    const nameInput = placeCard(b, edit, "NameInput", 140, 1530, 520, 90, SF.panel_cream);
+    const nameLabel = textNode(b, nameInput, "LabName", "", 0, 0, { font: 36, w: 326, h: 48 });
+    const placeholder = textNode(b, nameInput, "LabNamePlaceholder", "点击输入名字", 0, 0, { font: 30, w: 326, h: 48, color: INK.mute });
+    // EditBox 将文字定位到输入框左上角，文字节点必须使用相同锚点。
+    for (const label of [nameLabel, placeholder]) {
+        b.objs[b.objs[label]._components[0].__id__]._anchorPoint = vec2(0, 1);
+    }
+    b.objs[placeholder]._active = false;
+    b.addComp(nameInput, null, { type: "cc.EditBox", fields: {
+        _backgroundImage: { __uuid__: SF.panel_cream, __expectedType__: "cc.SpriteFrame" },
+        _textLabel: b.objs[nameLabel]._components.find(ref => b.objs[ref.__id__].__type__ === "cc.Label"),
+        _placeholderLabel: b.objs[placeholder]._components.find(ref => b.objs[ref.__id__].__type__ === "cc.Label"),
+        _string: "", _maxLength: 12, _inputMode: 6, _inputFlag: 5, _returnType: 1
+    } });
+    placeButton(b, edit, "BtnRandomName", "随机名字", 680, 1530, 280, 90, "yellow");
     const start = b.node({ name: "StartPanel", parent: root, w: 720, h: 1280 });
     b.sprite(start, [255, 255, 255, 255], 0, SF.bg_start_figma);
     placeButton(b, start, "BtnStart", "开始", 292, 1392, 496, 231, "red");

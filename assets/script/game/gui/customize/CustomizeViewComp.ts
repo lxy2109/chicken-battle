@@ -1,4 +1,4 @@
-import { _decorator } from "cc";
+import { _decorator, EditBox } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -22,10 +22,15 @@ const COLOR_INDEXES = [0, 1, 9, 4, 7, 5];
 export class CustomizeViewComp extends CCView<ChickenRun> {
     private draft: Appearance = defaultAppearance();
     private part: PartId | "face" = "head";
-    private nameRoll = 0;
+    private nameInput!: EditBox;
 
     start() {
         this.nodeTreeInfoLite();
+        this.nameInput = this.getNode("NameInput")!.getComponent(EditBox)!;
+        this.nameInput.node.on(EditBox.EventType.EDITING_DID_ENDED, () => {
+            this.ent.run.setPlayerName(this.nameInput.string);
+            this.nameInput.string = this.ent.run.playerName;
+        }, this);
         setLabel(this, "LabStory", getPlayer().storyIntro);
         this.draft = {
             face: this.ent.run.appearance.face,
@@ -100,7 +105,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
 
     private async refresh() {
         setLabel(this, "LabTitle", "自定义你的专属战鸡");
-        setLabel(this, "LabName", this.ent.run.playerName);
+        this.nameInput.string = this.ent.run.playerName;
         setLabel(this, "LabPart", this.part === "face" ? "选择表情" : this.part === "body" ? "正在染：躯干与脖子" : `正在染：${PART_TEXT[this.part]}`);
         setNodeActive(this, "ColorOptions", this.part !== "face");
         setNodeActive(this, "FaceOptions", this.part === "face");
@@ -115,6 +120,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     }
 
     private async onEnter() {
+        this.ent.run.setPlayerName(this.nameInput.string);
         this.ent.run.confirmAppearance(this.draft);
         await goScreen(this, "map");
     }
@@ -135,10 +141,10 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     }
 
     private onRandomName() {
-        const names = ["呆头王鸡", "铁嘴战鸡", "闪电羽", "村口霸王", "小鸡大将", "彩羽勇者"];
-        this.nameRoll = (this.nameRoll + 1) % names.length;
-        this.ent.run.setPlayerName(names[this.nameRoll]);
-        void this.refresh();
+        const names = ["呆头王鸡", "铁嘴战鸡", "闪电羽", "村口霸王", "小鸡大将", "彩羽勇者"]
+            .filter(name => name !== this.nameInput.string.trim());
+        this.ent.run.setPlayerName(names[Math.floor(Math.random() * names.length)]);
+        this.nameInput.string = this.ent.run.playerName;
     }
 
     reset() {
