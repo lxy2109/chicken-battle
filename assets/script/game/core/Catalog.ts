@@ -23,13 +23,13 @@ export const TEX = {
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`
 };
 
-/** 场景先复用现有背景；美术交付后只替换这里的资源路径。 */
+/** shop 为 1080×1920 原图中的店面中心位置与缩放，逐图避开主路及关卡。 */
 export const MAPS = [
-    { id: 1, name: "鸡鸣村", background: "map_figma" },
-    { id: 2, name: "青竹溪", background: "map_2_figma" },
-    { id: 3, name: "金穗田", background: "map_3_figma" },
-    { id: 4, name: "古祠镇", background: "map_4_figma" },
-    { id: 5, name: "鸡王山", background: "map_5_figma" }
+    { id: 1, name: "鸡鸣村", background: "map_figma", shop: { x: 940, y: 1390, scale: 0.72 } },
+    { id: 2, name: "青竹溪", background: "map_2_figma", shop: { x: 955, y: 1000, scale: 0.66 } },
+    { id: 3, name: "金穗田", background: "map_3_figma", shop: { x: 950, y: 1450, scale: 0.7 } },
+    { id: 4, name: "古祠镇", background: "map_4_figma", shop: { x: 940, y: 1320, scale: 0.7 } },
+    { id: 5, name: "鸡王山", background: "map_5_figma", shop: { x: 940, y: 1340, scale: 0.72 } }
 ];
 
 export const PART_NODE: Record<PartId, string> = {
@@ -141,7 +141,7 @@ export function enemyTaunts(id: string): string[] {
 export function enemyToFighter(id: string) {
     const e = getEnemy(id);
     const appearance: Appearance = {
-        illustration: id,
+        illustration: e.illustration || id,
         face: e.face,
         colors: {
             comb: e.comb,

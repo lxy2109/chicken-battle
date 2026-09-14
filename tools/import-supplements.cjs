@@ -112,6 +112,8 @@ for (let map = 1; map <= 5; map++) {
     }
 }
 route[31] = { id: 31, mapId: 5, kind: 'boss', encounter: 'final', name: '鸡鸣村 · 鸡王坤坤最终挑战', enemyId: 'kun_boss', goldWin: 300, goldLose: 0 };
+require('./warmup-roster.cjs')(enemies, route);
+save('Enemy', enemies);
 save('Route', route);
 Object.assign(player[1], { name: '无名鸡', storyIntro: '鸡鸣村的争霸赛开始了。无名的你，将用比赛、装备与成长，赢得全村的认可。',
     hintBoss: '五图赛程已毕，鸡王坤坤在全村注视下等你。',

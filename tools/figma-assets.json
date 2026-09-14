@@ -31,7 +31,7 @@
   },
   "bg/map_figma": {
     "uuid": "a1b2c3d4-3002-4000-8000-000000000009",
-    "source": "image 123",
+    "source": "image 127",
     "box": [
       0,
       0,
@@ -1087,6 +1087,126 @@
       235,
       1080,
       1920
+    ]
+  },
+  "chicken/warmup_1": {
+    "uuid": "e1d0fcc6-354a-559a-8f9c-b551a7fcccd5",
+    "source": "image 61",
+    "box": [
+      0,
+      0,
+      502,
+      553
+    ]
+  },
+  "chicken/warmup_2": {
+    "uuid": "20c14d4a-3cd5-56f5-8bf7-38a097c20b0c",
+    "source": "image 62",
+    "box": [
+      0,
+      0,
+      371,
+      579
+    ]
+  },
+  "chicken/warmup_3": {
+    "uuid": "52df8092-301c-5ca5-9670-3945fb32bcb5",
+    "source": "image 63",
+    "box": [
+      0,
+      0,
+      383,
+      453
+    ]
+  },
+  "chicken/warmup_4": {
+    "uuid": "5dfc509f-54e2-58b7-8fba-a5ada4214fee",
+    "source": "image 64",
+    "box": [
+      0,
+      0,
+      337,
+      379
+    ]
+  },
+  "chicken/warmup_5": {
+    "uuid": "09d060c0-2eb2-57db-9c82-d7073e17b510",
+    "source": "image 65",
+    "box": [
+      0,
+      0,
+      335,
+      429
+    ]
+  },
+  "chicken/warmup_6": {
+    "uuid": "9cb3d305-788f-578a-950f-d24eb1d8e5e6",
+    "source": "image 66",
+    "box": [
+      0,
+      0,
+      327,
+      450
+    ]
+  },
+  "chicken/warmup_7": {
+    "uuid": "aee3d8de-10dc-58d2-9730-08cbb15aaa36",
+    "source": "image 67",
+    "box": [
+      0,
+      0,
+      420,
+      579
+    ]
+  },
+  "chicken/warmup_8": {
+    "uuid": "cbe758ef-a682-5eb6-95e0-e3f4050f69d7",
+    "source": "image 68",
+    "box": [
+      0,
+      0,
+      360,
+      579
+    ]
+  },
+  "chicken/warmup_9": {
+    "uuid": "2618b3de-643b-5319-adc2-2052d439d767",
+    "source": "image 69",
+    "box": [
+      0,
+      0,
+      410,
+      579
+    ]
+  },
+  "chicken/warmup_10": {
+    "uuid": "f971464a-c381-5be0-a957-c712f533e75a",
+    "source": "image 70",
+    "box": [
+      0,
+      0,
+      378,
+      555
+    ]
+  },
+  "chicken/warmup_11": {
+    "uuid": "11e65b10-771f-5910-b098-a5dd1e7df7e9",
+    "source": "image 71",
+    "box": [
+      0,
+      0,
+      359,
+      553
+    ]
+  },
+  "chicken/warmup_12": {
+    "uuid": "7dd807e8-1fe5-5299-82ee-9dc99e3389ba",
+    "source": "image 72",
+    "box": [
+      0,
+      0,
+      399,
+      453
     ]
   }
 }

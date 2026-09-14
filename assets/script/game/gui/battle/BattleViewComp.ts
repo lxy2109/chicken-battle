@@ -1,4 +1,5 @@
-import { JsonAsset, Label, Node, Sprite, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -12,6 +13,8 @@ import { PREFAB_PATH } from "../../core/Catalog";
 import { BattleSession } from "../../core/BattleSession";
 import { DanmakuPool } from "../../core/Danmaku";
 import { BattleDanmaku } from "./BattleDanmaku";
+import { BattleImpact } from "./BattleImpact";
+import { BattleScreenEffects } from "./BattleScreenEffects";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -23,7 +26,6 @@ const { ccclass } = _decorator;
 /** 与 battle.prefab 里 PlayerSlot / EnemySlot 的落点保持一致。 */
 const P_HOME = new Vec3(-160, -76, 0);
 const E_HOME = new Vec3(160, -76, 0);
-const ARENA_HOME = new Vec3(0, 0, 0);
 /** 血条追赶实际血量的速度，越大越跟手。 */
 const BAR_EASE = 8;
 const LOG_HOLD = 1.6;
@@ -77,12 +79,17 @@ export class BattleViewComp extends CCView<ChickenRun> {
     private styleOf: Record<BattleSide, StrikeStyle> = { player: "peck", enemy: "peck" };
     private logLeft = 0;
     private danmaku?: BattleDanmaku;
+    private impact?: BattleImpact;
+    private screenEffects?: BattleScreenEffects;
+    private skillOf: Record<BattleSide, boolean> = { player: false, enemy: false };
+    private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
     async start() {
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const me = run.playerFighter();
         const foe = run.enemyFighter();
+        this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
         setLabel(this, "LabTitle", "自动战斗");
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
@@ -100,6 +107,18 @@ export class BattleViewComp extends CCView<ChickenRun> {
             // Head framing is proportional to each illustration, independent of whole-body height.
             const id = foe.appearance.illustration || "";
             const heads: Record<string, [number, number, number, number]> = {
+                warmup_1: [0.34, 0.17, 0.4, 0.28],
+                warmup_2: [0.33, 0.18, 0.38, 0.3],
+                warmup_3: [0.29, 0.16, 0.38, 0.28],
+                warmup_4: [0.3, 0.19, 0.4, 0.33],
+                warmup_5: [0.31, 0.17, 0.4, 0.3],
+                warmup_6: [0.3, 0.18, 0.4, 0.3],
+                warmup_7: [0.29, 0.15, 0.38, 0.26],
+                warmup_8: [0.32, 0.16, 0.36, 0.28],
+                warmup_9: [0.3, 0.14, 0.36, 0.26],
+                warmup_10: [0.32, 0.18, 0.42, 0.3],
+                warmup_11: [0.32, 0.18, 0.4, 0.3],
+                warmup_12: [0.3, 0.19, 0.4, 0.32],
                 s1_warmup: [0.38, 0.23, 0.58, 0.43],
                 s2_warmup: [0.43, 0.2, 0.59, 0.36],
                 s3_warmup: [0.43, 0.22, 0.62, 0.42],
@@ -140,6 +159,17 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (json) this.anim.initWithJson(json.json, this.playerAnim);
 
         this.refreshHp(true);
+        if (this.closed) return;
+        const frames = await Promise.all(["cartoon_feather", "cartoon_blood_drop", "cartoon_blood_splash"].map(name =>
+            this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame)));
+        if (this.closed) return;
+        const fxLayer = this.getNode("FxLayer");
+        if (fxLayer && arena && frames.every(Boolean)) {
+            const shadowY = this.playerNode?.getChildByName("Shadow")?.position.y ?? -205.5;
+            const floorY = P_HOME.y + shadowY * Math.abs(this.playerNode?.scale.y ?? 0.9);
+            this.impact = new BattleImpact(fxLayer, frames as SpriteFrame[], arena, floorY);
+        }
+        this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
         await this.playIntro();
         if (this.closed) return;
         this.playerActor?.startRoam();
@@ -176,6 +206,11 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (this.closed || !this.running) return;
         for (const ev of this.session.tick(dt)) this.dispatch(ev);
         this.easeBars(dt);
+        if (this.playerActor && this.enemyActor && this.playerNode && this.enemyNode) {
+            const front = this.playerActor.home.y < this.enemyActor.home.y ? this.playerNode : this.enemyNode;
+            const back = front === this.playerNode ? this.enemyNode : this.playerNode;
+            if (front.getSiblingIndex() < back.getSiblingIndex()) front.setSiblingIndex(back.getSiblingIndex());
+        }
         this.danmaku?.tick(dt, this.session.hp("player") <= this.session.maxHp("player") / 2
             || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
         if (this.logLeft > 0) {
@@ -202,7 +237,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         else if (ev.type === "revive") {
             void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, "复活!", 0.7);
             this.actor(ev.side)?.hop();
-            this.shake(14);
+            this.screenEffects?.play(14, true);
             this.log(ev.side, "复活");
         }
         else if (ev.type === "lock") {
@@ -227,6 +262,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }
         // 记下这一击用的招式，等伤害事件回来时按招式定震屏力度。
         this.styleOf[side] = style;
+        this.skillOf[side] = skill;
         this.log(side, skill ? `绝招·${STYLE_TEXT[style]}` : STYLE_TEXT[style]);
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
@@ -239,16 +275,27 @@ export class BattleViewComp extends CCView<ChickenRun> {
 
     private onHit(from: BattleSide, to: BattleSide, dmg: number, crit: boolean) {
         const style = this.styleOf[from];
+        const heavy = this.skillOf[from] || style === "leap" || style === "charge" || style === "dive";
+        const source = this.chicken(from);
+        const target = this.chicken(to);
+        const direction = source && target && source.worldPosition.x !== target.worldPosition.x
+            ? Math.sign(target.worldPosition.x - source.worldPosition.x) : from === "player" ? 1 : -1;
         playGameEffect(crit ? "critical" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
-        this.actor(to)?.flinch();
+        this.actor(to)?.flinch(crit ? 1.65 : heavy ? 1.3 : 1, direction);
+        if (target) {
+            // 用当前走位区域的地面高度，跳跃时也不会把血迹留在半空。
+            const shadowY = target.getChildByName("Shadow")?.position.y ?? -205.5;
+            const groundY = (this.actor(to)?.home.y ?? P_HOME.y) + shadowY * Math.abs(target.scale.y);
+            this.impact?.play(target, direction, heavy, crit, this.featherColors[to], groundY);
+        }
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
             crit ? `暴击 -${dmg}` : `-${dmg}`,
-            crit ? 0.7 : 0.5, crit ? 1.25 : 1
+            crit ? 0.8 : 0.6, crit ? 1.65 : heavy ? 1.25 : 1.1
         );
         // 整只砸下来和啄一口不该抖得一样重，按招式给个底，暴击再往上加。
-        this.shake(HIT_QUAKE[this.styleOf[from]] + (crit ? 11 : 0));
+        this.screenEffects?.play(HIT_QUAKE[style] + (crit ? 11 : heavy ? 4 : 2), heavy, crit, direction);
         if (crit) this.log(to === "player" ? "enemy" : "player", "暴击");
         this.refreshHp(false);
     }
@@ -274,6 +321,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (this.closed) return;
         await this.wait(0.5);
         if (this.closed) return;
+        this.screenEffects?.clear();
         await goScreen(this, "result");
     }
 
@@ -310,20 +358,6 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (sp) sp.fillRange = Math.max(0, Math.min(1, ratio));
     }
 
-    /** 打中了抖一下整个场地，暴击抖得狠些。 */
-    private shake(power: number) {
-        const arena = this.getNode("Arena");
-        if (!arena) return;
-        tween(arena).stop();
-        arena.setPosition(ARENA_HOME);
-        tween(arena)
-            .by(0.04, { position: v3(power, -power * 0.5, 0) })
-            .by(0.05, { position: v3(-power * 2, power, 0) })
-            .by(0.05, { position: v3(power, -power * 0.5, 0) })
-            .call(() => arena.setPosition(ARENA_HOME))
-            .start();
-    }
-
     private log(side: BattleSide, word: string) {
         setLabel(this, "LabLog", `${side === "player" ? "我方" : "敌方"} ${word}`);
         this.logLeft = LOG_HOLD;
@@ -334,6 +368,9 @@ export class BattleViewComp extends CCView<ChickenRun> {
      */
     private async spawnFx(path: string, side: BattleSide, text: string, life: number, scale = 1) {
         const layer = this.getNode("FxLayer") || this.node;
+        const src = this.chicken(side);
+        const box = layer.getComponent(UITransform);
+        const origin = src && box ? box.convertToNodeSpaceAR(src.worldPosition) : null;
         let node: Node | null = null;
         try {
             node = await this.createPrefabNode(path);
@@ -346,18 +383,20 @@ export class BattleViewComp extends CCView<ChickenRun> {
             return;
         }
         node.parent = layer;
-        const src = this.chicken(side);
-        const box = layer.getComponent(UITransform);
         // 出手很密，飘字全落同一点会糊成一坨，左右撒开一些。
         const jitter = (Math.random() - 0.5) * 56;
-        if (src && box) {
-            const p = box.convertToNodeSpaceAR(src.worldPosition);
-            node.setPosition(p.x + jitter, p.y + 96, 0);
+        if (origin) {
+            node.setPosition(origin.x + jitter, origin.y + 96, 0);
         }
         else {
             node.setPosition(jitter, side === "player" ? -160 : 160, 0);
         }
         if (scale !== 1) node.setScale(scale, scale, 1);
+        if (path === PREFAB_PATH.fxHit || path === PREFAB_PATH.fxSkill) {
+            node.setScale(scale * 0.55, scale * 0.55, 1);
+            tween(node).to(0.055, { scale: v3(scale * 1.25, scale * 1.25, 1) }, { easing: "quadOut" })
+                .to(0.1, { scale: v3(scale, scale, 1) }).start();
+        }
         const lab = node.getComponentInChildren(Label);
         if (lab) lab.string = text;
         const op = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
@@ -398,6 +437,8 @@ export class BattleViewComp extends CCView<ChickenRun> {
 
     reset() {
         this.closed = true;
+        this.screenEffects?.clear();
+        this.impact?.clear();
         this.danmaku?.clear();
         this.running = false;
         this.stopTick();

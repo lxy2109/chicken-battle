@@ -62,7 +62,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
         setLabel(this, "LabDesc", "点击商品查看效果与价格，确认后购买");
 
-        const sets = getSets().filter(set => !set.legacy && !set.rewardOnly);
+        const sets = getSets().filter(set => !set.legacy && !set.rewardOnly && set.unlockMap <= run.currentMap().id);
         this.pageCount = Math.max(1, sets.length);
         this.page = Math.min(this.page, this.pageCount - 1);
         const set = sets[this.page];

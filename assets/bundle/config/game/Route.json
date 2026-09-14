@@ -5,7 +5,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡鸣村 · 热身赛1",
-        "enemyId": "s1_warmup",
+        "enemyId": "s1_warmup_1",
         "goldWin": 40,
         "goldLose": 0,
         "shopAfter": false
@@ -16,7 +16,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡鸣村 · 热身赛2",
-        "enemyId": "s1_warmup",
+        "enemyId": "s1_warmup_2",
         "goldWin": 50,
         "goldLose": 0,
         "shopAfter": true
@@ -27,7 +27,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡鸣村 · 热身赛3",
-        "enemyId": "s1_warmup",
+        "enemyId": "s1_warmup_3",
         "goldWin": 60,
         "goldLose": 0,
         "shopAfter": false
@@ -38,7 +38,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡鸣村 · 热身赛4",
-        "enemyId": "s1_warmup",
+        "enemyId": "s1_warmup_4",
         "goldWin": 70,
         "goldLose": 0,
         "shopAfter": false
@@ -49,7 +49,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡鸣村 · 热身赛5",
-        "enemyId": "s1_warmup",
+        "enemyId": "s1_warmup_5",
         "goldWin": 80,
         "goldLose": 0,
         "shopAfter": true
@@ -71,7 +71,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "青竹溪 · 热身赛1",
-        "enemyId": "s2_warmup",
+        "enemyId": "s2_warmup_1",
         "goldWin": 40,
         "goldLose": 0,
         "shopAfter": false
@@ -82,7 +82,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "青竹溪 · 热身赛2",
-        "enemyId": "s2_warmup",
+        "enemyId": "s2_warmup_2",
         "goldWin": 50,
         "goldLose": 0,
         "shopAfter": true
@@ -93,7 +93,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "青竹溪 · 热身赛3",
-        "enemyId": "s2_warmup",
+        "enemyId": "s2_warmup_3",
         "goldWin": 60,
         "goldLose": 0,
         "shopAfter": false
@@ -104,7 +104,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "青竹溪 · 热身赛4",
-        "enemyId": "s2_warmup",
+        "enemyId": "s2_warmup_4",
         "goldWin": 70,
         "goldLose": 0,
         "shopAfter": false
@@ -115,7 +115,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "青竹溪 · 热身赛5",
-        "enemyId": "s2_warmup",
+        "enemyId": "s2_warmup_5",
         "goldWin": 80,
         "goldLose": 0,
         "shopAfter": true
@@ -137,7 +137,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "金穗田 · 热身赛1",
-        "enemyId": "s3_warmup",
+        "enemyId": "s3_warmup_1",
         "goldWin": 40,
         "goldLose": 0,
         "shopAfter": false
@@ -148,7 +148,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "金穗田 · 热身赛2",
-        "enemyId": "s3_warmup",
+        "enemyId": "s3_warmup_2",
         "goldWin": 50,
         "goldLose": 0,
         "shopAfter": true
@@ -159,7 +159,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "金穗田 · 热身赛3",
-        "enemyId": "s3_warmup",
+        "enemyId": "s3_warmup_3",
         "goldWin": 60,
         "goldLose": 0,
         "shopAfter": false
@@ -170,7 +170,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "金穗田 · 热身赛4",
-        "enemyId": "s3_warmup",
+        "enemyId": "s3_warmup_4",
         "goldWin": 70,
         "goldLose": 0,
         "shopAfter": false
@@ -181,7 +181,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "金穗田 · 热身赛5",
-        "enemyId": "s3_warmup",
+        "enemyId": "s3_warmup_5",
         "goldWin": 80,
         "goldLose": 0,
         "shopAfter": true
@@ -203,7 +203,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "古祠镇 · 热身赛1",
-        "enemyId": "s4_warmup",
+        "enemyId": "s4_warmup_1",
         "goldWin": 40,
         "goldLose": 0,
         "shopAfter": false
@@ -214,7 +214,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "古祠镇 · 热身赛2",
-        "enemyId": "s4_warmup",
+        "enemyId": "s4_warmup_2",
         "goldWin": 50,
         "goldLose": 0,
         "shopAfter": true
@@ -225,7 +225,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "古祠镇 · 热身赛3",
-        "enemyId": "s4_warmup",
+        "enemyId": "s4_warmup_3",
         "goldWin": 60,
         "goldLose": 0,
         "shopAfter": false
@@ -236,7 +236,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "古祠镇 · 热身赛4",
-        "enemyId": "s4_warmup",
+        "enemyId": "s4_warmup_4",
         "goldWin": 70,
         "goldLose": 0,
         "shopAfter": false
@@ -247,7 +247,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "古祠镇 · 热身赛5",
-        "enemyId": "s4_warmup",
+        "enemyId": "s4_warmup_5",
         "goldWin": 80,
         "goldLose": 0,
         "shopAfter": true
@@ -269,7 +269,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡王山 · 热身赛1",
-        "enemyId": "s5_warmup",
+        "enemyId": "s5_warmup_1",
         "goldWin": 40,
         "goldLose": 0,
         "shopAfter": false
@@ -280,7 +280,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡王山 · 热身赛2",
-        "enemyId": "s5_warmup",
+        "enemyId": "s5_warmup_2",
         "goldWin": 50,
         "goldLose": 0,
         "shopAfter": true
@@ -291,7 +291,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡王山 · 热身赛3",
-        "enemyId": "s5_warmup",
+        "enemyId": "s5_warmup_3",
         "goldWin": 60,
         "goldLose": 0,
         "shopAfter": false
@@ -302,7 +302,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡王山 · 热身赛4",
-        "enemyId": "s5_warmup",
+        "enemyId": "s5_warmup_4",
         "goldWin": 70,
         "goldLose": 0,
         "shopAfter": false
@@ -313,7 +313,7 @@
         "kind": "battle",
         "encounter": "warmup",
         "name": "鸡王山 · 热身赛5",
-        "enemyId": "s5_warmup",
+        "enemyId": "s5_warmup_5",
         "goldWin": 80,
         "goldLose": 0,
         "shopAfter": true

@@ -107,7 +107,7 @@ composition('ui/figma_hp', '自动战斗界面', [3], (149, 89, 362, 66))
 composition('bg/map_figma', '冒险地图', [0, 1])
 # The composed map background includes sample stage numbers and a baked button.
 # Use its separately supplied empty-road counterpart for live progression.
-for index, number in enumerate([123, 129, 130, 131, 133], 1):
+for index, number in enumerate([127, 129, 130, 131, 133], 1):
     source = 'image ' + str(number)
     im = Image.open(SOURCE / 'png' / (source + '.png')).convert('RGBA').resize((1080, 1920), Image.Resampling.LANCZOS)
     save('bg/' + ('map_figma' if index == 1 else 'map_' + str(index) + '_figma'), im, source, [0, 0, 1080, 1920])
@@ -183,6 +183,10 @@ for name, source in [('s1_official', 'image 105'), ('s2_official', 'image 107'),
     im = Image.open(SOURCE / 'png' / (source + '.png')).convert('RGBA')
     im = im.crop(im.getbbox())
     save('chicken/' + name, im, source, [0, 0, *im.size])
+for index in range(1, 13):
+    source = 'image ' + str(60 + index)
+    im = Image.open(SOURCE / 'png' / (source + '.png')).convert('RGBA')
+    save('chicken/warmup_' + str(index), im, source, [0, 0, *im.size])
 for name, source in [('stage', 'Group 28'), ('lock', 'Group 29'), ('boss', 'Group 31'), ('chest', 'Group 33'), ('shop', 'image 120')]:
     im = Image.open(SOURCE / 'png' / (source + '.png')).convert('RGBA')
     save('map/' + name, im, source, [0, 0, *im.size])

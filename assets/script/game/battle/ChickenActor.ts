@@ -1,4 +1,4 @@
-import { Color, Node, Sprite, UITransform, tween, v3, Vec3 } from "cc";
+import { Color, Node, Sprite, Tween, UITransform, tween, v3, Vec3 } from "cc";
 import { StrikeStyle } from "../core/Types";
 
 /** 位移用到的 easing 名。写成字面量是为了不依赖引擎导出的类型。 */
@@ -14,6 +14,7 @@ type Ease = "quadIn" | "quadOut";
 export class ChickenActor {
     readonly home: Vec3;
     private roaming = false;
+    private patrolStep = 0;
     private sx: number;
     private sy: number;
     private token = 0;
@@ -232,10 +233,18 @@ export class ChickenActor {
         return this.alive(tk) && target.isValid && this.hits(target);
     }
 
-    /** 回到自己的位置继续踱步。 */
+    /** 收招后换到下一片场地，双方继续追击，避免每次都退回前排。 */
     async retreat(tk = this.begin()) {
-        await this.moveTo(this.home, 0.2, tk);
         if (!this.alive(tk)) return;
+        const lanes = [60, 185, 65, -65];
+        const lane = this.patrolStep++ % lanes.length;
+        const centerX = lane % 2 === 0 ? -30 : 30;
+        this.home.set(centerX - this.sign() * (105 + Math.random() * 35),
+            lanes[lane] + (Math.random() - 0.5) * 24, 0);
+        this.walkLegs(true, tk);
+        await this.moveTo(this.home.clone(), 0.32, tk);
+        if (!this.alive(tk)) return;
+        this.walkLegs(false, tk);
         this.resetPose();
         this.roaming = true;
         this.roamStep(tk);
@@ -245,24 +254,28 @@ export class ChickenActor {
      * 受击反馈。挨打很频繁，这里刻意不抢占正在进行的位移，
      * 只让躯干抖一下并闪红，免得把自己的冲刺打断成一团乱麻。
      */
-    flinch() {
-        const back = -26 * this.sign();
+    flinch(force = 1, direction = -this.sign()) {
+        // 位移发生在角色局部空间，镜像角色也要沿来击方向后仰。
+        const localDirection = direction * (this.node.scale.x >= 0 ? 1 : -1);
+        const back = 38 * force * localDirection;
+        this.recoil(this.child("Illustration"), back, -10 * force, -12 * force * localDirection);
         // 躯干往后坐、脑袋甩得更远，两段错开幅度才像被顶了一下。
-        this.recoil(this.child("Body"), back, -8, 0);
-        this.recoil(this.child("Head"), back * 1.4, -4, -14 * this.sign());
-        this.recoil(this.child("Neck"), back * 1.2, -2, -10 * this.sign());
+        this.recoil(this.child("Body"), back, -8 * force, 0);
+        this.recoil(this.child("Head"), back * 1.4, -4 * force, -14 * force * localDirection);
+        this.recoil(this.child("Neck"), back * 1.2, -2 * force, -10 * force * localDirection);
         this.blink();
     }
 
     private recoil(n: Node | null, dx: number, dy: number, deg: number) {
         if (!n) return;
         const nest = this.nestOf(n);
-        tween(n).stop();
+        Tween.stopAllByTarget(n);
         n.setPosition(nest);
         n.angle = 0;
         tween(n)
-            .to(0.05, { position: v3(nest.x + dx, nest.y + dy, 0), angle: deg })
-            .to(0.14, { position: v3(nest.x, nest.y, 0), angle: 0 })
+            .to(0.035, { position: v3(nest.x + dx, nest.y + dy, nest.z), angle: deg }, { easing: "quadOut" })
+            .delay(0.045)
+            .to(0.18, { position: nest.clone(), angle: 0 }, { easing: "backOut" })
             .start();
     }
 
@@ -283,7 +296,7 @@ export class ChickenActor {
         this.walkLegs(true, tk);
         const p = this.node.position.clone();
         await this.moveTo(v3(p.x + this.sign() * 34, p.y + 58, 0), 0.13, tk);
-        await this.moveTo(this.home, 0.15, tk);
+        await this.moveTo(this.home.clone(), 0.15, tk);
         this.walkLegs(false, tk);
         if (!this.alive(tk)) return;
         this.resetPose();
@@ -393,15 +406,15 @@ export class ChickenActor {
     }
 
     private stopAll() {
-        tween(this.node).stop();
-        for (const c of this.node.children) tween(c).stop();
+        Tween.stopAllByTarget(this.node);
+        for (const c of this.node.children) Tween.stopAllByTarget(c);
     }
 
     private resetPose() {
         this.node.setScale(this.sx, this.sy, 1);
         this.node.angle = 0;
         // Beak 也要收：啄击是甩喙的，动画被抢占时它会歪着回不来。
-        for (const name of ["Wing", "LegL", "LegR", "Neck", "Head", "Body", "Tail", "Beak"]) {
+        for (const name of ["Wing", "LegL", "LegR", "Neck", "Head", "Body", "Tail", "Beak", "Illustration"]) {
             const n = this.child(name);
             if (!n) continue;
             n.angle = 0;
@@ -505,11 +518,11 @@ export class ChickenActor {
     private blink() {
         for (const t of this.tints) {
             if (!t.sp.isValid) continue;
-            tween(t.sp).stop();
-            t.sp.color = t.base;
+            Tween.stopAllByTarget(t.sp);
+            t.sp.color = new Color(255, 90, 70, t.base.a);
             tween(t.sp)
-                .to(0.06, { color: new Color(255, 130, 130, t.base.a) })
-                .to(0.16, { color: t.base.clone() })
+                .delay(0.07)
+                .to(0.13, { color: t.base.clone() })
                 .start();
         }
     }
