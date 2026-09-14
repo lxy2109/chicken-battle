@@ -86,3 +86,14 @@ export function clearChildren(node: Node | undefined) {
     if (!node) return;
     node.removeAllChildren();
 }
+
+/** Brief content entrance; animate position/opacity so button press scaling stays independent. */
+export function revealUI(node: Node | null | undefined, delay = 0) {
+    if (!node || !node.active) return;
+    const home = node.position.clone();
+    const opacity = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
+    opacity.opacity = 0;
+    node.setPosition(home.x, home.y - 18, home.z);
+    tween(opacity).delay(delay).to(0.2, { opacity: 255 }).start();
+    tween(node).delay(delay).to(0.26, { position: home }, { easing: "cubicOut" }).start();
+}

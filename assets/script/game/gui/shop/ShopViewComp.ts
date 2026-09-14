@@ -7,7 +7,7 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX, getSets, itemById } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
-import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
+import { revealUI, bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
@@ -133,7 +133,10 @@ export class ShopViewComp extends CCView<ChickenRun> {
         }
 
         // 先展示价格和效果，确认后仍由 RunState 校验余额和已购状态。
-        if (node.isValid) bindNodeClick(node, () => this.showPurchase(view), this);
+        if (node.isValid) {
+            bindNodeClick(node, () => this.showPurchase(view), this);
+            revealUI(node.getChildByName("IconSlot"), node.getSiblingIndex() * 0.045);
+        }
     }
 
     private showPurchase(view: ItemView) {

@@ -1,3 +1,4 @@
+import { revealUI } from "./UiUtil";
 import { Node, view } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { oops } from "db://oops-framework/core/Oops";
@@ -18,5 +19,23 @@ export async function openRunView<T extends ECSView>(entity: CCEntity, ctor: ECS
     }
     entity.add(comp);
     oops.gui.show(key);
+    const entrances: Record<string, string[]> = {
+        customize: ["BtnStart", "LabSaveHint"],
+        map: ["BtnCharacter", "GoldCard", "BtnChallenge"],
+        character: ["PowerCard", "EquipCard"],
+        result: ["LabHeader", "LabGold", "BtnNext"],
+        reward: ["BtnConfirm"],
+        shop: ["BtnShopPrev", "BtnShopNext", "BtnLeave"],
+        ending: ["LabTitle", "GainCard", "BtnCharacter"]
+    };
+    const names = entrances[node.name] || [];
+    const visit = (parent: Node) => {
+        for (const child of parent.children) {
+            const index = names.indexOf(child.name);
+            if (index >= 0) revealUI(child, index * 0.07);
+            else if (child.active) visit(child);
+        }
+    };
+    visit(node);
     return node;
 }

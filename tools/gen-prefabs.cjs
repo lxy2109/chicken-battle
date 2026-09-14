@@ -516,17 +516,24 @@ function makePrebattle() {
     const b = new Builder("prebattle");
     const root = panel(b, "prebattle", F['bg/prebattle_figma']);
     placeText(b, root, "LabTitle", "1-1", 335, 462, 390, 98, { font: 34, color: INK.cream, outline: true });
-    figmaImage(b, root, "MatchCard", 'ui/figma_match_card');
+
     const keys = ["Power", "Hp", "Atk", "Spd", "Combo", "Crit"];
     const tones = [[92, 209, 50, 255], [255, 80, 80, 255], [255, 185, 51, 255], [60, 181, 230, 255], [201, 102, 230, 255], [255, 221, 25, 255]];
     for (const side of ["Player", "Enemy"]) {
         const left = side === "Player";
-        placeNode(b, root, side + "Slot", left ? 59 : 901, left ? 679 : 742, left ? 152 : 106, left ? 142 : 103);
-        placeText(b, root, "Lab" + side + "Name", "", left ? 256 : 790, left ? 675 : 691, left ? 204 : 222, 52, { font: 26, color: INK.cream, outline: true });
-        keys.forEach((key, i) => placeText(b, root, "Lab" + side + key, "0", left ? 125 : 867,
+        const group = b.node({ name: side + "Panel", parent: root, w: 720, h: 1280 });
+        const art = placeNode(b, group, side + "PanelArt", 6, 614, 1073, 766);
+        const picture = b.node({ name: side + "Picture", parent: art, w: 715.333, h: 510.667 });
+        b.sprite(picture, [255,255,255,255], 0, F['ui/figma_match_card']);
+        placeNode(b, group, side + "Slot", left ? 59 : 901, left ? 679 : 742, left ? 152 : 106, left ? 142 : 103);
+        placeText(b, group, "Lab" + side + "Name", "", left ? 256 : 790, left ? 675 : 691, left ? 204 : 222, 52, { font: 26, color: INK.cream, outline: true });
+        keys.forEach((key, i) => placeText(b, group, "Lab" + side + key, "0", left ? 125 : 867,
             614 + (left ? [251, 336, 422, 510, 595, 681][i] : [269, 348, 430, 511, 590, 669][i]),
             left ? 144 : 135, 44, { font: 25, color: tones[i], outline: true }));
     }
+    const vs = b.node({ name: "VsBadge", parent: root, x: 0.667, y: -61.333, w: 286.667, h: 286.667 });
+    const vsArt = b.node({ name: "VsArt", parent: vs, x: 1, y: 36.667, w: 715.333, h: 510.667 });
+    b.sprite(vsArt, [255,255,255,255], 0, F['ui/figma_match_card']);
     placeButton(b, root, "BtnFight", "开始", 343.583, 1431, 396.833, 187.042, "red");
     placeText(b, root, "LabStory", "", 100, 1730, 880, 150, { font: 22, color: INK.cream, outline: true });
     writePrefab("assets/bundle/gui/prebattle/prebattle.prefab", b.finish(root));

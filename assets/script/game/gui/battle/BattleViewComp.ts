@@ -92,9 +92,25 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (layer) this.danmaku = new BattleDanmaku(layer,
             new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.name));
 
-        for (const [slot, appearance] of [["PlayerPortrait", me.appearance], ["EnemyPortrait", foe.appearance]] as const) {
-            const portrait = await spawnChicken(this, slot, appearance, 0.6, true);
-            portrait?.setPosition(0, -100, 0);
+        const playerPortrait = await spawnChicken(this, "PlayerPortrait", run.appearance, 0.76, true);
+        playerPortrait?.setPosition(33.6, -128.6, 0);
+        const enemyPortrait = await spawnChicken(this, "EnemyPortrait", foe.appearance, 1, true);
+        const art = enemyPortrait?.getChildByName("Illustration")?.getComponent(UITransform);
+        if (enemyPortrait && art) {
+            // Head framing is proportional to each illustration, independent of whole-body height.
+            const id = foe.appearance.illustration || "";
+            const heads: Record<string, [number, number, number, number]> = {
+                s1_warmup: [0.38, 0.23, 0.58, 0.43],
+                s2_warmup: [0.43, 0.2, 0.59, 0.36],
+                s3_warmup: [0.43, 0.22, 0.62, 0.42],
+                s4_warmup: [0.4, 0.22, 0.57, 0.4],
+                s5_warmup: [0.43, 0.22, 0.61, 0.41],
+            };
+            const [x, y, w, h] = heads[id] || [0.5, 0.13, 0.5, 0.23];
+            const size = this.getNode("EnemyPortrait")!.getComponent(UITransform)!;
+            const scale = Math.min(size.width / (art.width * w), size.height / (art.height * h));
+            enemyPortrait.setScale(-scale, scale, 1);
+            enemyPortrait.setPosition((0.5 - x) * art.width * scale, (y - 0.5) * art.height * scale);
         }
         this.playerNode = await spawnChicken(this, "PlayerSlot", me.appearance, 0.9);
         this.enemyNode = await spawnChicken(this, "EnemySlot", foe.appearance, 0.9, true);
