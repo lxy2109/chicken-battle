@@ -221,5 +221,40 @@
         "desc4": "通关奖励：专属加冕结算效果",
         "unlockMap": 0,
         "rewardOnly": true
+    },
+    "digger": {
+        "id": "digger",
+        "name": "挖掘鸡套",
+        "pieceIds": [
+            "digger_head",
+            "digger_neck",
+            "digger_wing",
+            "digger_leg"
+        ],
+        "discount": 0.8,
+        "b2maxHp": 20,
+        "b2def": 3,
+        "b4lockHp": 1,
+        "desc2": "埋头苦干：生命+20，防御+3",
+        "desc4": "深挖一层：每场一次，致命伤害时保留1点生命",
+        "unlockMap": 4,
+        "rewardOnly": false
+    },
+    "coming": {
+        "id": "coming",
+        "name": "鸡来套装",
+        "pieceIds": [
+            "coming_head",
+            "coming_neck",
+            "coming_wing",
+            "coming_leg"
+        ],
+        "discount": 0.8,
+        "b2atk": 6,
+        "b4crit": 0.1,
+        "desc2": "气场全开：攻击+6",
+        "desc4": "大鸡大利：暴击+10%",
+        "unlockMap": 5,
+        "rewardOnly": false
     }
 }

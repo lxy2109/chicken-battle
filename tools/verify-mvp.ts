@@ -831,6 +831,22 @@ function run() {
         assert(migrated.routeNode === kunId() && migrated.screen === "map", "旧结局开放新增坤坤挑战");
     });
 
+    ok("挖掘鸡与鸡来按地图解锁，鸡王中王最后发放", () => {
+        const run = new RunState(86);
+        run.gold = 8000;
+        assert(!!getSets().find(s => s.id === "digger") && !!getSets().find(s => s.id === "coming"), "新套装已入表");
+        assert(!run.buySet("digger") && !run.buySet("coming"), "未到地图不能买新套装");
+        run.routeNode = mapStart(4);
+        assert(run.buySet("digger") && !run.buySet("coming"), "第四图只解锁挖掘鸡");
+        assert(run.equipSet("digger") && run.playerFighter().stats.lockHp === true, "挖掘鸡四件锁血");
+        run.routeNode = mapStart(5);
+        assert(run.buySet("coming"), "第五图解锁鸡来套装");
+        assert(!run.buySet("champion"), "鸡王中王仍不能购买");
+        run.routeNode = kunId(); run.phase = "boss"; run.screen = "battle";
+        run.settle(true);
+        assert(getSets().find(s => s.id === "champion")!.pieceIds.every(id => run.ownedIds.includes(id)), "通关才发放鸡王中王");
+    });
+
     ok("不同派系同一局势出招不同", () => {
         const foe: AiFighter = {
             hp: 80, maxHp: 100, atk: 12, def: 8, spd: 8, healPerTurn: 0, healCd: 1, skillCd: 1

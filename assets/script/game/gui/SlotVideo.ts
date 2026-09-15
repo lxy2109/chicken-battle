@@ -1,106 +1,105 @@
-import { assetManager, Node, UITransform, VideoClip, VideoPlayer, Widget } from "cc";
+import { Asset, BufferAsset, Node, Sprite, UITransform, assetManager } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
-import { TEX, showcaseSuit } from "../core/Catalog";
+import GifFrameAni from "../../gif/GifFrameAni";
+import { TEX, getSets } from "../core/Catalog";
 import { Appearance } from "../core/Types";
 
-const VIDEO_NODE = "SuitVideo";
-
-/** 在现有 slot 内播视频。播放器尺寸始终跟 slot 的 UITransform 走。 */
-export interface SlotVideoPlayOptions {
-    /** bundle 内 VideoClip 路径，不含扩展名，例如 game/video/set_rookie。 */
-    clipPath?: string;
-    /** 远程地址；有本地 clip 时优先本地。 */
-    remoteURL?: string;
-    loop?: boolean;
-    mute?: boolean;
-}
+const GIF_NODE = "SuitGif";
 
 /**
- * 结算套装视频入口：穿齐一套时在 ChickenSlot 里播对应视频。
+ * 结算套装胜利 GIF：穿齐一套且赢得对局时在 ChickenSlot 里播对应动画。
  * 当前没有片源时返回 false，调用方继续展示立绘/拼装鸡。
  */
 export async function playResultSuitVideo(view: GameComponent, slotName: string, appearance: Appearance): Promise<boolean> {
-    const suit = showcaseSuit(appearance);
+    const suit = suitForWinGif(appearance);
     if (!suit) return false;
-    return playSlotVideo(view, slotName, {
-        clipPath: TEX.suitVideo(suit.id),
-        loop: true,
-        mute: true
-    });
+    return playSlotGif(view, slotName, TEX.suitGif(suit.id));
 }
 
-/** 在指定 slot 内创建并播放视频，画面铺满当前 slot 大小。 */
-export async function playSlotVideo(view: GameComponent, slotName: string, options: SlotVideoPlayOptions): Promise<boolean> {
+/** 在指定 slot 内创建并播放 GIF，画面按 slot 尺寸等比铺满。 */
+export async function playSlotGif(view: GameComponent, slotName: string, path: string): Promise<boolean> {
     const slot = view.getNode(slotName);
     if (!slot) return false;
-    const clip = options.clipPath ? await loadLocalClip(view, options.clipPath) : null;
-    if (!clip && !options.remoteURL) return false;
-    if (!slot.isValid) return false;
-    const player = mountSlotVideo(slot);
-    player.playOnAwake = false;
-    player.fullScreenOnAwake = false;
-    player.stayOnBottom = false;
-    player.keepAspectRatio = true;
-    player.loop = options.loop !== false;
-    player.mute = options.mute !== false;
-    if (clip) {
-        player.resourceType = VideoPlayer.ResourceType.LOCAL;
-        player.clip = clip;
+    const asset = await loadGifAsset(view, path);
+    if (!asset || !slot.isValid) return false;
+    const ani = mountSlotGif(slot);
+    const slotWidth = slot.getComponent(UITransform)?.width || 360;
+    const ok = await ani.play(asset, Math.max(256, Math.floor(slotWidth)));
+    if (!ok || !ani.isValid || !slot.isValid) {
+        stopSlotVideo(slot);
+        return false;
     }
-    else {
-        player.resourceType = VideoPlayer.ResourceType.REMOTE;
-        player.remoteURL = options.remoteURL!;
-    }
-    const play = () => { if (player.isValid) player.play(); };
-    player.node.once(VideoPlayer.EventType.READY_TO_PLAY, play);
-    play();
+    fitGifToSlot(ani.node, slot);
     return true;
 }
 
 export function stopSlotVideo(slot: Node | undefined | null) {
     if (!slot?.isValid) return;
-    const video = slot.getChildByName(VIDEO_NODE);
-    const player = video?.getComponent(VideoPlayer);
-    if (player?.isValid) player.stop();
-    video?.destroy();
+    slot.getChildByName(GIF_NODE)?.destroy();
 }
 
-function mountSlotVideo(slot: Node): VideoPlayer {
+function suitForWinGif(appearance: Appearance) {
+    const equipped = Object.values(appearance.equipment || {});
+    return getSets().find(set => !set.legacy && set.pieceIds.every(id => equipped.includes(id)));
+}
+
+function mountSlotGif(slot: Node): GifFrameAni {
     stopSlotVideo(slot);
     for (const child of slot.children) child.destroy();
     slot.removeAllChildren();
-    const video = new Node(VIDEO_NODE);
-    video.layer = slot.layer;
-    video.parent = slot;
-    video.setPosition(0, 0, 0);
+    const node = new Node(GIF_NODE);
+    node.layer = slot.layer;
+    node.parent = slot;
+    node.setPosition(0, 0, 0);
     const slotTransform = slot.getComponent(UITransform);
-    const transform = video.addComponent(UITransform);
+    const transform = node.addComponent(UITransform);
     if (slotTransform) {
         transform.setContentSize(slotTransform.contentSize);
         transform.setAnchorPoint(slotTransform.anchorPoint);
     }
-    const widget = video.addComponent(Widget);
-    widget.isAlignTop = widget.isAlignBottom = widget.isAlignLeft = widget.isAlignRight = true;
-    widget.top = widget.bottom = widget.left = widget.right = 0;
-    widget.alignMode = Widget.AlignMode.ALWAYS;
-    widget.updateAlignment();
-    const player = video.addComponent(VideoPlayer);
-    player.playOnAwake = false;
-    player.fullScreenOnAwake = false;
-    video.once(Node.EventType.NODE_DESTROYED, () => {
-        if (player.isValid) player.stop();
-    });
-    return player;
+    const sprite = node.addComponent(Sprite);
+    sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    sprite.type = Sprite.Type.SIMPLE;
+    return node.addComponent(GifFrameAni);
 }
 
-async function loadLocalClip(view: GameComponent, path: string): Promise<VideoClip | null> {
+function fitGifToSlot(node: Node, slot: Node) {
+    const slotTransform = slot.getComponent(UITransform);
+    const transform = node.getComponent(UITransform);
+    const frame = node.getComponent(Sprite)?.spriteFrame;
+    if (!slotTransform || !transform || !frame) return;
+    const width = Math.max(frame.rect.width, 1);
+    const height = Math.max(frame.rect.height, 1);
+    const scale = Math.min(slotTransform.width / width, slotTransform.height / height);
+    transform.setContentSize(width * scale, height * scale);
+}
+
+async function loadGifAsset(view: GameComponent, path: string): Promise<Asset | null> {
     const bundle = assetManager.getBundle("bundle");
-    if (!bundle?.getInfoWithPath(path)) return null;
+    if (!bundle) return null;
+    const resolved = resolveGifPath(bundle, path);
+    if (!resolved) return null;
     try {
-        const clip = await view.load("bundle", path, VideoClip);
-        return clip || null;
+        const asset = await view.load("bundle", resolved, Asset);
+        if (asset) return asset;
+    }
+    catch { /* 有的 gif 会按二进制导入 */ }
+    try {
+        return await view.load("bundle", resolved, BufferAsset) || null;
     }
     catch {
         return null;
     }
+}
+
+function resolveGifPath(bundle: ReturnType<typeof assetManager.getBundle>, path: string): string | null {
+    if (!bundle) return null;
+    if (bundle.getInfoWithPath(path)) return path;
+    const infos = bundle.getDirWithPath("game/equip_win_gif") || [];
+    const base = path.split("/").pop() || "";
+    const hit = infos.find(info => {
+        const name = (info.path || "").split("/").pop() || "";
+        return name === base || name.startsWith(base);
+    });
+    return hit?.path || null;
 }

@@ -5,7 +5,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { TEX, getSets } from "../../core/Catalog";
+import { TEX, compareSets, getSets } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -57,10 +57,10 @@ export class CharacterViewComp extends CCView<ChickenRun> {
 
     private ownedSets() {
         const run = this.ent.run;
-        return getSets().filter(set => set.pieceIds.every(id => run.ownedIds.includes(id))).map(set => ({
+        return getSets().filter(set => set.pieceIds.every(id => run.ownedIds.includes(id))).sort(compareSets).map(set => ({
             id: set.id,
             text: set.name,
-            icon: ["rookie", "helicopter", "brawler", "medic", "miser"].includes(set.id) ? TEX.set(set.id) : TEX.equip(set.pieceIds[0]),
+            icon: TEX.set(set.id),
             equipped: set.pieceIds.every(id => run.equippedIds.includes(id))
         }));
     }

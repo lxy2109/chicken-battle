@@ -23,8 +23,8 @@ export const TEX = {
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
-    /** 结算套装视频，文件放到 bundle/game/video/set_<套装id>。 */
-    suitVideo: (setId: string) => `game/video/set_${setId}`
+    /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>。 */
+    suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`
 };
 
 /** 每张地图对应 `gui/map/map_${id}` 预制体，背景和落点都做在预制体上。 */
@@ -93,10 +93,15 @@ export function getSets(): SetDef[] {
     return tableRows("Set").map(toSet);
 }
 
-/** 当前穿齐、可在结算展示套装视频/立绘的套装。 */
+/** 商店/角色面板：先按解锁地图，通关奖励套装排最后。 */
+export function compareSets(a: SetDef, b: SetDef) {
+    return Number(a.rewardOnly) - Number(b.rewardOnly) || a.unlockMap - b.unlockMap || a.id.localeCompare(b.id);
+}
+
+/** 当前穿齐、可在结算展示套装 GIF/立绘的套装。 */
 export function showcaseSuit(appearance: Appearance) {
     const equipped = Object.values(appearance.equipment || {});
-    return getSets().find(set => !set.legacy && !set.rewardOnly && set.pieceIds.every(id => equipped.includes(id)));
+    return getSets().find(set => !set.legacy && set.pieceIds.every(id => equipped.includes(id)));
 }
 
 export function getColorPalette(): string[] {

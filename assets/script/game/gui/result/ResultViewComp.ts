@@ -43,13 +43,13 @@ export class ResultViewComp extends CCView<ChickenRun> {
         await setNodeSprite(this, "result", TEX.background(win ? "result_figma" : "result_lose_figma"));
         const appearance = run.playerFighter().appearance;
         const look: Appearance = win ? appearance : { ...appearance, face: "sad" };
-        // 成套后在 ChickenSlot 播套装视频，尺寸跟现有 slot 一致；没有片源时仍展示立绘/拼装鸡。
-        if (!await playResultSuitVideo(this, "ChickenSlot", look)) {
+        bindClick(this, "BtnNext", this.onNext.bind(this));
+        // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
+        if (!(win && await playResultSuitVideo(this, "ChickenSlot", look))) {
             const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
             if (win) celebrateChicken(chicken, look);
             else mournChicken(chicken);
         }
-        bindClick(this, "BtnNext", this.onNext.bind(this));
     }
 
     private async onNext() {

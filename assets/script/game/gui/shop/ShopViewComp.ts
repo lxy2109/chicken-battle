@@ -5,7 +5,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { PREFAB_PATH, TEX, getSets } from "../../core/Catalog";
+import { PREFAB_PATH, TEX, compareSets, getSets } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
 import { revealUI, bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
@@ -49,7 +49,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
         setLabel(this, "LabDesc", gameText("ShopViewComp_002"));
 
-        const sets = getSets().filter(set => !set.legacy && !set.rewardOnly && set.unlockMap <= run.currentMap().id);
+        const sets = getSets().filter(set => !set.legacy && !set.rewardOnly && set.unlockMap <= run.currentMap().id).sort(compareSets);
         const goods: ItemView[] = sets.map(set => {
             const owned = ownedSetCount(run.ownedIds, set.id);
             const collected = owned >= set.pieceIds.length;

@@ -590,5 +590,85 @@
         "setId": "champion",
         "price": 0,
         "icon": "stone_leg"
+    },
+    "digger_head": {
+        "id": "digger_head",
+        "name": "安全帽",
+        "desc": "生命+8，防御+1",
+        "slot": "head",
+        "setId": "digger",
+        "price": 75,
+        "maxHp": 8,
+        "def": 1
+    },
+    "digger_neck": {
+        "id": "digger_neck",
+        "name": "反光背心",
+        "desc": "生命+8，防御+1",
+        "slot": "neck",
+        "setId": "digger",
+        "price": 80,
+        "maxHp": 8,
+        "def": 1
+    },
+    "digger_wing": {
+        "id": "digger_wing",
+        "name": "工程铲",
+        "desc": "生命+8，防御+1",
+        "slot": "wing",
+        "setId": "digger",
+        "price": 85,
+        "maxHp": 8,
+        "def": 1
+    },
+    "digger_leg": {
+        "id": "digger_leg",
+        "name": "防滑靴",
+        "desc": "生命+8，防御+1",
+        "slot": "leg",
+        "setId": "digger",
+        "price": 90,
+        "maxHp": 8,
+        "def": 1
+    },
+    "coming_head": {
+        "id": "coming_head",
+        "name": "鸡来冠",
+        "desc": "生命+5，攻击+2",
+        "slot": "head",
+        "setId": "coming",
+        "price": 85,
+        "maxHp": 5,
+        "atk": 2
+    },
+    "coming_neck": {
+        "id": "coming_neck",
+        "name": "鸡来袍",
+        "desc": "生命+5，攻击+1",
+        "slot": "neck",
+        "setId": "coming",
+        "price": 90,
+        "maxHp": 5,
+        "atk": 1
+    },
+    "coming_wing": {
+        "id": "coming_wing",
+        "name": "鸡来翼",
+        "desc": "生命+5，攻击+1",
+        "slot": "wing",
+        "setId": "coming",
+        "price": 95,
+        "maxHp": 5,
+        "atk": 1
+    },
+    "coming_leg": {
+        "id": "coming_leg",
+        "name": "鸡来靴",
+        "desc": "生命+5，攻击+1",
+        "slot": "leg",
+        "setId": "coming",
+        "price": 100,
+        "maxHp": 5,
+        "atk": 1
     }
 }
