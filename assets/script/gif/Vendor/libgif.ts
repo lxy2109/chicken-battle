@@ -477,6 +477,7 @@ const libgif = function () {
             }
             catch (err) {
                 doLoadError('parse');
+                if (load_callback) load_callback(gif);
             }
         };
 
@@ -957,7 +958,10 @@ const libgif = function () {
                 this.load_url(gif.getAttribute('rel:animated_src') || gif.src, callback);
             },
             load_raw: function (arr, callback) {
-                if (!load_setup(callback)) return;
+                if (!load_setup(callback)) {
+                    if (callback) callback(gif);
+                    return;
+                }
                 if (!initialized) init();
                 stream = new Stream(arr);
                 setTimeout(doParse, 0);
@@ -986,7 +990,14 @@ export default class SuperGif {
         return await new Promise<any>(ok => this.__rub.load(ok));
     }
     async loadRaw(data: Uint8Array) {
-        return await new Promise<any>(ok => this.__rub.load_raw(data, ok));
+        return await new Promise<any>((ok, fail) => {
+            try {
+                this.__rub.load_raw(data, ok);
+            }
+            catch (err) {
+                fail(err);
+            }
+        });
     }
     play() {
         this.__rub.play();

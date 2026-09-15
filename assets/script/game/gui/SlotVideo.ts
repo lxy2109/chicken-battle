@@ -13,7 +13,9 @@ const GIF_NODE = "SuitGif";
 export async function playResultSuitVideo(view: GameComponent, slotName: string, appearance: Appearance): Promise<boolean> {
     const suit = suitForWinGif(appearance);
     if (!suit) return false;
-    return playSlotGif(view, slotName, TEX.suitGif(suit.id));
+    const ok = await playSlotGif(view, slotName, TEX.suitGif(suit.id));
+    if (!ok) console.warn("[SuitGif] 套装 GIF 播放失败", suit.id);
+    return ok;
 }
 
 /** 在指定 slot 内创建并播放 GIF，按原比例放入 slot，不拉伸。 */
@@ -21,7 +23,8 @@ export async function playSlotGif(view: GameComponent, slotName: string, path: s
     const slot = view.getNode(slotName);
     if (!slot) return false;
     const asset = await loadGifAsset(view, path);
-    if (!asset || !slot.isValid) return false;
+    if (!asset) return false;
+    if (!slot.isValid) return false;
     const ani = mountSlotGif(slot);
     const ok = await ani.play(asset);
     if (!ok || !ani.isValid || !slot.isValid) {
@@ -71,31 +74,31 @@ function fitGifToSlot(node: Node, slot: Node) {
 }
 
 async function loadGifAsset(view: GameComponent, path: string): Promise<Asset | null> {
-    const bundle = assetManager.getBundle("bundle");
-    if (!bundle) return null;
-    const resolved = resolveGifPath(bundle, path);
-    if (!resolved) return null;
-    try {
-        const asset = await view.load("bundle", resolved, Asset);
+    for (const candidate of gifPathCandidates(path)) {
+        const asset = await view.load("bundle", candidate, Asset);
         if (asset) return asset;
+        const buffer = await view.load("bundle", candidate, BufferAsset);
+        if (buffer) return buffer;
     }
-    catch { /* 有的 gif 会按二进制导入 */ }
-    try {
-        return await view.load("bundle", resolved, BufferAsset) || null;
-    }
-    catch {
-        return null;
-    }
-}
-
-function resolveGifPath(bundle: ReturnType<typeof assetManager.getBundle>, path: string): string | null {
-    if (!bundle) return null;
-    if (bundle.getInfoWithPath(path)) return path;
-    const infos = bundle.getDirWithPath("game/equip_win_gif") || [];
+    const bundle = assetManager.getBundle("bundle");
+    const infos = bundle?.getDirWithPath("game/equip_win_gif") || [];
     const base = path.split("/").pop() || "";
     const hit = infos.find(info => {
         const name = (info.path || "").split("/").pop() || "";
-        return name === base || name.startsWith(base);
+        return name === base || name.startsWith(base) || name.startsWith(`${base}.`);
     });
-    return hit?.path || null;
+    if (hit?.path) {
+        const asset = await view.load("bundle", hit.path, Asset);
+        if (asset) return asset;
+        const buffer = await view.load("bundle", hit.path, BufferAsset);
+        if (buffer) return buffer;
+    }
+    console.warn("[SuitGif] 找不到资源", path);
+    return null;
+}
+
+function gifPathCandidates(path: string): string[] {
+    const withExt = path.endsWith(".gif") ? path : `${path}.gif`;
+    const noExt = withExt.slice(0, -4);
+    return [withExt, noExt];
 }
