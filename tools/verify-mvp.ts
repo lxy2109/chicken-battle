@@ -126,10 +126,16 @@ function run() {
             run.enterFight();
             assert(run.screen === "prebattle" && run.claimedGoldNodes.length === 0, "逛店不影响当前关卡挑战资格或首通账本");
         }
+        const warmups = [2, 2, 3, 3, 5];
         for (let id = 1; id <= 5; id++) {
             const prefab = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), `assets/bundle/gui/map/map_${id}.prefab`), "utf8"));
-            const shops = prefab.filter((obj: any) => obj.__type__ === "cc.Node" && /^BtnShop/.test(obj._name));
-            assert(shops.length === 1 && shops[0]._name === "BtnShop", `地图${id}仅有统一商店入口`);
+            const root = prefab.find((obj: any) => obj.__type__ === "cc.Node" && obj._name === "map" && obj._parent === null);
+            const child = (ref: any) => prefab[ref.__id__]._name;
+            const names = root._children.map(child);
+            const shops = names.filter((name: string) => /^BtnShop/.test(name));
+            const stages = names.filter((name: string) => /^BtnStage\d+$/.test(name));
+            assert(shops.length === 1 && shops[0] === "BtnShop", `地图${id}仅有统一商店入口`);
+            assert(stages.length === warmups[id - 1] && names.includes("BtnBoss"), `地图${id}热身节点应为 ${warmups[id - 1]} 个`);
         }
     });
 
