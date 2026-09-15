@@ -5,9 +5,9 @@ import { PartId, Stats, UpgradeDef, addPartial } from "./Types";
  * 部位强化：每场战斗后三选一，练哪个部位就把那个部位撑大一圈。
  *
  * 等级是唯一的真相源，属性加成和体型倍数都从它现算，不另存一份。
- * 这样两者永远对得上，也不会因为重复累加把数值刷上天。
+ * 属性按等级无限叠加；外形放大在配表 maxLevel 处封顶，避免部位无限膨胀。
  *
- * 哪个部位加哪个属性、每级撑大多少、最多练几级，全部读 Reward 配表，
+ * 哪个部位加哪个属性、每级撑大多少、外形最多撑几级，全部读 Reward 配表，
  * 这里一条映射都不写死，策划改表即可。
  */
 export type PartLevels = Partial<Record<PartId, number>>;
@@ -20,11 +20,15 @@ export function levelOf(levels: PartLevels, part: PartId): number {
     return levels[part] ?? 0;
 }
 
-/** 没到上限就还能练；表里没配这个部位就压根练不了。 */
-export function canUpgrade(levels: PartLevels, part: PartId): boolean {
-    const def = upgradeOf(part);
-    if (!def) return false;
-    return levelOf(levels, part) < def.maxLevel;
+/** 表里配了这个部位就能练；属性加成不设等级上限。 */
+export function canUpgrade(_levels: PartLevels, part: PartId): boolean {
+    return !!upgradeOf(part);
+}
+
+/** 外形放大按等级累加，到达配表 maxLevel 后不再继续撑大。 */
+export function scaleSteps(def: UpgradeDef, level: number): number {
+    if (level <= 0 || def.scalePerLevel <= 0) return 0;
+    return def.maxLevel > 0 ? Math.min(level, def.maxLevel) : level;
 }
 
 /** 各部位当前等级折算出的属性加成总和。 */
@@ -47,9 +51,9 @@ export function partScale(levels: PartLevels): Partial<Record<PartId, number>> {
     const out: Partial<Record<PartId, number>> = {};
     for (const def of getUpgrades()) {
         if (!def.part || def.scalePerLevel <= 0) continue;
-        const n = levelOf(levels, def.part);
-        if (n <= 0) continue;
-        out[def.part] = 1 + def.scalePerLevel * n;
+        const steps = scaleSteps(def, levelOf(levels, def.part));
+        if (steps <= 0) continue;
+        out[def.part] = 1 + def.scalePerLevel * steps;
     }
     return out;
 }

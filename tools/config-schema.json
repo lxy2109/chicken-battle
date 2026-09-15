@@ -543,7 +543,7 @@
     {
       "key": "maxLevel",
       "type": "int",
-      "label": "部位上限",
+      "label": "放大上限",
       "required": true
     },
     {

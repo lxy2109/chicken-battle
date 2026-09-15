@@ -33,7 +33,7 @@ customize ──▶ map ──▶ prebattle ──▶ battle ──▶ result �
 
 ## 部位强化
 
-三选一每次给三张不同部位的牌。练哪个部位加哪个属性、每级把部位撑大多少、最多练几级，**全在 `Reward` 配表里，代码一条都没写死**，`weight` 设 0 就是暂时不出现。
+三选一每次给三张不同部位的牌。练哪个部位加哪个属性、每级把部位撑大多少、外形最多撑几级，**全在 `Reward` 配表里，代码一条都没写死**，`weight` 设 0 就是暂时不出现。属性加成按选中次数一直叠加，`maxLevel` 只限制对应部位的外形放大。
 
 当前只启用部位强化池；金币已经在结算时发放，不会占掉三选一名额。
 
@@ -120,7 +120,7 @@ extensions/               编辑器插件源码
 | `Item` | 装备：槽位、价格、属性、所属套装、是否皮肤 |
 | `Set` | 套装：件数、2/4 件效果、折扣 |
 | `Part` | 捏鸡时可选的颜色与表情 |
-| `Reward` | 三选一池：部位对应属性、每级撑大多少、上限、权重 |
+| `Reward` | 三选一池：部位对应属性、每级撑大多少、外形放大上限、权重 |
 
 配置源统一为 `excel/斗鸡配置.xlsx`。在 Creator 的 **扩展 → 斗鸡 Excel 配表** 中直接搜索、增删和编辑记录，点击 **保存 Excel** 后再点击 **导出并刷新资源**。首次在扩展管理器的项目页刷新并启用 `chicken-excel`。命令行 `node tools/excel-kit.cjs` 仍可使用，请勿直接修改生成的JSON。新增 Map、GameRule、UiText、Danmaku、DanmakuRule 表，动态文本使用 Language 表；剧情独立在 Story 表，Map.storyId 指定地图剧情，Route.storyId 可覆盖。角色台词独立在 Taunt 表，Player/Enemy.tauntGroup 引用，按 order 排序。最终敌人及奖励统一由 Route 管理。详见 [配表说明](excel/配表说明.md)。
 

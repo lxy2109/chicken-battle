@@ -26,7 +26,7 @@ function rewardIcon(opt: RewardOption): string {
 /** 部位强化的牌面写清练哪儿、练到几级，纯 buff 就只有名字。 */
 function cardTitle(opt: RewardOption): string {
     if (!opt.part) return opt.title;
-    return gameText("RewardViewComp_001", PART_TEXT[opt.part], opt.nextLevel!, opt.maxLevel!);
+    return gameText("RewardViewComp_001", PART_TEXT[opt.part], opt.nextLevel!);
 }
 
 @ccclass("RewardViewComp")

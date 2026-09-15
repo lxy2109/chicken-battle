@@ -509,14 +509,13 @@ function run() {
         assert(fresh.routeNode === 1 && fresh.gold === 0 && fresh.ownedIds.length === 0 && fresh.completedMaps.length === 0, "清档后全部重新开始");
     });
 
-    ok("强化不足三项展示剩余，全满不再发牌", () => {
+    ok("外形满级后仍能发满三张强化", () => {
         const run = new RunState(36);
-        for (const part of ["head", "neck", "body", "wing"] as const) run.partLevels[part] = upgradeOf(part)!.maxLevel;
-        assert(rollUpgrades(1, 36, run.partLevels).length === 1, "仅剩脚部时只有一张");
-        run.partLevels.leg = upgradeOf("leg")!.maxLevel;
+        for (const part of ["head", "neck", "body", "wing", "leg"] as const) run.partLevels[part] = upgradeOf(part)!.maxLevel;
+        assert(rollUpgrades(1, 36, run.partLevels).length === 3, "外形满级后仍有三张");
         run.confirmAppearance(defaultAppearance());
         run.settle(true); run.afterResult();
-        assert(run.upgrades.length === 0 && run.routeNode === 2 && run.screen === "map", "全满后不能卡在空强化页");
+        assert(run.upgrades.length === 3 && run.screen === "reward", "外形满级后仍进入三选一");
     });
 
     ok("损坏存档或未知版本读档失败时不删除原内容", () => {
@@ -566,7 +565,7 @@ function run() {
         const after = run.playerFighter();
         // 等级和 bonus 各加一次就会变成双倍，这条断言专门盯这个。
         assert(after.stats.atk === before.stats.atk + step, "练一级只该加一份攻击");
-        assert((after.appearance.partScale?.head ?? 1) > 1, "练过的部位要变大");
+        assert((after.appearance.partScale?.head ?? 1) === 1 + upgradeOf("head")!.scalePerLevel, "练一级按配表放大");
         assert((after.appearance.partScale?.wing ?? 1) === 1, "没练的部位不该变大");
         assert(combatPower(after.stats) > combatPower(before.stats), "强化应体现在战力上");
 
@@ -576,13 +575,21 @@ function run() {
         assert((run.playerFighter().stats.combo ?? 0) === comboBefore + comboStep, "翅膀强化应增加连击");
     });
 
-    ok("部位练满后不再发牌", () => {
+    ok("加成不设上限，外形放大封顶", () => {
         const run = new RunState(13);
+        run.confirmAppearance(defaultAppearance());
         const def = upgradeOf("head")!;
+        const before = run.playerFighter().stats.atk;
         for (let i = 0; i < def.maxLevel + 3; i++) run.levelUp("head");
-        assert(run.partLevels.head === def.maxLevel, "等级不该超过配表上限");
+        assert(run.partLevels.head === def.maxLevel + 3, "等级应能超过外形上限");
+        assert(run.playerFighter().stats.atk === before + def.stats.atk! * (def.maxLevel + 3), "加成应继续叠加");
+        assert(run.playerFighter().appearance.partScale?.head === 1 + def.scalePerLevel * def.maxLevel, "外形放大封顶");
+        const extra = run.playerFighter().stats.atk;
+        run.levelUp("head");
+        assert(run.playerFighter().stats.atk === extra + def.stats.atk!, "封顶后加成仍增加");
+        assert(run.playerFighter().appearance.partScale?.head === 1 + def.scalePerLevel * def.maxLevel, "封顶后外形不再变大");
         const cards = rollUpgrades(1, 99, run.partLevels);
-        assert(cards.every(c => c.part !== "head"), "练满的部位不该再出现");
+        assert(cards.some(c => c.part === "head"), "外形满后仍可抽到该部位");
     });
 
     ok("自动战斗可分出胜负", () => {

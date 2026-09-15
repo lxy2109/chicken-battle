@@ -19,7 +19,7 @@ export function rollBuffs(stage: number, seed: number): RewardOption[] {
     return roll(getUpgrades().filter(u => !u.part), stage, seed, {});
 }
 
-/** 部位强化：表里带 part 的那些，已经练满的排除掉，免得给出一张点了没用的牌。 */
+/** 部位强化：表里带 part 的那些。属性加成不设上限，外形满了也继续发牌。 */
 export function rollUpgrades(stage: number, seed: number, levels: PartLevels): RewardOption[] {
     const pool = getUpgrades().filter(u => !!u.part && canUpgrade(levels, u.part));
     return roll(pool, stage, seed, levels);

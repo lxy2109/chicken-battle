@@ -13,7 +13,7 @@
         "revive": 0,
         "healPerTurn": 0,
         "maxLevel": 5,
-        "scalePerLevel": 0.06,
+        "scalePerLevel": 0.15,
         "weight": 10
     },
     "up_neck": {
@@ -30,7 +30,7 @@
         "revive": 0,
         "healPerTurn": 0,
         "maxLevel": 5,
-        "scalePerLevel": 0.06,
+        "scalePerLevel": 0.15,
         "weight": 10
     },
     "up_body": {
@@ -47,7 +47,7 @@
         "revive": 0,
         "healPerTurn": 0,
         "maxLevel": 5,
-        "scalePerLevel": 0.06,
+        "scalePerLevel": 0.15,
         "weight": 10
     },
     "up_wing": {
@@ -65,7 +65,7 @@
         "revive": 0,
         "healPerTurn": 0,
         "maxLevel": 5,
-        "scalePerLevel": 0.06,
+        "scalePerLevel": 0.15,
         "weight": 10
     },
     "up_leg": {
@@ -82,7 +82,7 @@
         "revive": 0,
         "healPerTurn": 0,
         "maxLevel": 5,
-        "scalePerLevel": 0.06,
+        "scalePerLevel": 0.15,
         "weight": 10
     },
     "buff_gold": {

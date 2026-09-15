@@ -186,8 +186,9 @@ export type RunScreen =
 /**
  * 一条三选一强化的配置，整张 Reward 表由策划维护。
  *
- * 部位对应哪个属性、每级撑大多少、最多几级、出现权重，全在表里，代码不写死任何一条。
+ * 部位对应哪个属性、每级撑大多少、外形最多撑几级、出现权重，全在表里，代码不写死任何一条。
  * part 留空就是纯 buff（比如给钱），weight 设 0 就是暂时不出现。
+ * maxLevel 只限制外形放大，属性加成按选中次数一直叠加。
  */
 export interface UpgradeDef {
     id: string;
@@ -196,6 +197,7 @@ export interface UpgradeDef {
     part?: PartId;
     goldPerStage: number;
     stats: Partial<Stats>;
+    /** 外形放大封顶对应的等级；0 表示不限制放大。属性加成不看这个。 */
     maxLevel: number;
     scalePerLevel: number;
     weight: number;
