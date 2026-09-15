@@ -57,6 +57,28 @@ export class BattleFx {
         root.once(Node.EventType.NODE_DESTROYED, this.clear, this);
     }
 
+    /** 按地图铺一层薄色，换图时场地立刻不像上一场。 */
+    wash(rgb: [number, number, number], heavy = false) {
+        if (!this.veil.isValid) return;
+        this.layout();
+        const { w, h } = this.size();
+        const g = this.veilInk;
+        g.clear();
+        const [r, gch, b] = rgb;
+        const band = heavy ? 150 : 110;
+        g.fillColor = new Color(r, gch, b, heavy ? 90 : 48);
+        g.rect(-w / 2, h / 2 - band, w, band);
+        g.fill();
+        g.rect(-w / 2, -h / 2, w, band);
+        g.fill();
+        g.fillColor = new Color(r, gch, b, heavy ? 40 : 22);
+        g.rect(-w / 2, -h / 2, 56, h);
+        g.fill();
+        g.rect(w / 2 - 56, -h / 2, 56, h);
+        g.fill();
+        this.veilFade.opacity = heavy ? 200 : 140;
+    }
+
     skillWindup(actor: ChickenActor | null) {
         this.letterbox(true);
         actor?.flash(new Color(255, 248, 220), 0.12);
@@ -174,9 +196,9 @@ export class BattleFx {
 
     private slashAt(x: number, y: number, direction: number, style: StrikeStyle, heavy: boolean) {
         const dir = direction >= 0 ? 1 : -1;
-        const long = heavy ? 240 : style === "tail" ? 210 : 170;
-        const thick = heavy ? 120 : 78;
-        const tilt = style === "leap" || style === "dive" ? -28 : style === "tail" ? 22 : 8;
+        const long = heavy ? 240 : style === "tail" ? 210 : style === "feint" ? 150 : 170;
+        const thick = heavy ? 120 : style === "jump" ? 64 : 78;
+        const tilt = style === "leap" || style === "dive" ? -48 : style === "tail" ? 28 : style === "charge" ? 4 : 8;
         this.stamp(this.arenaFx, this.sheet.slash, x, y + 16, long, thick, 0.2, {
             sx: dir,
             angle: dir * tilt,

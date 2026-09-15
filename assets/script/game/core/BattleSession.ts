@@ -1,4 +1,4 @@
-import { dodgeChance, inferFightStyle, styleDamageMul, stylePierce, styleStagger } from "./BattleStyle";
+import { dodgeChance, inferFightStyle, STYLE_OPENING, styleDamageMul, stylePierce, styleStagger } from "./BattleStyle";
 import { gameNumber, gameText } from "./GameConfig";
 import { AiFighter, BattleDecision, decide } from "./BattleAI";
 import { Rng } from "./Rng";
@@ -202,7 +202,8 @@ export class BattleSession {
                 ? { kind: "skill" as const, style: pickCounterStyle(actor) }
                 : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
             actor.counterReady = false;
-            const style: StrikeStyle = d.style;
+            const style: StrikeStyle = actor.beats === 0 && d.kind !== "heal"
+                ? STYLE_OPENING[actor.fightStyle] : d.style;
             actor.beats += 1;
             out.push({ type: "action", side, kind: d.kind, style });
 

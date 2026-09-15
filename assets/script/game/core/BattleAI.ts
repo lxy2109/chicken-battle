@@ -61,8 +61,12 @@ export const AI_RULE = {
     canPierce: (s, f) => n(s.atk) > n(f.def),
     /** 诡道型技能不讲究血量优势，冷却好了就甩假动作 */
     tricksterCast: (s, _f) => s.style === "trickster",
+    /** 飞扑型一有大招就往天上送，不等人家残血 */
+    aerialCast: (s, _f) => s.style === "aerial",
     /** 狂战型残血反而更想放技能 */
-    berserkCast: (s, _f) => s.style === "berserker" && ratio(s.hp, s.maxHp) <= 0.55
+    berserkCast: (s, _f) => s.style === "berserker" && ratio(s.hp, s.maxHp) <= 0.55,
+    /** 铁壁型不靠抢手，贴着打扫尾；疾步才用速度池 */
+    dash: (s, f) => n(s.spd) > n(f.spd) + gameNumber("ai_speedAdvantage") && s.style !== "tank"
 } satisfies Record<string, AiRule>;
 
 /**
@@ -110,10 +114,11 @@ export function decide(self: AiFighter, foe: AiFighter): BattleDecision {
     if (AI_RULE.needHeal(self, foe)) return act("heal", "heal", self);
     if (AI_RULE.skillReady(self, foe)
         && (AI_RULE.foeDying(self, foe) || AI_RULE.healthy(self, foe) || AI_RULE.outgun(self, foe)
-            || AI_RULE.tricksterCast(self, foe) || AI_RULE.berserkCast(self, foe))) {
+            || AI_RULE.tricksterCast(self, foe) || AI_RULE.aerialCast(self, foe)
+            || AI_RULE.berserkCast(self, foe))) {
         return act("skill", "skill", self);
     }
-    if (AI_RULE.faster(self, foe)) return act("attack", "fast", self);
+    if (AI_RULE.dash(self, foe)) return act("attack", "fast", self);
     if (AI_RULE.losing(self, foe)) return act("attack", "losing", self);
     if (AI_RULE.canPierce(self, foe)) return act("attack", "pierce", self);
     return act("attack", "hold", self);

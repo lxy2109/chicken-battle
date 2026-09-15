@@ -17,10 +17,11 @@ import { BattleDanmaku } from "./BattleDanmaku";
 import { BattleFx } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
+import { ARENA_MOOD, SIGNATURE_LABEL, STYLE_LABEL, styleRhythm } from "../../core/BattleStyle";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
-import { setLabel } from "../UiUtil";
+import { hexColor, setLabel } from "../UiUtil";
 import { playGameEffect } from "../GameAudio";
 
 const { ccclass } = _decorator;
@@ -93,10 +94,19 @@ export class BattleViewComp extends CCView<ChickenRun> {
         const me = run.playerFighter();
         const foe = run.enemyFighter();
         this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
+        const mapId = run.currentMap().id;
+        const mood = ARENA_MOOD[mapId] || ARENA_MOOD[1];
+        const bg = this.node.getComponent(Sprite);
+        if (bg) bg.color = hexColor(run.currentRoute().encounter === "final" ? "#f0b4a8" : mood.tint);
+        const pHome = new Vec3(-styleRhythm(me.fightStyle).gap, P_HOME.y + styleRhythm(me.fightStyle).lane, 0);
+        const eHome = new Vec3(styleRhythm(foe.fightStyle).gap, E_HOME.y + styleRhythm(foe.fightStyle).lane, 0);
+        const pLabel = STYLE_LABEL[me.fightStyle || "brawler"];
+        const eLabel = STYLE_LABEL[foe.fightStyle || "brawler"];
+        const sig = SIGNATURE_LABEL[foe.signature || "none"];
         setLabel(this, "LabTitle", gameText("BattleViewComp_009"));
-        setLabel(this, "LabPlayerName", me.name);
-        setLabel(this, "LabEnemyName", foe.name);
-        setLabel(this, "LabLog", "");
+        setLabel(this, "LabPlayerName", `${me.name} · ${pLabel}`);
+        setLabel(this, "LabEnemyName", sig ? `${foe.name} · ${eLabel} ${sig}` : `${foe.name} · ${eLabel}`);
+        setLabel(this, "LabLog", `${eLabel} vs ${pLabel}`);
         const layer = this.getNode("DanmakuLayer");
         const encounter = run.currentRoute().encounter;
         if (layer) this.danmaku = new BattleDanmaku(layer,
@@ -139,16 +149,16 @@ export class BattleViewComp extends CCView<ChickenRun> {
         const arena = this.getNode("Arena");
         if (arena && this.playerNode) {
             this.playerNode.parent = arena;
-            this.playerNode.setPosition(P_HOME);
+            this.playerNode.setPosition(pHome);
         }
         if (arena && this.enemyNode) {
             this.enemyNode.parent = arena;
-            this.enemyNode.setPosition(E_HOME);
+            this.enemyNode.setPosition(eHome);
         }
         // 必须等 spawnChicken 建完再造 Actor：它会记下各部位此刻的位置当复位基准，
         // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
-        if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, P_HOME);
-        if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, E_HOME);
+        if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler");
+        if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler");
 
         // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
         const brain = new BattleBrain();
@@ -194,9 +204,12 @@ export class BattleViewComp extends CCView<ChickenRun> {
                 ink: fxFrames[6] || undefined,
                 charge: fxFrames[7] || undefined
             });
+            this.fx.wash(mood.veil, run.currentRoute().encounter === "final" || run.phase === "boss");
         }
         await this.playIntro();
         if (this.closed) return;
+        this.playerActor?.stance();
+        this.enemyActor?.stance();
         this.playerActor?.startRoam();
         this.enemyActor?.startRoam();
         this.session.beginCombat();

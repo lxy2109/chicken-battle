@@ -15,14 +15,17 @@ const ENEMY_PROFILE: Record<string, CombatProfile> = {
     s1_official: { style: "brawler", signature: "clumsy" },
     s2_warmup_1: { style: "aerial", signature: "none" },
     s2_warmup_2: { style: "brawler", signature: "none" },
+    s2_warmup_3: { style: "trickster", signature: "none" },
     s2_official: { style: "tank", signature: "counter" },
     s3_warmup_1: { style: "trickster", signature: "none" },
     s3_warmup_2: { style: "aerial", signature: "none" },
     s3_warmup_3: { style: "tank", signature: "none" },
+    s3_warmup_4: { style: "swift", signature: "none" },
     s3_official: { style: "trickster", signature: "slip" },
     s4_warmup_1: { style: "brawler", signature: "none" },
     s4_warmup_2: { style: "swift", signature: "none" },
     s4_warmup_3: { style: "aerial", signature: "none" },
+    s4_warmup_4: { style: "tank", signature: "none" },
     s4_official: { style: "swift", signature: "focus" },
     s5_warmup_1: { style: "brawler", signature: "none" },
     s5_warmup_2: { style: "trickster", signature: "none" },
@@ -49,61 +52,119 @@ const NAME_STYLE: Array<[RegExp, FightStyle]> = [
 export const ARCHETYPE_POOLS: Record<FightStyle, Record<StylePool, StrikeStyle[]>> = {
     brawler: {
         heal: ["peck"],
-        skill: ["leap", "combo", "charge"],
-        fast: ["combo", "jump", "charge"],
+        skill: ["charge", "leap", "combo"],
+        fast: ["charge", "combo", "jump"],
         losing: ["charge", "dive", "peck"],
         pierce: ["peck", "combo", "charge"],
-        hold: ["peck", "combo", "tail", "charge"]
+        hold: ["charge", "peck", "combo", "leap"]
     },
     swift: {
         heal: ["peck"],
-        skill: ["leap", "feint", "jump"],
+        skill: ["jump", "feint", "leap"],
         fast: ["jump", "feint", "combo"],
         losing: ["feint", "jump", "dive"],
-        pierce: ["combo", "feint", "peck"],
-        hold: ["jump", "feint", "combo", "tail"]
+        pierce: ["combo", "feint", "jump"],
+        hold: ["jump", "feint", "combo", "dive"]
     },
     tank: {
         heal: ["peck"],
-        skill: ["tail", "leap", "charge"],
-        fast: ["tail", "jump", "charge"],
+        skill: ["tail", "charge", "leap"],
+        fast: ["tail", "charge", "peck"],
         losing: ["tail", "charge", "dive"],
         pierce: ["tail", "peck", "charge"],
-        hold: ["tail", "peck", "dive", "charge"]
+        hold: ["tail", "charge", "peck", "leap"]
     },
     aerial: {
         heal: ["peck"],
-        skill: ["leap", "dive", "charge"],
+        skill: ["dive", "leap", "charge"],
         fast: ["dive", "jump", "leap"],
         losing: ["dive", "leap", "charge"],
-        pierce: ["dive", "peck", "jump"],
+        pierce: ["dive", "jump", "peck"],
         hold: ["dive", "leap", "jump", "feint"]
     },
     trickster: {
         heal: ["peck"],
         skill: ["feint", "leap", "combo"],
-        fast: ["feint", "combo", "jump"],
+        fast: ["feint", "jump", "combo"],
         losing: ["feint", "dive", "jump"],
         pierce: ["feint", "combo", "peck"],
-        hold: ["feint", "combo", "tail", "jump"]
+        hold: ["feint", "combo", "jump", "dive"]
     },
     berserker: {
         heal: ["peck"],
         skill: ["leap", "dive", "charge"],
-        fast: ["combo", "jump", "charge"],
+        fast: ["combo", "charge", "jump"],
         losing: ["dive", "charge", "leap"],
-        pierce: ["combo", "peck", "charge"],
+        pierce: ["combo", "charge", "peck"],
         hold: ["dive", "combo", "leap", "charge"]
     },
     medic: {
         heal: ["peck"],
-        skill: ["leap", "tail", "peck"],
+        skill: ["peck", "leap", "tail"],
         fast: ["peck", "jump", "tail"],
         losing: ["peck", "tail", "feint"],
         pierce: ["peck", "combo", "tail"],
         hold: ["peck", "tail", "jump", "feint"]
     }
 };
+
+/** 开场第一招跟路数走，两秒内就能看出这只鸡怎么打。 */
+export const STYLE_OPENING: Record<FightStyle, StrikeStyle> = {
+    brawler: "charge",
+    swift: "jump",
+    tank: "tail",
+    aerial: "dive",
+    trickster: "feint",
+    berserker: "leap",
+    medic: "peck"
+};
+
+/**
+ * 位移个性。敌人战斗里是整图立绘，部位动画看不见，
+ * 所以路数必须改整只鸡怎么挪、跳多高、站哪，不能只换招式名。
+ */
+export interface StyleRhythm {
+    /** 位移时长倍率，小于 1 更利落。上限压在 1.05，免得顶住出手间隔。 */
+    tempo: number;
+    hop: number;
+    roam: number;
+    squash: number;
+    gap: number;
+    lane: number;
+    ghost: [number, number, number];
+}
+
+export const STYLE_RHYTHM: Record<FightStyle, StyleRhythm> = {
+    brawler: { tempo: 0.9, hop: 0.82, roam: 1.05, squash: 1.28, gap: 148, lane: -8, ghost: [190, 48, 22] },
+    swift: { tempo: 0.78, hop: 1.18, roam: 1.85, squash: 0.82, gap: 205, lane: 18, ghost: [70, 96, 170] },
+    tank: { tempo: 1.05, hop: 0.5, roam: 0.4, squash: 1.48, gap: 118, lane: -16, ghost: [96, 78, 42] },
+    aerial: { tempo: 0.86, hop: 1.72, roam: 1.15, squash: 1.08, gap: 176, lane: 46, ghost: [210, 232, 255] },
+    trickster: { tempo: 0.84, hop: 1.08, roam: 1.7, squash: 0.9, gap: 188, lane: -28, ghost: [108, 42, 140] },
+    berserker: { tempo: 0.8, hop: 1.22, roam: 1.45, squash: 1.38, gap: 136, lane: 10, ghost: [220, 32, 24] },
+    medic: { tempo: 1, hop: 0.92, roam: 0.85, squash: 1, gap: 160, lane: 0, ghost: [72, 176, 118] }
+};
+
+export const ARENA_MOOD: Record<number, { tint: string; veil: [number, number, number] }> = {
+    1: { tint: "#fff1d2", veil: [196, 118, 36] },
+    2: { tint: "#d7f0c6", veil: [46, 122, 58] },
+    3: { tint: "#ffe59a", veil: [201, 154, 32] },
+    4: { tint: "#e8cfc0", veil: [108, 48, 72] },
+    5: { tint: "#f3c4b0", veil: [148, 36, 28] }
+};
+
+export const SIGNATURE_LABEL: Record<SignatureId, string> = {
+    none: "",
+    clumsy: "会打滑",
+    counter: "挨打必回",
+    slip: "捉不住",
+    focus: "连啄见血",
+    stitch: "吸血",
+    idol: "半血回春"
+};
+
+export function styleRhythm(style: FightStyle | undefined): StyleRhythm {
+    return STYLE_RHYTHM[style || "brawler"];
+}
 
 export function enemyCombatProfile(id: string, name = ""): CombatProfile {
     if (ENEMY_PROFILE[id]) return ENEMY_PROFILE[id];

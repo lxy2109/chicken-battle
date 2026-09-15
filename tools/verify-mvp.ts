@@ -5,6 +5,7 @@ import { AiFighter, decideAction, decide } from "../assets/script/game/core/Batt
 import { BattleSession } from "../assets/script/game/core/BattleSession";
 import { DanmakuPool } from "../assets/script/game/core/Danmaku";
 import { Rng } from "../assets/script/game/core/Rng";
+import { enemyCombatProfile, STYLE_OPENING } from "../assets/script/game/core/BattleStyle";
 import { getItems, getRoute, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
 import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
@@ -862,6 +863,43 @@ function run() {
         assert(swift.style === "jump", "疾步型速度池仍以跳踢起手");
         assert(tank.style === "tail", "铁壁型速度池改扫尾");
         assert(swift.style !== tank.style, "疾步和铁壁不该打出同一招");
+        const aerial = decide({ ...base, style: "aerial", skillCd: 0, spd: 8 }, foe);
+        const trick = decide({ ...base, style: "trickster", skillCd: 0, spd: 8 }, foe);
+        const brawler = decide({ ...base, style: "brawler", spd: 8 }, foe);
+        assert(aerial.kind === "skill" && aerial.style === "dive", "飞扑型冷却好了就下砸");
+        assert(trick.kind === "skill" && trick.style === "feint", "诡道型冷却好了就假动作");
+        assert(brawler.style === "charge" || brawler.style === "peck", "莽撞型贴身撞");
+        assert(aerial.style !== trick.style && trick.style !== tank.style, "飞扑/诡道/铁壁开场招应能一眼分开");
+    });
+
+    ok("相邻场次路数不同，开场招跟路数走", () => {
+        const styles = getRoute().filter(n => n.enemyId).map(n => enemyCombatProfile(n.enemyId!, "").style);
+        const unique = new Set(styles);
+        assert(unique.size >= 5, `整条路线路数太少，只有 ${[...unique].join(",")}`);
+        let same = 0;
+        for (let i = 1; i < styles.length; i++) if (styles[i] === styles[i - 1]) same += 1;
+        assert(same <= 2, `相邻场次路数重复 ${same} 次，连看会腻`);
+
+        const run = new RunState(3);
+        run.confirmAppearance(defaultAppearance());
+        const me = run.playerFighter();
+        const foe = run.enemyFighter();
+        const battle = new BattleSession(me, foe, 3, false);
+        battle.intro();
+        battle.beginCombat();
+        const first: Partial<Record<"player" | "enemy", string>> = {};
+        let guard = 0;
+        while ((first.player == null || first.enemy == null) && !battle.done && guard++ < 400) {
+            for (const ev of battle.tick(0.05)) {
+                if (ev.type === "action" && first[ev.side] == null) first[ev.side] = ev.style;
+            }
+            for (const side of ["player", "enemy"] as const) {
+                if (battle.striking(side)) battle.resolveStrike(side, true);
+            }
+        }
+        assert(first.player === STYLE_OPENING[me.fightStyle || "brawler"], `玩家开场应是 ${STYLE_OPENING[me.fightStyle || "brawler"]}，实际 ${first.player}`);
+        assert(first.enemy === STYLE_OPENING[foe.fightStyle || "brawler"], `敌人开场应是 ${STYLE_OPENING[foe.fightStyle || "brawler"]}，实际 ${first.enemy}`);
+        assert(first.player !== first.enemy, "首场双方开场招相同，看起来会像镜像互啄");
     });
 
     ok("对撞折伤、闪避与红眼", () => {
