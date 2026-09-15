@@ -125,7 +125,7 @@
             "_value": true
           },
           "video": {
-            "_value": false
+            "_value": true
           },
           "webview": {
             "_value": false
@@ -217,6 +217,7 @@
           "spine-3.8",
           "tween",
           "ui",
+          "video",
           "websocket"
         ],
         "noDeprecatedFeatures": {

@@ -8,6 +8,7 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { getMaps, TEX, routeNode } from "../../core/Catalog";
 import { celebrateChicken, spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
+import { playResultSuitVideo, stopSlotVideo } from "../SlotVideo";
 import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
 
 const { ccclass } = _decorator;
@@ -39,8 +40,12 @@ export class ResultViewComp extends CCView<ChickenRun> {
 
         setNodeActive(this, "LossBanner", !win);
         await setNodeSprite(this, "result", TEX.background(win ? "result_figma" : "result_lose_figma"));
-        const chicken = await spawnChicken(this, "ChickenSlot", run.playerFighter().appearance, 1.2);
-        if (win) celebrateChicken(chicken, run.playerFighter().appearance);
+        const appearance = run.playerFighter().appearance;
+        // 成套后在 ChickenSlot 播套装视频，尺寸跟现有 slot 一致；没有片源时仍展示立绘/拼装鸡。
+        if (!await playResultSuitVideo(this, "ChickenSlot", appearance)) {
+            const chicken = await spawnChicken(this, "ChickenSlot", appearance, 1.2);
+            if (win) celebrateChicken(chicken, appearance);
+        }
         bindClick(this, "BtnNext", this.onNext.bind(this));
     }
 
@@ -50,6 +55,7 @@ export class ResultViewComp extends CCView<ChickenRun> {
     }
 
     reset() {
+        stopSlotVideo(this.getNode("ChickenSlot"));
         this.node.destroy();
     }
 }

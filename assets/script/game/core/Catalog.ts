@@ -20,7 +20,9 @@ export const TEX = {
     equip: (itemId: string) => `game/texture/equip/${itemById(itemId).icon || itemId}/spriteFrame`,
     icon: (name: string) => `game/texture/icon/${name}/spriteFrame`,
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
-    ui: (name: string) => `game/texture/ui/${name}/spriteFrame`
+    ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
+    /** 结算套装视频，文件放到 bundle/game/video/set_<套装id>。 */
+    suitVideo: (setId: string) => `game/video/set_${setId}`
 };
 
 /** shop 使用 1080×1920 坐标；entrances 使用归一化图像坐标（左上为原点），依次为五关和 BOSS 的道路落点。 */
@@ -83,6 +85,12 @@ export function getItems(): EquipItem[] {
 
 export function getSets(): SetDef[] {
     return tableRows("Set").map(toSet);
+}
+
+/** 当前穿齐、可在结算展示套装视频/立绘的套装。 */
+export function showcaseSuit(appearance: Appearance) {
+    const equipped = Object.values(appearance.equipment || {});
+    return getSets().find(set => !set.legacy && !set.rewardOnly && set.pieceIds.every(id => equipped.includes(id)));
 }
 
 export function getColorPalette(): string[] {

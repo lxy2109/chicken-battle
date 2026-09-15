@@ -1,7 +1,7 @@
 import { Color, EffectAsset, Graphics, Material, Vec4, Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, tween, v3 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { FACE_TEXT, Appearance, PartId } from "../core/Types";
-import { PART_NODE, TEX, getSets, itemById } from "../core/Catalog";
+import { PART_NODE, TEX, showcaseSuit, itemById } from "../core/Catalog";
 import { setSpriteColor } from "./UiUtil";
 
 export async function spawnChicken(view: GameComponent, slotName: string, appearance: Appearance, scale = 1, flip = false): Promise<Node | null> {
@@ -21,8 +21,7 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
     node.parent = slot;
     node.setPosition(0, 0, 0);
     node.setScale(flip ? -Math.abs(scale) : scale, scale, 1);
-    const equipped = Object.values(appearance.equipment || {});
-    const suit = getSets().find(set => !set.legacy && !set.rewardOnly && set.pieceIds.every(id => equipped.includes(id)));
+    const suit = showcaseSuit(appearance);
     const illustration = appearance.illustration ? `chicken/${appearance.illustration}` : suit ? `equip/set_${suit.id}` : undefined;
     if (illustration) {
         for (const child of node.children) child.active = false;
