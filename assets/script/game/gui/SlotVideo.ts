@@ -23,8 +23,7 @@ export async function playSlotGif(view: GameComponent, slotName: string, path: s
     const asset = await loadGifAsset(view, path);
     if (!asset || !slot.isValid) return false;
     const ani = mountSlotGif(slot);
-    const slotWidth = slot.getComponent(UITransform)?.width || 360;
-    const ok = await ani.play(asset, Math.max(256, Math.floor(slotWidth)));
+    const ok = await ani.play(asset);
     if (!ok || !ani.isValid || !slot.isValid) {
         stopSlotVideo(slot);
         return false;
@@ -53,25 +52,22 @@ function mountSlotGif(slot: Node): GifFrameAni {
     node.setPosition(0, 0, 0);
     const slotTransform = slot.getComponent(UITransform);
     const transform = node.addComponent(UITransform);
-    if (slotTransform) {
-        transform.setContentSize(slotTransform.contentSize);
-        transform.setAnchorPoint(slotTransform.anchorPoint);
-    }
+    if (slotTransform) transform.setAnchorPoint(slotTransform.anchorPoint);
     const sprite = node.addComponent(Sprite);
-    sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    sprite.sizeMode = Sprite.SizeMode.RAW;
     sprite.type = Sprite.Type.SIMPLE;
+    sprite.trim = false;
     return node.addComponent(GifFrameAni);
 }
 
 function fitGifToSlot(node: Node, slot: Node) {
     const slotTransform = slot.getComponent(UITransform);
-    const transform = node.getComponent(UITransform);
     const frame = node.getComponent(Sprite)?.spriteFrame;
-    if (!slotTransform || !transform || !frame) return;
+    if (!slotTransform || !frame) return;
     const width = Math.max(frame.rect.width, 1);
     const height = Math.max(frame.rect.height, 1);
     const scale = Math.min(slotTransform.width / width, slotTransform.height / height);
-    transform.setContentSize(width * scale, height * scale);
+    node.setScale(scale, scale, 1);
 }
 
 async function loadGifAsset(view: GameComponent, path: string): Promise<Asset | null> {
