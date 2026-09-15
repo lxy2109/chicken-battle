@@ -1,11 +1,11 @@
 import { revealUI } from "./UiUtil";
-import { Node, Sprite, SpriteFrame, view } from "cc";
+import { Node, SpriteFrame, view } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { oops } from "db://oops-framework/core/Oops";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { ECSCtor, ECSView } from "db://oops-framework/module/common/CCEntity";
-import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { ChickenRun } from "../chicken/ChickenRun";
+import { mapPrefab } from "../core/Catalog";
 import { applyConfiguredTexts } from "./UiUtil";
 
 const preparedDirectories = new Map<string, Promise<void>>();
@@ -19,8 +19,9 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
     if (key === "MapView") directories.push("map");
     if (key === "RewardView") directories.push("icon");
     if (key === "BattleView") directories.push("fx");
-    const backgrounds = key === "MapView" ? [entity.run.currentMap().background]
-        : key === "ShopView" ? ["shop_figma", "shop_weapon_figma"]
+    if (key === "MapView") gui.internal.getConfig(key).prefab = mapPrefab(entity.run.currentMap().id);
+    const prefab = gui.internal.getConfig(key).prefab;
+    const backgrounds = key === "ShopView" ? ["shop_figma", "shop_weapon_figma"]
         : key === "ResultView" ? ["result_figma", "result_lose_figma"] : [];
     await Promise.all([
         ...directories.map(dir => {
@@ -40,7 +41,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
             return ready;
         }),
         new Promise<void>((resolve, reject) => {
-            oops.res.loadAny("bundle", [gui.internal.getConfig(key).prefab,
+            oops.res.loadAny("bundle", [prefab,
                 "game/prefab/chicken", "game/feather-gradient",
                 ...backgrounds.map(bg => `game/texture/bg/${bg}/spriteFrame`)],
             null, (error: Error | null) => error ? reject(error) : resolve());
@@ -57,11 +58,6 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         comp = node.addComponent(ctor as any) as unknown as ecs.Comp;
     }
     entity.add(comp);
-    // 在显示地图之前完成背景绑定，避免先露出预制体的第一张地图。
-    if (key === "MapView") {
-        await (comp as unknown as GameComponent).setSprite(node.getComponent(Sprite)!,
-            `game/texture/bg/${backgrounds[0]}/spriteFrame`);
-    }
     oops.gui.show(key);
     const entrances: Record<string, string[]> = {
         customize: ["BtnStart", "LabSaveHint"],
@@ -69,7 +65,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         character: ["PowerCard", "EquipCard"],
         result: ["LabHeader", "LabGold", "BtnNext"],
         reward: ["BtnConfirm"],
-        shop: ["BtnShopPrev", "BtnShopNext", "BtnLeave"],
+        shop: ["BtnLeave"],
         ending: ["LabTitle", "GainCard", "BtnCharacter"]
     };
     const names = entrances[node.name] || [];

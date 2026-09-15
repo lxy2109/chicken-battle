@@ -867,24 +867,6 @@
       "required": true
     },
     {
-      "key": "background",
-      "type": "string",
-      "label": "背景资源名",
-      "required": true
-    },
-    {
-      "key": "shop",
-      "type": "any",
-      "label": "商店坐标及缩放（JSON）",
-      "required": true
-    },
-    {
-      "key": "entrances",
-      "type": "any",
-      "label": "关卡坐标（JSON数组）",
-      "required": true
-    },
-    {
       "key": "storyId",
       "label": "地图剧情ID",
       "type": "string",

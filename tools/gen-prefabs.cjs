@@ -446,7 +446,7 @@ function palette(i) {
 }
 
 /** 关卡节点在地图上的落点，按原型从上到下推进。 */
-// 每张地图五轮热身与一场正式赛；第五星图结束后进入坤坤挑战。
+// 五图热身 2/2/3/3/5 加正式赛；第五图结束后进入坤坤挑战。运行时用 map_1..map_5，每图只放对应场次的热身节点。
 // 坐标由 1080×1920 标注换算到 720×1280 设计区，节点只向前开放。
 const MAP_NODES = [[134.333, -452.667], [-96.333, -274], [145, -93.333], [-10.333, 30.667], [85.667, 215.333]];
 const MAP_BOSS = [-126.667, 326.667];
@@ -485,6 +485,7 @@ function makeMap() {
     b.node({ name: "MapBossSlot", parent: root, x: MAP_BOSS[0], y: MAP_BOSS[1] + 88, w: 106, h: 148 });
     placeButton(b, root, "BtnChallenge", "开始挑战", 220, 1810, 640, 100, "yellow");
     writePrefab("assets/bundle/gui/map/map.prefab", b.finish(root));
+    // 运行时使用 map_1..map_5，背景和落点在编辑器里手调，不要用本函数覆盖。
 }
 
 function makeCharacter() {
@@ -503,25 +504,18 @@ function makeCharacter() {
         placeText(b, root, 'Lab' + key, '', box[0] + 20, box[1] + 137, box[2] - 40, 50, { font: 24 });
     }
     figmaImage(b, root, "EquipCard", 'ui/figma_equipment_panel');
-    const tabBackdrop = placeNode(b, root, "TabBackdrop", 0, 1060, 1080, 120);
-    b.sprite(tabBackdrop, [35, 33, 47, 255]);
-    for (let i = 0; i < 5; i++) {
-        const tab = figmaImage(b, root, "BtnTab" + i, 'ui/figma_tab', [84 + i * 190, 1060, 180, 120]);
-        b.button(tab);
-        if (i < 4) iconNode(b, tab, "EquipTabIcon" + i, F['ui/figma_tab_' + ['head', 'wing', 'body', 'leg'][i]], 0, 0, 54);
-        else iconNode(b, tab, "EquipTabIcon4", F['ui/figma_tab_set'], 0, 0, 54);
-    }
-    placeText(b, root, "LabPartInfo", "", 60, 1175, 740, 50, { font: 22, color: INK.cream });
-    placeButton(b, root, "BtnPagePrev", "‹", 855, 1175, 75, 55, "green");
-    placeButton(b, root, "BtnPageNext", "›", 960, 1175, 75, 55, "green");
+    const hide = placeButton(b, root, "BtnHideAppearance", "隐藏外观", 60, 1080, 300, 72, "green");
+    b.objs[hide]._active = false;
+    placeButton(b, root, "BtnPagePrev", "‹", 855, 1080, 75, 55, "green");
+    placeButton(b, root, "BtnPageNext", "›", 960, 1080, 75, 55, "green");
     for (let i = 0; i < 8; i++) {
-        const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1243 + Math.floor(i / 4) * 270, 180, 180]);
+        const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1180 + Math.floor(i / 4) * 270, 180, 180]);
         b.button(slot);
         iconNode(b, slot, "SlotIcon" + i, SF.icon_star, 0, 0, 96);
         textNode(b, slot, "LabSlot" + i, "", 0, -78, { font: 18, w: 150, h: 32, color: INK.cream });
         textNode(b, slot, "LabSlotState" + i, "", 0, 44, { font: 16, w: 110, h: 24, color: INK.cream, outline: true });
     }
-    const empty = placeText(b, root, "LabEmpty", "该部位暂无装备", 100, 1450, 880, 100, { font: 25, color: INK.cream });
+    const empty = placeText(b, root, "LabEmpty", "尚未获得套装", 100, 1450, 880, 100, { font: 25, color: INK.cream });
     b.objs[empty]._active = false;
     placeText(b, root, "LabSets", "", 60, 1800, 960, 110, { font: 24, color: INK.cream });
     writePrefab("assets/bundle/gui/character/character.prefab", b.finish(root));
@@ -620,12 +614,9 @@ function makeShop() {
     placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
     const back = figmaImage(b, root, "BtnBack", 'ui/figma_back');
     b.button(back);
-    const ir = layoutBox(242, 990, 696, 540);
+    const ir = layoutBox(90, 990, 900, 540);
     const items = b.node({ name: "ItemSlot", parent: root, x: ir.x, y: ir.y, w: ir.w, h: ir.h });
-    b.layout(items, { type: 3, cols: 3, cellW: 148, cellH: 166, gapX: 10, gapY: 16, pad: 0 });
-    placeButton(b, root, "BtnShopPrev", "‹", 70, 1150, 120, 160, "yellow");
-    placeButton(b, root, "BtnShopNext", "›", 950, 1150, 120, 160, "yellow");
-    placeText(b, root, "LabShopPage", "1 / 1", 200, 1560, 680, 55, { font: 26, color: INK.cream, outline: true });
+    b.layout(items, { type: 3, cols: 3, cellW: 180, cellH: 164, gapX: 16, gapY: 16, pad: 8 });
     placeText(b, root, "LabDesc", "", 160, 1630, 760, 70, { font: 22, color: INK.cream, outline: true });
     placeButton(b, root, "BtnLeave", "返回地图", 300, 1760, 480, 120, "yellow");
     const modal = b.node({ name: "PurchaseModal", parent: root, w: 720, h: 1280, active: false });
@@ -717,7 +708,7 @@ function makeShopSetItem() {
 }
 
 function makeShopItem() {
-    makeShelfItem('shop_item', 148, 166);
+    makeShelfItem('shop_item', 180, 164);
 }
 
 /** Place the actual products directly in the painted wooden shelf compartments. */
@@ -734,6 +725,9 @@ function makeShelfItem(name, width, height) {
     const price = b.node({ name: "PriceRow", parent: root, y: -height / 2 + 18, w: width - 12, h: 28 });
     iconNode(b, price, "Coin", SF.icon_coin, -42, 0, 22);
     textNode(b, price, "LabPrice", "0", 10, 0, { font: 21, w: width - 50, h: 28, color: INK.dark });
+    const mask = b.node({ name: "SoldMask", parent: root, w: width, h: height, active: false });
+    b.sprite(mask, [18, 16, 22, 160]);
+    textNode(b, mask, "LabSold", "已购买", 0, 0, { font: 20, w: width - 8, h: 32, color: INK.cream, outline: true });
     writePrefab("assets/bundle/game/prefab/" + name + ".prefab", b.finish(root));
 }
 

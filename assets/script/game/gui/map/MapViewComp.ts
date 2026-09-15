@@ -1,5 +1,5 @@
 import { gameText } from "../../core/GameConfig";
-import { BlockInputEvents, Color, Graphics, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, view, _decorator } from "cc";
+import { BlockInputEvents, Color, Graphics, Label, Node, UIOpacity, UITransform, tween, view, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -8,8 +8,10 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { TEX, enemyToFighter } from "../../core/Catalog";
 import { combatPower } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
+import { openRunView } from "../RunGui";
+import { playScreenMusic } from "../GameAudio";
 import { spawnChicken } from "../ChickenBinder";
-import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
+import { bindClick, setLabel, setNodeSprite, setSpriteColor } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
@@ -28,7 +30,7 @@ const MAP_FEET: Record<string, [number, number]> = {
 
 @ccclass("MapViewComp")
 @ecs.register("MapView", false)
-@gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map" })
+@gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map_1" })
 export class MapViewComp extends CCView<ChickenRun> {
     private switchingMap = false;
 
@@ -40,34 +42,29 @@ export class MapViewComp extends CCView<ChickenRun> {
     private async refreshMap() {
         const run = this.ent.run;
         setLabel(this, "LabTitle", `${run.currentMap().id}/5 · ${run.currentMap().name}`);
-        const placement = run.currentMap().shop;
-        const shop = this.getNode("BtnShop")!;
-        const x = (placement.x - 540) / 1.5;
-        const y = (960 - placement.y) / 1.5;
-        shop.setPosition(x, y, 0);
-        shop.setScale(placement.scale, placement.scale, 1);
-        const sign = this.getNode("LabShopName")!;
-        sign.setPosition(x, y + shop.getComponent(UITransform)!.height * placement.scale / 2 + 22, 0);
-        const label = sign.getComponent(Label)!;
-        label.fontSize = 26;
-        label.lineHeight = 34;
-        label.isBold = true;
-        label.color = new Color(255, 228, 145);
-        sign.getComponent(UITransform)!.setContentSize(136, 40);
-        const plaque = this.node.getChildByName("ShopSignBackdrop") || new Node("ShopSignBackdrop");
-        plaque.layer = this.node.layer;
-        plaque.parent = this.node;
-        plaque.setPosition(sign.position);
-        (plaque.getComponent(UITransform) || plaque.addComponent(UITransform)).setContentSize(136, 40);
-        const graphic = plaque.getComponent(Graphics) || plaque.addComponent(Graphics);
-        graphic.clear();
-        graphic.fillColor = new Color(73, 40, 21, 245);
-        graphic.strokeColor = new Color(255, 204, 94);
-        graphic.lineWidth = 2;
-        graphic.roundRect(-68, -20, 136, 40, 9);
-        graphic.fill();
-        graphic.stroke();
-        sign.setSiblingIndex(this.node.children.length - 1);
+        const sign = this.getNode("LabShopName");
+        if (sign) {
+            const label = sign.getComponent(Label)!;
+            label.fontSize = 26;
+            label.lineHeight = 34;
+            label.isBold = true;
+            label.color = new Color(255, 228, 145);
+            sign.getComponent(UITransform)!.setContentSize(136, 40);
+            const plaque = this.node.getChildByName("ShopSignBackdrop") || new Node("ShopSignBackdrop");
+            plaque.layer = this.node.layer;
+            plaque.parent = this.node;
+            plaque.setPosition(sign.position);
+            (plaque.getComponent(UITransform) || plaque.addComponent(UITransform)).setContentSize(136, 40);
+            const graphic = plaque.getComponent(Graphics) || plaque.addComponent(Graphics);
+            graphic.clear();
+            graphic.fillColor = new Color(73, 40, 21, 245);
+            graphic.strokeColor = new Color(255, 204, 94);
+            graphic.lineWidth = 2;
+            graphic.roundRect(-68, -20, 136, 40, 9);
+            graphic.fill();
+            graphic.stroke();
+            sign.setSiblingIndex(this.node.children.length - 1);
+        }
         setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", gameText("MapViewComp_001", combatPower(run.playerFighter().stats)));
         setLabel(this, "LabRouteTitle", run.currentRoute().name.split(" · ").pop()!);
@@ -88,39 +85,28 @@ export class MapViewComp extends CCView<ChickenRun> {
         const run = this.ent.run;
         const nodes = run.route();
         const current = run.routeNode;
-        const entrances = run.currentMap().entrances;
-        const mapBox = this.node.getComponent(UITransform)!;
         const battleNodes = nodes.filter(node => node.kind === "battle");
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < battleNodes.length; i++) {
             const node = battleNodes[i];
-            const view = this.getNode(`BtnStage${i + 1}`);
-            setNodeActive(this, `BtnStage${i + 1}`, !!node);
-            setNodeActive(this, `LabStageName${i + 1}`, !!node);
-            if (!node || !view) continue;
-            const [x, y] = entrances[i];
-            view.setPosition((x - mapBox.anchorX) * mapBox.width, (1 - y - mapBox.anchorY) * mapBox.height, 0);
+            const stage = this.getNode(`BtnStage${i + 1}`);
+            if (!node || !stage) continue;
             const cleared = node.id < current;
             const active = node.id === current;
             await setNodeSprite(this, `BtnStage${i + 1}`, TEX.mapNode(cleared ? "chest" : active ? "stage" : "lock"));
-            setSpriteColor(view, cleared || active ? "#FFFFFF" : "#9C8A72");
-            view.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
+            setSpriteColor(stage, cleared || active ? "#FFFFFF" : "#9C8A72");
             setLabel(this, `LabStageNum${i + 1}`, cleared ? "✓" : `${run.currentMap().id}-${i + 1}`);
             setLabel(this, `LabStageName${i + 1}`, node.name.split(" · ").pop()!);
-            if (node.enemyId) await this.placeEnemy(`StageEnemySlot${i + 1}`, node.enemyId, view, 0.24);
+            if (node.enemyId) await this.placeEnemy(`StageEnemySlot${i + 1}`, node.enemyId, stage, 0.24);
             bindClick(this, `BtnStage${i + 1}`, () => this.onBattleNode(node.id));
         }
 
         const boss = nodes.find(node => node.kind === "boss" && node.id >= current) || nodes.filter(node => node.kind === "boss").slice(-1)[0];
         const bossView = this.getNode("BtnBoss");
         if (boss && bossView) {
-            const [x, y] = entrances[5];
-            bossView.setPosition((x - mapBox.anchorX) * mapBox.width, (1 - y - mapBox.anchorY) * mapBox.height, 0);
-            this.getNode("LabBossName")!.setPosition(bossView.position.x, bossView.position.y - 68, 0);
             const cleared = boss.id < current || run.claimedGoldNodes.includes(boss.id);
             const active = boss.id === current && !cleared;
             await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
-            bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
             if (boss.enemyId) await this.placeEnemy("MapBossSlot", boss.enemyId, bossView, 0.32, true);
             setLabel(this, "LabBossName", boss.encounter === "final" ? gameText("MapViewComp_004") : gameText("MapViewComp_005"));
             bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
@@ -192,6 +178,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         const next = run.nextMap;
         if (!next || this.switchingMap) return;
         this.switchingMap = true;
+        const ent = this.ent;
         const curtain = new Node("MapTransition");
         curtain.layer = this.node.layer;
         curtain.parent = this.node.parent;
@@ -219,21 +206,17 @@ export class MapViewComp extends CCView<ChickenRun> {
         const opacity = curtain.addComponent(UIOpacity);
         opacity.opacity = 0;
         try {
-            await Promise.all([
-                new Promise<void>(resolve => tween(opacity).to(0.4, { opacity: 255 }).call(() => resolve()).start()),
-                this.load("bundle", TEX.background(next.background), SpriteFrame)
-            ]);
-            // 遮幕合拢、资源准备好之后，才提交新地图进度并刷新整张地图。
-            await this.setSprite(this.node.getComponent(Sprite)!, TEX.background(next.background));
+            await new Promise<void>(resolve => tween(opacity).to(0.4, { opacity: 255 }).call(() => resolve()).start());
             if (!run.enterNextMap()) return;
-            await this.refreshMap();
+            this.remove();
+            await openRunView(ent, MapViewComp);
+            playScreenMusic("map");
             await new Promise<void>(resolve => tween(opacity).delay(0.3).to(0.45, { opacity: 0 }).call(() => resolve()).start());
         } catch (error) {
             console.error("[MapView] 切换地图失败", error);
-            this.warn(gameText("MapViewComp_011"));
+            if (this.node?.isValid) this.warn(gameText("MapViewComp_011"));
         } finally {
-            curtain.destroy();
-            this.switchingMap = false;
+            if (curtain.isValid) curtain.destroy();
         }
     }
 

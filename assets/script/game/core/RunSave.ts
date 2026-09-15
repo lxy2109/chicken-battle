@@ -6,7 +6,7 @@ export const RUN_SAVE_KEY = "chicken_battle_save_v1";
 
 export interface RunSaveData {
     version: 1 | 2 | 3;
-    permanent: Pick<RunState, "gold" | "claimedGoldNodes" | "completedMaps" | "appearance" | "playerName" | "ownedIds" | "bonus" | "partLevels"> & { equippedIds?: string[] };
+    permanent: Pick<RunState, "gold" | "claimedGoldNodes" | "completedMaps" | "appearance" | "playerName" | "ownedIds" | "bonus" | "partLevels"> & { equippedIds?: string[]; hideEquippedAppearance?: boolean };
     progress: Pick<RunState, "routeNode" | "screen" | "lastWin" | "lastGoldGain" | "lastBattleNode" | "lastFirstClear" | "upgrades" | "rewards" | "rewardRolls" | "seed" | "shopLoadedAt"> & { shopItemIds: string[]; shopPending?: boolean };
 }
 
@@ -17,7 +17,7 @@ export function encodeRun(run: RunState): string {
         permanent: {
             gold: run.gold, claimedGoldNodes: run.claimedGoldNodes, completedMaps: run.completedMaps,
             appearance: run.appearance, playerName: run.playerName, ownedIds: run.ownedIds,
-            equippedIds: run.equippedIds,
+            equippedIds: run.equippedIds, hideEquippedAppearance: run.hideEquippedAppearance,
             bonus: run.bonus, partLevels: run.partLevels
         },
         progress: {
@@ -81,6 +81,7 @@ export function decodeRun(raw: string): RunState {
     // 旧存档没有穿戴字段：每槽保留最后购买的一件；已手动卸下的空列表保持为空。
     run.equippedIds = p.equippedIds ?? run.ownedIds.filter((id, index, ids) =>
         !ids.slice(index + 1).some(other => itemById(other).slot === itemById(id).slot));
+    run.hideEquippedAppearance = p.hideEquippedAppearance === true && run.equippedIds.length > 0;
     if (data.version < 3) {
         // Figma robes/accessories moved to body/neck. Keep ownership and the
         // last equipped item when two formerly different slots now coincide.

@@ -4,7 +4,7 @@
 
 - 超大贴图按现有 `tools/optimize-textures.py` 的尺寸上限缩放，背景最大 720×1280，保持比例、路径和 UUID；同步 SpriteFrame 尺寸与九宫格边距。原图和报告保存在本机忽略目录 `outputs/texture-optimization/`。
 - `settings/v2/packages/builder.json` 的 `chicken-web` 预设在 Web 构建时使用 WebP，质量 85。游戏贴图、自动图集和加载页贴图已指定该预设。PNG 源文件仍保留透明通道；Android 使用 ASTC 6×6（medium）和 WebP 85 回退；其他原生平台没有新增压缩配置。
-- `openRunView` 在旧界面/加载页仍显示时准备动态贴图，复用已有资源缓存。地图只额外准备当前地图背景，商店准备两页背景，结算准备胜负背景。失败不移除旧界面，允许重新点击；切换中重复点击不会重复打开界面。
+- `openRunView` 在旧界面/加载页仍显示时准备动态贴图，复用已有资源缓存。地图准备当前 `gui/map/map_${id}` 预制体（背景已打在预制体上），商店准备两页背景，结算准备胜负背景。失败不移除旧界面，允许重新点击；切换中重复点击不会重复打开界面。
 
 后续构建保持“压缩纹理”开启（`skipCompressTexture=false`），并启用自动图集（`packAutoAtlas=true`）。新导入大图可运行 `python tools/optimize-textures.py`；新图及图集需在 Creator 的纹理压缩设置中选择 `Chicken Web + Android (ASTC 6x6 / WebP 85)`。
 

@@ -219,18 +219,6 @@
         "id": "shop/LabGold",
         "text": "0"
     },
-    "shop/BtnShopPrev/BtnShopPrevLab": {
-        "id": "shop/BtnShopPrev/BtnShopPrevLab",
-        "text": "‹"
-    },
-    "shop/BtnShopNext/BtnShopNextLab": {
-        "id": "shop/BtnShopNext/BtnShopNextLab",
-        "text": "›"
-    },
-    "shop/LabShopPage": {
-        "id": "shop/LabShopPage",
-        "text": "1 / 1"
-    },
     "shop/BtnLeave/BtnLeaveLab": {
         "id": "shop/BtnLeave/BtnLeaveLab",
         "text": "返回地图"

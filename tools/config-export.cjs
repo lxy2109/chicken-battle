@@ -70,9 +70,7 @@ function validate(t) {
     }
     for (const id of contract.uiKeys) ref("UiText", id, "预制体文本");
     for (const r of rows("Map")) {
-        const battles = rows("Route").filter(n => n.mapId === r.id && n.kind !== "shop" && n.encounter !== "final");
-        check(Array.isArray(r.entrances) && r.entrances.length >= battles.length && r.entrances.every(p => Array.isArray(p) && p.length === 2 && p.every(n => Number.isFinite(n) && n >= 0 && n <= 1)), `Map ${r.id}: 坐标无效或数量不足`);
-        check(r.shop && Number.isFinite(r.shop.x) && Number.isFinite(r.shop.y) && r.shop.scale > 0, `Map ${r.id}: 商店坐标无效`);
+        check(rows("Route").some(n => n.mapId === r.id), `Map ${r.id}: 没有对应路线`);
     }
     check(Array.isArray(t.Player[1]?.randomNames) && new Set(t.Player[1].randomNames).size >= 2 && t.Player[1].randomNames.every(x => typeof x === "string" && x.trim()), "Player 1: 名称池至少填写两个不同的非空名字");
     for (const id of ["intro", "ending"]) ref("Story", id, "剧情入口");

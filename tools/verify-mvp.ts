@@ -44,6 +44,17 @@ function run() {
     loadTables();
     const fail: string[] = [];
     let total = 0;
+    const WARMUPS = [2, 2, 3, 3, 5];
+    const nodeBy = (pred: (n: ReturnType<typeof getRoute>[number]) => boolean) => {
+        const node = getRoute().find(pred);
+        if (!node) throw new Error("找不到路线节点");
+        return node;
+    };
+    const mapStart = (map: number) => nodeBy(n => n.mapId === map && n.encounter !== "final").id;
+    const mapBoss = (map: number) => nodeBy(n => n.mapId === map && n.encounter === "official").id;
+    const kunId = () => nodeBy(n => n.encounter === "final").id;
+    const mapKinds = (map: number) => Array(WARMUPS[map - 1]).fill("battle").concat("boss").join(",");
+    const mapLength = (map: number) => WARMUPS[map - 1] + 1 + (map === 5 ? 1 : 0);
     const ok = (name: string, fn: () => void) => {
         total += 1;
         try {
@@ -59,9 +70,9 @@ function run() {
     ok("配置表可读", () => {
         assert(getItems().length >= 16, "应有散件");
         assert(getSets().length >= 4, "应有套装");
-        assert(getRoute().length === 31, "五图各六战加最终挑战，共31场");
+        assert(getRoute().length === 21, "五图按 2/2/3/3/5 热身加正式赛和最终挑战，共21场");
         for (let mapId = 1; mapId <= 5; mapId++) {
-            assert(getRoute().filter(n => n.mapId === mapId && n.encounter !== "final").map(n => n.kind).join(",") === "battle,battle,battle,battle,battle,boss", "每图五轮热身加正式赛");
+            assert(getRoute().filter(n => n.mapId === mapId && n.encounter !== "final").map(n => n.kind).join(",") === mapKinds(mapId), `第${mapId}图应为${WARMUPS[mapId - 1]}轮热身加正式赛`);
         }
     });
     ok("自定义外观", () => {
@@ -115,13 +126,15 @@ function run() {
             run.enterFight();
             assert(run.screen === "prebattle" && run.claimedGoldNodes.length === 0, "逛店不影响当前关卡挑战资格或首通账本");
         }
-        const prefab = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "assets/bundle/gui/map/map.prefab"), "utf8"));
-        const shops = prefab.filter((obj: any) => obj.__type__ === "cc.Node" && /^BtnShop/.test(obj._name));
-        assert(shops.length === 1 && shops[0]._name === "BtnShop", "地图仅有统一商店入口");
+        for (let id = 1; id <= 5; id++) {
+            const prefab = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), `assets/bundle/gui/map/map_${id}.prefab`), "utf8"));
+            const shops = prefab.filter((obj: any) => obj.__type__ === "cc.Node" && /^BtnShop/.test(obj._name));
+            assert(shops.length === 1 && shops[0]._name === "BtnShop", `地图${id}仅有统一商店入口`);
+        }
     });
 
     ok("旧商店节点存档恢复下一战斗关，并保留货架和待弹出事件", () => {
-        for (const shop of [3, 5, 9, 11, 15, 17, 21, 23, 27, 29].map(id => ({ id }))) {
+        for (const shop of getRoute().filter(n => n.id < kunId() && [3, 5].includes((n.id - 1) % 6 + 1))) {
             const run = new RunState(45);
             run.routeNode = shop.id + 1; run.phase = getRoute().find(node => node.id === run.routeNode)!.kind;
             run.gold = 500; run.openShop(); run.buyItem(run.shopItems[0].id);
@@ -152,14 +165,14 @@ function run() {
         run.pickReward(run.upgrades[0].id);
         assert(run.routeNode === 2 && run.phase === "battle", "节点1胜利进入节点2");
         run.settle(true);
-        assert(run.routeNode === 3 && run.phase === "battle" && run.shopPending, "第二战结算即开放第三战并记录弹出");
+        assert(run.routeNode === mapBoss(1) && run.phase === "boss" && run.shopPending, "第二战结算即开放正式赛并记录弹出");
         run.afterResult();
         run.pickReward(run.upgrades[0].id);
-        assert(run.routeNode === 3 && run.phase === "battle", "弹出商店不占用关卡进度");
+        assert(run.routeNode === mapBoss(1) && run.phase === "boss", "弹出商店不占用关卡进度");
         assert(run.screen === "shop" && !run.shopPending, "商店自动弹出一次");
         run.leaveShop();
         run.enterFight();
-        assert(String(run.screen) === "prebattle" && run.routeNode === 3, "无需购买便可挑战第三战");
+        assert(String(run.screen) === "prebattle" && run.routeNode === mapBoss(1), "无需购买便可挑战正式赛");
     });
 
     ok("商店套装折扣与2/4件加成", () => {
@@ -219,13 +232,31 @@ function run() {
         run.equipSet("kunkun");
         const restored = decodeRun(saved);
         assert(restored.playerFighter().appearance.colors.body === "#1D1D1D" && restored.playerFighter().stats.lockHp, "穿戴外观和特殊属性随存档恢复");
-        restored.routeNode = 6; restored.phase = "boss"; restored.screen = "battle";
+        restored.routeNode = mapBoss(1); restored.phase = "boss"; restored.screen = "battle";
         assert(!restored.equipItem("kun_body"), "战斗快照期间不能换装");
         restored.settle(false);
-        assert(restored.equippedIds.length === 4 && restored.routeNode === 1, "BOSS失败不丢穿戴状态");
+        assert(restored.equippedIds.length === 4 && restored.routeNode === mapStart(1), "BOSS失败不丢穿戴状态");
         restored.equipSet("kunkun");
         assert(JSON.stringify(restored.playerFighter().appearance) === JSON.stringify(base), "卸下恢复自定义配色且去掉装备图");
         assert(decodeRun(encodeRun(restored)).equippedIds.length === 0, "空穿戴不能被读档自动穿回");
+    });
+
+    ok("穿上隐藏保留套装效果并显示原始染色", () => {
+        const run = new RunState(46);
+        const pieces = getSets().find(s => s.id === "rookie")!.pieceIds;
+        run.ownedIds.push(...pieces);
+        const dyed = run.playerFighter().appearance;
+        assert(!run.toggleHideAppearance(), "未穿戴不能隐藏");
+        assert(run.equipSet("rookie"), "已购套装可穿戴");
+        const worn = run.playerFighter();
+        assert(worn.appearance.equipment?.head === "rookie_head", "默认显示套装外观");
+        assert(run.toggleHideAppearance() && run.hideEquippedAppearance, "可隐藏已穿外观");
+        const hidden = run.playerFighter();
+        assert(!hidden.appearance.equipment?.head && JSON.stringify(hidden.appearance.colors) === JSON.stringify(dyed.colors), "隐藏后仍是自定义染色");
+        assert(JSON.stringify(hidden.stats) === JSON.stringify(worn.stats), "隐藏不取消套装属性");
+        const restored = decodeRun(encodeRun(run));
+        assert(restored.hideEquippedAppearance && JSON.stringify(restored.playerFighter().stats) === JSON.stringify(worn.stats), "隐藏状态随存档恢复");
+        assert(restored.equipSet("rookie") && !restored.hideEquippedAppearance, "卸下后取消隐藏");
     });
 
     ok("旧存档迁移每槽一件，非法穿戴存档不静默采用", () => {
@@ -257,19 +288,19 @@ function run() {
     ok("决战前商店弹出时鸡王已开放，返回不额外推进", () => {
         const run = new RunState(4);
         run.confirmAppearance(defaultAppearance());
-        run.routeNode = 5;
+        run.routeNode = getRoute().filter(n => n.mapId === 1 && n.encounter === "warmup").slice(-1)[0].id;
         run.settle(true);
-        assert(run.routeNode === 6 && run.phase === "boss", "第五轮热身胜利即开放正式赛");
+        assert(run.routeNode === mapBoss(1) && run.phase === "boss", "末轮热身胜利即开放正式赛");
         run.afterResult();
         run.pickReward(run.upgrades[0].id);
         assert(run.screen === "shop", "决战前仍弹出商店");
         run.leaveShop();
-        assert(run.routeNode === 6 && run.phase === "boss", "第二个商店后应是鸡王");
+        assert(run.routeNode === mapBoss(1) && run.phase === "boss", "商店后应是本图正式赛");
         assert(run.enemyFighter().name === "菜鸡", "第一图正式赛对手应是菜鸡");
         run.settle(true);
         run.afterResult();
-        assert(run.screen === "map" && run.routeNode === 6 && run.nextMap?.id === 2, "首图鸡王胜利后留在原图等待点击");
-        assert(run.enterNextMap() && run.routeNode === 7, "点击前往新地图后进入第二图");
+        assert(run.screen === "map" && run.routeNode === mapBoss(1) && run.nextMap?.id === 2, "首图正式赛胜利后留在原图等待点击");
+        assert(run.enterNextMap() && run.routeNode === mapStart(2), "点击前往新地图后进入第二图");
         assert(run.rewards.length === 0 && run.upgrades.length === 0, "赢了鸡王直接通关，不该再发牌");
     });
 
@@ -282,7 +313,7 @@ function run() {
         let guard = 0;
         while (run.screen !== "ending" && guard++ < 60) {
             const map = run.currentMap().id;
-            assert(run.route().length === (map === 5 ? 7 : 6) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图六场，末图额外开放最终挑战");
+            assert(run.route().length === mapLength(map) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图按 2/2/3/3/5 热身加正式赛，末图额外开放最终挑战");
             if (run.screen === "shop") {
                 run.leaveShop();
             } else if (run.nextMap) {
@@ -293,20 +324,20 @@ function run() {
                 if (run.screen === "reward") run.pickReward(run.upgrades[0].id);
             }
         }
-        assert(run.screen === "ending" && run.routeNode === 31, "只有最终坤坤挑战胜利才总通关");
+        assert(run.screen === "ending" && run.routeNode === kunId(), "只有最终坤坤挑战胜利才总通关");
         assert(run.ownedIds.includes("iron_head") && (run.partLevels.head || 0) >= 1 && run.gold > 100, "换图保留装备强化金币");
         const retry = new RunState(25);
-        retry.routeNode = 12;
+        retry.routeNode = mapBoss(2);
         retry.phase = "boss";
         retry.screen = "battle";
         retry.settle(false);
         retry.afterResult();
         retry.pickReward(retry.upgrades[0].id);
-        assert(retry.routeNode === 7 && String(retry.screen) === "map", "第二图BOSS失败从第二图第一小关重来");
+        assert(retry.routeNode === mapStart(2) && String(retry.screen) === "map", "第二图BOSS失败从第二图第一小关重来");
     });
 
     ok("未结算时关闭游戏不算打过，小关与BOSS均从战前重打", () => {
-        for (const id of [1, 4, 6, 12, 30]) {
+        for (const id of [1, mapStart(2), mapBoss(1), mapBoss(2), mapBoss(5)]) {
             const run = new RunState(31);
             run.routeNode = id;
             run.stage = id;
@@ -366,8 +397,8 @@ function run() {
         run.ownedIds.push(...getSets().find(s => s.id === "iron_beak")!.pieceIds);
         run.levelUp("head");
         run.completedMaps = [1];
-        run.claimedGoldNodes = [1, 2, 4, 6, 7, 8, 10];
-        run.routeNode = 12;
+        run.claimedGoldNodes = [1, 2, 3, 4, 5];
+        run.routeNode = mapBoss(2);
         run.phase = "boss";
         run.screen = "battle";
         const before = JSON.stringify(JSON.parse(encodeRun(run)).permanent);
@@ -375,7 +406,7 @@ function run() {
         run.onChanged = () => { saved = encodeRun(run); };
         run.settle(false);
         const restored = decodeRun(saved);
-        assert(restored.routeNode === 7 && restored.stage === 7 && restored.phase === "battle", "结算时已回退第二图起点");
+        assert(restored.routeNode === mapStart(2) && restored.stage === mapStart(2) && restored.phase === "battle", "结算时已回退第二图起点");
         const prior = JSON.parse(before);
         const after = JSON.parse(saved).permanent;
         assert(Object.keys(after.partLevels).length === 0, "正式赛失败清除部位成长");
@@ -404,7 +435,7 @@ function run() {
 
     ok("BOSS胜利保存通关但停在原图，读档和重复点击不会自动跳图", () => {
         const run = new RunState(35);
-        run.routeNode = 6;
+        run.routeNode = mapBoss(1);
         run.phase = "boss";
         run.screen = "battle";
         let saved = "";
@@ -412,21 +443,21 @@ function run() {
         run.settle(true);
         const restored = decodeRun(saved);
         assert(restored.completedMaps.includes(1), "结算页关闭也已经保存大关通关");
-        assert(restored.routeNode === 6 && restored.phase === "boss", "结算和读档均留在原图BOSS");
+        assert(restored.routeNode === mapBoss(1) && restored.phase === "boss", "结算和读档均留在原图BOSS");
         assert(!restored.enterNextMap(), "结算页不能直接跳图");
         restored.enterFight();
         assert(restored.screen === "result", "通关后不能重复挑战BOSS");
         restored.afterResult();
-        assert(restored.routeNode === 6 && restored.screen === "map" && restored.nextMap?.id === 2, "恢复胜利结算后等待前往新地图");
+        assert(restored.routeNode === mapBoss(1) && restored.screen === "map" && restored.nextMap?.id === 2, "恢复胜利结算后等待前往新地图");
         restored.afterResult();
-        assert(restored.routeNode === 6, "重复结算按钮不会自动切图");
+        assert(restored.routeNode === mapBoss(1), "重复结算按钮不会自动切图");
         const waiting = decodeRun(encodeRun(restored));
-        assert(waiting.nextMap?.id === 2 && waiting.routeNode === 6, "地图页重进仍保留待切图状态");
+        assert(waiting.nextMap?.id === 2 && waiting.routeNode === mapBoss(1), "地图页重进仍保留待切图状态");
         restored.enterFight();
         assert(restored.screen === "map", "已通关BOSS不能再次挑战");
         assert(restored.enterNextMap() && !restored.enterNextMap(), "前往新地图只生效一次");
-        assert(restored.routeNode === 7, "重复继续不能跳过下图第一关");
-        restored.routeNode = 31; restored.phase = "boss"; restored.screen = "battle";
+        assert(restored.routeNode === mapStart(2), "重复继续不能跳过下图第一关");
+        restored.routeNode = kunId(); restored.phase = "boss"; restored.screen = "battle";
         restored.settle(true);
         const finalResult = decodeRun(encodeRun(restored));
         assert(finalResult.completedMaps.includes(5) && finalResult.screen === "result", "最终关不点按钮也已保存通关");
@@ -436,14 +467,16 @@ function run() {
     });
 
     ok("旧版等待按钮推进的胜利存档在读档时修正且不重复推进", () => {
-        for (const id of [1, 2, 6, 24, 30]) {
+        for (const id of [1, 2, mapBoss(1), mapBoss(4), mapBoss(5)]) {
             const run = new RunState(38);
             run.routeNode = id; run.phase = getRoute().find(n => n.id === id)!.kind; run.screen = "battle";
             run.settle(true);
             const old = JSON.parse(encodeRun(run));
             old.progress.routeNode = id;
             const restored = decodeRun(JSON.stringify(old));
-            const next = [6, 24].includes(id) ? id : getRoute().find(node => node.id > id && node.kind !== "shop")?.id ?? id;
+            const node = getRoute().find(n => n.id === id)!;
+            const stay = node.kind === "boss" && node.encounter === "official" && (node.mapId || 1) < 5;
+            const next = stay ? id : getRoute().find(n => n.id > id && n.kind !== "shop")?.id ?? id;
             assert(restored.routeNode === next, "读档即修正旧结算进度");
             assert(decodeRun(encodeRun(restored)).routeNode === restored.routeNode, "重复读档不跳关");
         }
@@ -719,7 +752,7 @@ function run() {
         assert(first > 8 && first < 40, `首战 ${first.toFixed(1)}s 不该这么${first <= 8 ? "快" : "慢"}`);
         // 使用石冠套装加铁喙翅；同槽互斥，不能把背包两套属性叠加。
         run.phase = "boss";
-        run.routeNode = 6;
+        run.routeNode = mapBoss(1);
         run.ownedIds = ["iron_comb", "iron_head", "iron_body", "iron_wing", "stone_comb", "stone_head", "stone_body", "stone_leg"];
         run.equipSet("stone_crown");
         run.equipItem("iron_wing");
@@ -734,7 +767,7 @@ function run() {
         assert(!run.buySet("miser"), "未到解锁地图不能绕过UI购买");
         assert(run.buySet("rookie") && run.equipSet("rookie"), "新手套可购买并穿戴");
         assert(run.playerFighter().stats.retainGrowth === 1, "四件保留成长生效");
-        run.routeNode = 13;
+        run.routeNode = mapStart(3);
         assert(run.buySet("miser") && run.equipSet("miser"), "第三图铁公鸡解锁");
         const gold = run.gold, price = run.itemPrice("medic_head");
         assert(run.buyItem("medic_head") && gold - run.gold === price, "显示价和实扣一致");
@@ -743,7 +776,7 @@ function run() {
         const before = run.gold;
         assert(run.buySet("medic") && before - run.gold === missingPrice, "整套确认按缺件折扣收费");
         run.screen = "battle";
-        const reward = getRoute().find(n => n.id === 13)!.goldWin!;
+        const reward = getRoute().find(n => n.id === mapStart(3))!.goldWin!;
         run.settle(true);
         assert(run.lastGoldGain === Math.floor(reward * 1.2), "两件金币加成按首通发放");
         const once = run.gold; run.settle(true);
@@ -758,20 +791,20 @@ function run() {
         run.screen = "battle";
         run.settle(false);
         assert(run.partLevels.head === 2 && run.partLevels.leg === 3, "热身失败不清成长");
-        run.routeNode = 6; run.phase = "boss"; run.screen = "battle";
+        run.routeNode = mapBoss(1); run.phase = "boss"; run.screen = "battle";
         run.settle(false);
         assert(Object.keys(run.partLevels).length === 1, "只保留一个部位");
         assert(run.partLevels.head === 2 || run.partLevels.leg === 3, "保留该部位全部等级");
-        assert(decodeRun(encodeRun(run)).routeNode === 1, "正式赛失败回到本图起点");
+        assert(decodeRun(encodeRun(run)).routeNode === mapStart(1), "正式赛失败回到本图起点");
     });
 
     ok("最终挑战在五图完成后仍可进入，奖励唯一且旧结局可迁移", () => {
         const run = new RunState(82);
-        run.routeNode = 31; run.phase = "boss"; run.screen = "map"; run.completedMaps = [1, 2, 3, 4, 5];
+        run.routeNode = kunId(); run.phase = "boss"; run.screen = "map"; run.completedMaps = [1, 2, 3, 4, 5];
         run.enterFight(); run.startBattle();
         assert(String(run.screen) === "battle", "地图完成记录不阻挡坤坤");
         run.settle(false);
-        assert(run.routeNode === 31, "最终失败可重新准备直接重试");
+        assert(run.routeNode === kunId(), "最终失败可重新准备直接重试");
         run.afterResult(); if (run.upgrades.length) run.pickReward(run.upgrades[0].id);
         run.enterFight(); run.startBattle(); run.settle(true);
         assert(run.ownedIds.length === 4 && run.ownedIds.every(id => id.startsWith("champion_")), "发放四件奖励");
@@ -779,10 +812,10 @@ function run() {
         assert(String(run.screen) === "ending", "最终胜利进入结局");
         const saved = encodeRun(run); run.settle(true);
         assert(encodeRun(run) === saved, "重复最终结算不重复奖励");
-        const old = JSON.parse(saved); old.version = 1; old.progress.routeNode = 30;
-        old.progress.lastBattleNode = 30; old.permanent.claimedGoldNodes = [30]; old.permanent.ownedIds = [];
+        const old = JSON.parse(saved); old.version = 1; old.progress.routeNode = mapBoss(5);
+        old.progress.lastBattleNode = mapBoss(5); old.permanent.claimedGoldNodes = [mapBoss(5)]; old.permanent.ownedIds = [];
         const migrated = decodeRun(JSON.stringify(old));
-        assert(migrated.routeNode === 31 && migrated.screen === "map", "旧结局开放新增坤坤挑战");
+        assert(migrated.routeNode === kunId() && migrated.screen === "map", "旧结局开放新增坤坤挑战");
     });
 
     ok("先手、连续命中增伤及落空重置", () => {

@@ -100,18 +100,21 @@ enemies.kun_boss.name = '鸡王坤坤';
 enemies.kun_boss.taunt1 = '鸡你太美';
 save('Enemy', enemies);
 const maps = ['鸡鸣村', '青竹溪', '金穗田', '古祠镇', '鸡王山'];
+const warmups = [2, 2, 3, 3, 5];
 const route = {};
+let id = 1;
 for (let map = 1; map <= 5; map++) {
-    for (let round = 1; round <= 6; round++) {
-        const id = (map - 1) * 6 + round;
-        const formal = round === 6;
+    const n = warmups[map - 1];
+    for (let round = 1; round <= n + 1; round++) {
+        const formal = round === n + 1;
         route[id] = { id, mapId: map, kind: formal ? 'boss' : 'battle', encounter: formal ? 'official' : 'warmup',
             name: `${maps[map - 1]} · ${formal ? names[map - 1] + '正式赛' : '热身赛' + round}`,
             enemyId: `s${map}_${formal ? 'official' : 'warmup'}`, goldWin: formal ? 120 + map * 20 : 30 + round * 10,
-            goldLose: 0, shopAfter: !formal && (round === 2 || round === 5) };
+            goldLose: 0, shopAfter: !formal && (round === 2 || round === n) };
+        id += 1;
     }
 }
-route[31] = { id: 31, mapId: 5, kind: 'boss', encounter: 'final', name: '鸡鸣村 · 鸡王坤坤最终挑战', enemyId: 'kun_boss', goldWin: 300, goldLose: 0 };
+route[id] = { id, mapId: 5, kind: 'boss', encounter: 'final', name: '鸡鸣村 · 鸡王坤坤最终挑战', enemyId: 'kun_boss', goldWin: 300, goldLose: 0 };
 require('./warmup-roster.cjs')(enemies, route);
 save('Enemy', enemies);
 save('Route', route);
@@ -121,4 +124,4 @@ Object.assign(player[1], { name: '无名鸡', storyIntro: '鸡鸣村的争霸赛
     story1: '村民还在笑：这只无名鸡，也想争王？', story2: '围观的鸡群渐渐安静，开始认真看你的比赛。',
     story3: '有人开始为你喝彩：无名鸡，继续冲！', story4: '全村都在期待，你能走到多远。', story5: '走完最后的赛程，在全村注视下挑战坤坤。' });
 save('Player', player);
-console.log('Imported 7 sets / 28 pieces and 31 encounters. Existing equipment IDs retained.');
+console.log(`Imported 7 sets / 28 pieces and ${Object.keys(route).length} encounters. Existing equipment IDs retained.`);

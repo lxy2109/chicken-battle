@@ -181,7 +181,7 @@ const cases = [];
 
     const kun = fresh(11);
     kun.phase = "boss";
-    kun.routeNode = 31;
+    kun.routeNode = Object.values(tables.Route).find(n => n.encounter === "final").id;
     kun.ownedIds = GEAR;
     kun.equipSet("stone_crown");
     kun.equipItem("iron_wing");

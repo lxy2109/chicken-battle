@@ -73,6 +73,11 @@ function sleep(ms) {
         const items = [
             ["db://assets/bundle/gui/customize/customize.prefab", "customize", "db://assets/script/game/gui/customize/CustomizeViewComp.ts"],
             ["db://assets/bundle/gui/map/map.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/map/map_1.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/map/map_2.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/map/map_3.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/map/map_4.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
+            ["db://assets/bundle/gui/map/map_5.prefab", "map", "db://assets/script/game/gui/map/MapViewComp.ts"],
             ["db://assets/bundle/gui/character/character.prefab", "character", "db://assets/script/game/gui/character/CharacterViewComp.ts"],
             ["db://assets/bundle/gui/prebattle/prebattle.prefab", "prebattle", "db://assets/script/game/gui/prebattle/PreBattleViewComp.ts"],
             ["db://assets/bundle/gui/battle/battle.prefab", "battle", "db://assets/script/game/gui/battle/BattleViewComp.ts"],

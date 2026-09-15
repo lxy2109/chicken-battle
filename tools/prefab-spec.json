@@ -3,6 +3,11 @@
   "gui": [
     "db://assets/bundle/gui/customize/customize.prefab",
     "db://assets/bundle/gui/map/map.prefab",
+    "db://assets/bundle/gui/map/map_1.prefab",
+    "db://assets/bundle/gui/map/map_2.prefab",
+    "db://assets/bundle/gui/map/map_3.prefab",
+    "db://assets/bundle/gui/map/map_4.prefab",
+    "db://assets/bundle/gui/map/map_5.prefab",
     "db://assets/bundle/gui/character/character.prefab",
     "db://assets/bundle/gui/prebattle/prebattle.prefab",
     "db://assets/bundle/gui/battle/battle.prefab",
@@ -25,6 +30,11 @@
   "scripts": {
     "gui/customize/customize": "CustomizeViewComp",
     "gui/map/map": "MapViewComp",
+    "gui/map/map_1": "MapViewComp",
+    "gui/map/map_2": "MapViewComp",
+    "gui/map/map_3": "MapViewComp",
+    "gui/map/map_4": "MapViewComp",
+    "gui/map/map_5": "MapViewComp",
     "gui/prebattle/prebattle": "PreBattleViewComp",
     "gui/battle/battle": "BattleViewComp",
     "gui/result/result": "ResultViewComp",

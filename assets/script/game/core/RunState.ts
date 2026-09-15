@@ -13,7 +13,7 @@ import {
 /**
  * 一局的唯一流程状态。
  *
- * 每图五轮热身与一场正式赛，五图后挑战坤坤；商店只触发弹出，不占关卡进度。
+ * 五图热身 2/2/3/3/5 加正式赛，五图后挑战坤坤；商店只触发弹出，不占关卡进度。
  * 战斗结束即更新并保存进度；结算页展示金币，之后选择强化（BOSS 胜利除外）。
  * 商店货架由 EquipMath 固定生成，不存在刷新或随机换货。
  */
@@ -40,6 +40,8 @@ export class RunState {
     ownedIds: string[] = [];
     /** 背包与穿戴分开；同一装备槽最多一件。 */
     equippedIds: string[] = [];
+    /** 穿上但隐藏外观：套装数值仍生效，角色保持自定义染色。 */
+    hideEquippedAppearance = false;
     bonus: Partial<Stats> = {};
     partLevels: PartLevels = {};
     rewardRolls = 0;
@@ -55,7 +57,7 @@ export class RunState {
     }
 
     playerFighter(): FighterSnapshot {
-        const look = applySkinAppearance(this.appearance, this.equippedIds);
+        const look = applySkinAppearance(this.appearance, this.hideEquippedAppearance ? [] : this.equippedIds);
         look.partScale = partScale(this.partLevels);
         return {
             name: this.playerName || getPlayer().name,
@@ -288,6 +290,7 @@ export class RunState {
         const slot = itemById(id).slot;
         this.equippedIds = this.equippedIds.filter(other => itemById(other).slot !== slot);
         if (!equipped) this.equippedIds.push(id);
+        if (this.equippedIds.length === 0) this.hideEquippedAppearance = false;
         this.onChanged?.();
         return true;
     }
@@ -299,6 +302,14 @@ export class RunState {
         const slots = pieces.map(id => itemById(id).slot);
         this.equippedIds = this.equippedIds.filter(id => !slots.includes(itemById(id).slot));
         if (!equipped) this.equippedIds.push(...pieces);
+        if (this.equippedIds.length === 0) this.hideEquippedAppearance = false;
+        this.onChanged?.();
+        return true;
+    }
+
+    toggleHideAppearance(): boolean {
+        if (this.screen === "battle" || this.equippedIds.length === 0) return false;
+        this.hideEquippedAppearance = !this.hideEquippedAppearance;
         this.onChanged?.();
         return true;
     }

@@ -21,12 +21,17 @@ export const TEX = {
     icon: (name: string) => `game/texture/icon/${name}/spriteFrame`,
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
+    set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
     /** 结算套装视频，文件放到 bundle/game/video/set_<套装id>。 */
     suitVideo: (setId: string) => `game/video/set_${setId}`
 };
 
-/** shop 使用 1080×1920 坐标；entrances 使用归一化图像坐标（左上为原点），依次为五关和 BOSS 的道路落点。 */
-export function getMaps(): Array<{ id: number; name: string; storyId: string; background: string; shop: { x: number; y: number; scale: number }; entrances: number[][] }> {
+/** 每张地图对应 `gui/map/map_${id}` 预制体，背景和落点都做在预制体上。 */
+export function mapPrefab(id: number) {
+    return `gui/map/map_${id}`;
+}
+
+export function getMaps(): Array<{ id: number; name: string; storyId: string }> {
     return tableRows("Map");
 }
 

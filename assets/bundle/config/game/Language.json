@@ -143,6 +143,18 @@
         "zh": "未集齐",
         "en": ""
     },
+    "CharacterViewComp_012": {
+        "zh": "隐藏外观",
+        "en": ""
+    },
+    "CharacterViewComp_013": {
+        "zh": "显示外观",
+        "en": ""
+    },
+    "CharacterViewComp_014": {
+        "zh": "已穿戴 · 外观隐藏",
+        "en": ""
+    },
     "CustomizeViewComp_001": {
         "zh": "开始",
         "en": ""
