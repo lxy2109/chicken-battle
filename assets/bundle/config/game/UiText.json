@@ -23,13 +23,9 @@
         "id": "character/BtnPageNext/BtnPageNextLab",
         "text": "›"
     },
-    "character/SetTray/LabEmpty": {
-        "id": "character/SetTray/LabEmpty",
-        "text": "尚未获得套装"
-    },
-    "character/BtnHideAppearance/BtnHideAppearanceLab": {
-        "id": "character/BtnHideAppearance/BtnHideAppearanceLab",
-        "text": "原皮出战"
+    "character/LabEmpty": {
+        "id": "character/LabEmpty",
+        "text": "该部位暂无装备"
     },
     "customize/CustomizePanel/NameInput/LabNamePlaceholder": {
         "id": "customize/CustomizePanel/NameInput/LabNamePlaceholder",
@@ -223,6 +219,18 @@
         "id": "shop/LabGold",
         "text": "0"
     },
+    "shop/BtnShopPrev/BtnShopPrevLab": {
+        "id": "shop/BtnShopPrev/BtnShopPrevLab",
+        "text": "‹"
+    },
+    "shop/BtnShopNext/BtnShopNextLab": {
+        "id": "shop/BtnShopNext/BtnShopNextLab",
+        "text": "›"
+    },
+    "shop/LabShopPage": {
+        "id": "shop/LabShopPage",
+        "text": "1 / 1"
+    },
     "shop/BtnLeave/BtnLeaveLab": {
         "id": "shop/BtnLeave/BtnLeaveLab",
         "text": "返回地图"
@@ -238,5 +246,13 @@
     "shop/PurchaseModal/BtnConfirmBuy/BtnConfirmBuyLab": {
         "id": "shop/PurchaseModal/BtnConfirmBuy/BtnConfirmBuyLab",
         "text": "购买"
+    },
+    "character/SetTray/LabEmpty": {
+        "id": "character/SetTray/LabEmpty",
+        "text": "尚未获得套装"
+    },
+    "character/BtnHideAppearance/BtnHideAppearanceLab": {
+        "id": "character/BtnHideAppearance/BtnHideAppearanceLab",
+        "text": "原皮出战"
     }
 }
