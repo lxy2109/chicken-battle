@@ -1,6 +1,6 @@
 import { Color, EffectAsset, Graphics, Material, Vec4, Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, tween, v3 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
-import { FACE_TEXT, Appearance, PartId } from "../core/Types";
+import { FACE_TEXT, Appearance, FaceId, PartId } from "../core/Types";
 import { PART_NODE, TEX, showcaseSuit, itemById } from "../core/Catalog";
 import { setSpriteColor } from "./UiUtil";
 
@@ -48,37 +48,44 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
     const effect = await view.load("bundle", "game/feather-gradient", EffectAsset);
     if (!node.isValid) return null;
     if (effect) shadeFeathers(node, appearance, effect);
-    const eyes = node.getChildByName("Head")?.getChildByName("Face")?.getComponent(Sprite);
-    if (eyes) await view.setSprite(eyes, `game/texture/chicken/figma_face_${appearance.face}/spriteFrame`);
+    const head = node.getChildByName("Head");
+    if (head) paintExpression(head, appearance.face);
     await dressChicken(view, node, appearance);
     if (!node.isValid) return null;
+    const headNode = node.getChildByName("Head");
+    if (headNode) {
+        for (const name of ["EyeL", "EyeR"]) {
+            const eye = headNode.getChildByName(name);
+            if (eye) eye.setSiblingIndex(headNode.children.length - 1);
+        }
+    }
     return node;
 }
 
 // Figma rig local coordinates: the head sprite includes transparent space to its right.
 // [attachment, x, y, maximum width, maximum height]; dimensions preserve the item's aspect ratio.
 const EQUIPMENT_POSE: Record<string, [string, number, number, number, number]> = {
-    rookie_head: ["Head", -53, 53, 98, 105],
-    brawler_head: ["Head", -51, 51, 110, 98],
-    medic_head: ["Head", -54, 48, 103, 79],
+    rookie_head: ["Head", 0, 42, 90, 96],
+    brawler_head: ["Head", 0, 40, 100, 90],
+    medic_head: ["Head", 0, 38, 94, 72],
     // Align the helmet opening with the eyes, not the top of the comb.
-    helicopter_head: ["Head", -44, 18, 130, 128],
-    miser_head: ["Head", -51, 52, 106, 84],
-    rookie_neck: ["Body", 9, 0, 142, 174],
-    brawler_neck: ["Body", 12, 7, 146, 170],
-    medic_neck: ["Body", 12, 0, 144, 170],
-    helicopter_neck: ["Body", 10, 0, 144, 170],
-    miser_neck: ["Body", 12, 0, 145, 168],
-    rookie_wing: ["Wing", -103, 7, 94, 108],
-    brawler_wing: ["Wing", -110, 25, 92, 225],
-    medic_wing: ["Wing", -96, -7, 55, 88],
-    helicopter_wing: ["Head", -53, 116, 154, 72],
-    miser_wing: ["Wing", -100, -4, 104, 69],
-    rookie_leg: ["Body", -22, -30, 35, 77],
-    brawler_leg: ["Head", -54, -56, 55, 121],
-    medic_leg: ["Body", 63, -40, 68, 78],
-    helicopter_leg: ["Wing", -99, -9, 78, 78],
-    miser_leg: ["Body", 62, -39, 64, 72],
+    helicopter_head: ["Head", 0, 16, 118, 116],
+    miser_head: ["Head", 0, 40, 96, 76],
+    rookie_neck: ["Body", 0, 8, 130, 160],
+    brawler_neck: ["Body", 0, 10, 134, 156],
+    medic_neck: ["Body", 0, 8, 132, 156],
+    helicopter_neck: ["Body", 0, 8, 132, 156],
+    miser_neck: ["Body", 0, 8, 132, 154],
+    rookie_wing: ["Wing", 0, 8, 80, 96],
+    brawler_wing: ["Wing", 0, 18, 80, 160],
+    medic_wing: ["Wing", 0, -4, 50, 80],
+    helicopter_wing: ["Head", 0, 78, 140, 66],
+    miser_wing: ["Wing", 0, 0, 90, 62],
+    rookie_leg: ["Body", 8, -70, 32, 70],
+    brawler_leg: ["Head", 0, -48, 50, 110],
+    medic_leg: ["Body", 48, -70, 62, 70],
+    helicopter_leg: ["Wing", 0, -6, 70, 70],
+    miser_leg: ["Body", 48, -70, 58, 66],
 };
 
 /** 装备挂在对应部位下，随强化缩放和战斗动作一起运动。 */
@@ -122,7 +129,10 @@ async function dressChicken(view: GameComponent, root: Node, appearance: Appeara
             equipment.setPosition(pose ? pose[1] : slot === "head" || slot === "face" ? -53 : 0,
                 pose ? pose[2] : slot === "head" ? 53 : slot === "face" ? -8 : slot === "leg" ? -12 : 0, 0);
             // Keep facial features visible above headwear; attachments must not cover the eyes.
-            if (parent.name === "Head") parent.getChildByName("Face")?.setSiblingIndex(parent.children.length - 1);
+            if (parent.name === "Head") {
+                parent.getChildByName("EyeL")?.setSiblingIndex(parent.children.length - 1);
+                parent.getChildByName("EyeR")?.setSiblingIndex(parent.children.length - 1);
+            }
         }
     }
 }
@@ -137,19 +147,17 @@ function paintChicken(root: Node, appearance: Appearance) {
     for (const part in PART_NODE) {
         const id = part as PartId;
         const node = root.getChildByName(PART_NODE[id]);
-        if (node) {
-            setSpriteColor(node, appearance.colors[id]);
-            sizePart(node, scale[id]);
-        }
-        // 两条腿是分开的节点，配色和体型都得跟着腿走。
+        if (node) setSpriteColor(node, appearance.colors[id]);
         if (id === "leg") {
             const r = root.getChildByName("LegR");
-            if (r) {
-                setSpriteColor(r, appearance.colors.leg);
-                sizePart(r, scale.leg);
-            }
+            if (r) setSpriteColor(r, appearance.colors.leg);
+        }
+        if (id === "wing") {
+            const back = root.getChildByName("WingBack");
+            if (back) setSpriteColor(back, appearance.colors.wing);
         }
     }
+    growParts(root, scale);
     const face = root.getChildByName("Face");
     if (face) {
         const lab = face.getComponent(Label);
@@ -157,22 +165,97 @@ function paintChicken(root: Node, appearance: Appearance) {
     }
 }
 
+function partOf(root: Node, name: string) {
+    return root.getChildByName(name);
+}
+
+function visualSize(node: Node) {
+    const ui = node.getComponent(UITransform);
+    return {
+        w: (ui?.width ?? 0) * Math.abs(node.scale.x),
+        h: (ui?.height ?? 0) * Math.abs(node.scale.y)
+    };
+}
+
 /**
- * 按强化等级把部位撑大。
- *
- * 预制体里部位本身的缩放不一定是 1（比如右腿是 -1 翻过来的），所以要乘上去而不是
- * 直接赋值，不然一强化就把原本的朝向和比例抹平了。
- *
- * 撑大之后还得把底边钉回原处。节点是绕自身中心放大的，不补这一下，腿会往下伸出
- * 影子外面像陷进地里，身子也会往下坠；钉住底边之后长大只往上和两侧扩，才像长壮了。
+ * 绕关节撑大。ax/ay 是相对视觉中心的比例，-0.5 是底边，0.5 是顶边。
+ * 预制体里部位缩放不一定是 1（右腿、翅膀是 -1 翻过来的），所以只能乘，不能赋值。
  */
-function sizePart(node: Node, k?: number) {
+function sizeAround(node: Node, k: number, ax: number, ay: number) {
     if (!k || k === 1) return;
+    const { w, h } = visualSize(node);
+    const p = node.position;
     const s = node.scale;
     node.setScale(s.x * k, s.y * k, s.z);
-    const h = node.getComponent(UITransform)?.height ?? 0;
-    const p = node.position;
-    node.setPosition(p.x, p.y + h * (k - 1) / 2, p.z);
+    node.setPosition(p.x + ax * w * (1 - k), p.y + ay * h * (1 - k), p.z);
+}
+
+/**
+ * 从脚往上把强化后的部位重新叠好：脚钉在地上，髋、胸、颈窝对上，翅膀跟肩走。
+ * 各自绕中心放大的话，脖子会从脑袋里穿出来，看起来像尸块。
+ */
+function growParts(root: Node, scale: Partial<Record<PartId, number>>) {
+    const kOf = (id: PartId) => scale[id] || 1;
+    const kLeg = kOf("leg");
+    const kBody = kOf("body");
+    const kNeck = kOf("neck");
+    const kHead = kOf("head");
+    const kWing = kOf("wing");
+    if (kLeg === 1 && kBody === 1 && kNeck === 1 && kHead === 1 && kWing === 1) return;
+
+    const legs = [partOf(root, "LegL"), partOf(root, "LegR")].filter((n): n is Node => !!n);
+    const body = partOf(root, "Body");
+    const neck = partOf(root, "Neck");
+    const head = partOf(root, "Head");
+    const wings = [partOf(root, "Wing"), partOf(root, "WingBack")].filter((n): n is Node => !!n);
+    const restBody = body ? { x: body.position.x, y: body.position.y, h: visualSize(body).h } : { x: 0, y: 0, h: 0 };
+    const restNeck = neck ? { y: neck.position.y, h: visualSize(neck).h } : { y: 0, h: 0 };
+    const restHead = head ? { y: head.position.y, h: visualSize(head).h } : { y: 0, h: 0 };
+    const restWings = wings.map(n => ({ n, x: n.position.x, y: n.position.y }));
+    const restComb = partOf(root, "Comb")?.position.clone();
+    const restTail = partOf(root, "Tail")?.position.clone();
+    const restLegH = legs[0] ? visualSize(legs[0]).h : 0;
+
+    for (const n of legs) sizeAround(n, kLeg, 0, -0.5);
+    const hipRise = restLegH * (kLeg - 1);
+    const chestRise = restBody.h * (kBody - 1);
+    const napeRise = restNeck.h * (kNeck - 1);
+
+    if (body) {
+        sizeAround(body, kBody, 0, -0.5);
+        body.setPosition(body.position.x, body.position.y + hipRise, 0);
+    }
+    if (neck) {
+        sizeAround(neck, kNeck, 0, -0.5);
+        neck.setPosition(neck.position.x, neck.position.y + hipRise + chestRise, 0);
+    }
+    if (head) {
+        sizeAround(head, kHead, 0, -0.5);
+        head.setPosition(head.position.x, head.position.y + hipRise + chestRise + napeRise, 0);
+    }
+
+    const bodyNow = body ? body.position : v3(restBody.x, restBody.y + hipRise);
+    for (const rest of restWings) {
+        rest.n.setPosition(
+            bodyNow.x + (rest.x - restBody.x) * kBody,
+            bodyNow.y + (rest.y - restBody.y) * kBody,
+            0
+        );
+        sizeAround(rest.n, kWing, rest.x >= 0 ? -0.32 : 0.32, 0.38);
+    }
+
+    const comb = partOf(root, "Comb");
+    if (comb && restComb) {
+        comb.setPosition(restComb.x, restComb.y + hipRise + chestRise + napeRise + restHead.h * (kHead - 1), 0);
+    }
+    const tail = partOf(root, "Tail");
+    if (tail && restTail) {
+        tail.setPosition(
+            bodyNow.x + (restTail.x - restBody.x) * kBody,
+            bodyNow.y + (restTail.y - restBody.y) * kBody,
+            0
+        );
+    }
 }
 
 export function punch(node: Node | null, dir: number) {
@@ -191,9 +274,123 @@ export function bounce(node: Node | null) {
         .start();
 }
 
+const FACE_INK = new Color(42, 30, 24, 255);
+const FACE_PUPIL = new Color(28, 20, 16, 255);
+const FACE_WHITE = new Color(255, 252, 248, 255);
+
+function paintExpression(head: Node, faceId: FaceId) {
+    const face = head.getChildByName("Face");
+    if (face) face.active = false;
+    const old = head.getChildByName("Expression");
+    if (old) old.active = false;
+    const left = head.getChildByName("EyeL");
+    const right = head.getChildByName("EyeR");
+    if (!left || !right) return;
+    paintEyeInner(left, faceId, "L");
+    paintEyeInner(right, faceId, "R");
+}
+
+/** Look 画布锚在眼睛左下角，中心是 (w/2, h/2)，跟着预制体里对齐好的 Eye 节点走。 */
+function eyeGraphics(eye: Node): { g: Graphics; cx: number; cy: number; r: number } {
+    const box = eye.getComponent(UITransform)!;
+    const w = box.width;
+    const h = box.height;
+    let look = eye.getChildByName("Look");
+    if (!look) {
+        look = new Node("Look");
+        look.layer = eye.layer;
+        look.parent = eye;
+        const ui = look.addComponent(UITransform);
+        ui.setContentSize(w, h);
+        ui.setAnchorPoint(0, 0);
+        look.addComponent(Graphics);
+    }
+    look.getComponent(UITransform)!.setContentSize(w, h);
+    look.getComponent(UITransform)!.setAnchorPoint(0, 0);
+    look.setPosition(-w / 2, -h / 2, 0);
+    look.setSiblingIndex(eye.children.length - 1);
+    const g = look.getComponent(Graphics)!;
+    g.clear();
+    return { g, cx: w / 2, cy: h / 2, r: Math.min(w, h) * 0.38 };
+}
+
+function paintEyeInner(eye: Node, faceId: FaceId, side: "L" | "R") {
+    const sprite = eye.getComponent(Sprite);
+    if (sprite) sprite.enabled = true;
+    const { g, cx, cy, r } = eyeGraphics(eye);
+    const inner = side === "L" ? 1 : -1;
+    // 白眼圈始终用预制体。只画图标里那块深色：瞳孔 / 横线 / 尖括号。
+    if (faceId === "wink" && side === "R") {
+        g.strokeColor = FACE_PUPIL;
+        g.lineWidth = Math.max(3, r * 0.42);
+        g.lineCap = Graphics.LineCap.ROUND;
+        g.lineJoin = Graphics.LineJoin.ROUND;
+        g.moveTo(cx - r * 0.25, cy + r * 0.48);
+        g.lineTo(cx + r * 0.42, cy);
+        g.lineTo(cx - r * 0.25, cy - r * 0.48);
+        g.stroke();
+        return;
+    }
+    if (faceId === "proud") {
+        fillOval(g, cx, cy, r * 0.58, r * 0.14);
+        return;
+    }
+    if (faceId === "dumb") {
+        fillOval(g, cx + r * 0.12, cy, r * 0.34, r * 0.38);
+        return;
+    }
+    if (faceId === "cute") {
+        // 图标：横着的 C，开口朝下。
+        g.strokeColor = FACE_PUPIL;
+        g.lineWidth = Math.max(2.8, r * 0.42);
+        g.lineCap = Graphics.LineCap.ROUND;
+        const w = r * 0.52;
+        const h = r * 0.48;
+        g.moveTo(cx - w, cy - h * 0.15);
+        g.bezierCurveTo(cx - w, cy + h, cx + w, cy + h, cx + w, cy - h * 0.15);
+        g.stroke();
+        return;
+    }
+    if (faceId === "sad") {
+        fillOval(g, cx + r * 0.04, cy - r * 0.16, r * 0.32, r * 0.38);
+        drawBrow(g, cx, cy + r + 5, r, inner, -1);
+        return;
+    }
+    fillOval(g, cx + r * 0.08, cy - r * 0.04, r * 0.30, r * 0.36);
+    drawBrow(g, cx, cy + r + 5, r, inner, 1);
+}
+
+function fillOval(g: Graphics, x: number, y: number, rx: number, ry: number) {
+    g.fillColor = FACE_PUPIL;
+    g.moveTo(x + rx, y);
+    g.bezierCurveTo(x + rx, y + ry * 0.55, x + rx * 0.55, y + ry, x, y + ry);
+    g.bezierCurveTo(x - rx * 0.55, y + ry, x - rx, y + ry * 0.55, x - rx, y);
+    g.bezierCurveTo(x - rx, y - ry * 0.55, x - rx * 0.55, y - ry, x, y - ry);
+    g.bezierCurveTo(x + rx * 0.55, y - ry, x + rx, y - ry * 0.55, x + rx, y);
+    g.close();
+    g.fill();
+}
+
+function drawBrow(g: Graphics, x: number, y: number, r: number, inner: number, tilt: number) {
+    g.strokeColor = FACE_INK;
+    g.lineWidth = Math.max(7, r * 0.72);
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(x - r * 1.15 * inner, y + 5 * tilt);
+    g.lineTo(x + r * 1.15 * inner, y - 6 * tilt);
+    g.stroke();
+}
+
+/** 纯黑乘到贴图上会糊成剪影，染色保底后再交给 shader 做正片叠底。 */
+function liftDark(c: Color) {
+    const luma = (c.r * 0.299 + c.g * 0.587 + c.b * 0.114) / 255;
+    if (luma >= 0.2) return c;
+    const t = 0.2 / Math.max(luma, 0.001);
+    return new Color(Math.min(255, c.r * t), Math.min(255, c.g * t), Math.min(255, c.b * t), c.a);
+}
+
 /** 相邻部位使用相同的边缘色，保留中部原色与独立墨线。 */
 function shadeFeathers(root: Node, appearance: Appearance, effect: EffectAsset) {
-    const color = (id: PartId) => Color.fromHEX(new Color(), appearance.colors[id]);
+    const color = (id: PartId) => liftDark(Color.fromHEX(new Color(), appearance.colors[id]));
     const edge = (a: PartId, b: PartId) => Color.lerp(new Color(), color(a), color(b), 0.5);
     const parts: Array<[string, PartId, Color, Color]> = [
         ["Head", "head", color("head"), edge("head", "neck")],
@@ -202,6 +399,7 @@ function shadeFeathers(root: Node, appearance: Appearance, effect: EffectAsset) 
         ["LegL", "leg", edge("body", "leg"), color("leg")],
         ["LegR", "leg", edge("body", "leg"), color("leg")],
         ["Wing", "wing", edge("body", "wing"), color("wing")],
+        ["WingBack", "wing", edge("body", "wing"), color("wing")],
     ];
     for (const [name, id, top, bottom] of parts) {
         const sprite = root.getChildByName(name)?.getComponent(Sprite);
@@ -218,38 +416,28 @@ function shadeFeathers(root: Node, appearance: Appearance, effect: EffectAsset) 
     }
 }
 
-/** 结算双翅从肩部展开，保持展翅姿态并缓慢扇动。 */
-export function celebrateChicken(root: Node | null, appearance: Appearance) {
+/** 结算时用真翅膀小幅扇动，并轻轻跳两下，不再另画一对外飞的假翅。 */
+export function celebrateChicken(root: Node | null, _appearance?: Appearance) {
     if (!root) return;
-    // The resting wing also covers a cutout in the body texture; retain it as the shoulder base.
-    for (const side of [-1, 1]) {
-        const wing = new Node(side < 0 ? "VictoryWingL" : "VictoryWingR");
-        wing.layer = root.layer;
-        wing.parent = root;
-        wing.setSiblingIndex(1);
-        wing.setPosition(side * 38, -35);
-        wing.setScale(side, 1, 1);
-        const g = wing.addComponent(Graphics);
-        g.lineWidth = 3;
-        g.strokeColor = new Color(48, 36, 27);
-        const base = Color.fromHEX(new Color(), appearance.colors.wing);
-        // Overlapping tapered feathers form a broad fan rather than rotating the cropped resting wing.
-        for (let i = 6; i >= 0; i--) {
-            const angle = (-25 + i * 13) * Math.PI / 180;
-            const length = 122 + Math.sin(i / 6 * Math.PI) * 40;
-            const x = Math.cos(angle) * length;
-            const y = Math.sin(angle) * length;
-            const nx = -Math.sin(angle) * 14, ny = Math.cos(angle) * 14;
-            g.fillColor = Color.lerp(new Color(), base, Color.WHITE, 0.08 + i * 0.035);
-            g.moveTo(0, 0);
-            g.bezierCurveTo(x * 0.45 + nx, y * 0.45 + ny, x + nx, y + ny, x, y);
-            g.bezierCurveTo(x - nx, y - ny, x * 0.45 - nx, y * 0.45 - ny, 0, 0);
-            g.close(); g.fill(); g.stroke();
-        }
-        wing.angle = -side * 55;
-        tween(wing).to(0.55, { angle: side * 8 }, { easing: "backOut" })
-            .repeatForever(tween().to(0.85, { angle: side * 16 }).to(0.85, { angle: side * 8 })).start();
+    const restOf = (n: Node) => n.angle;
+    for (const name of ["Wing", "WingBack"]) {
+        const wing = root.getChildByName(name);
+        if (!wing) continue;
+        const rest = restOf(wing);
+        tween(wing).stop();
+        tween(wing)
+            .repeatForever(tween().to(0.16, { angle: rest + 18 }).to(0.16, { angle: rest - 10 }))
+            .start();
     }
+    const base = root.scale.clone();
+    tween(root)
+        .repeatForever(
+            tween()
+                .to(0.14, { scale: v3(base.x * 1.08, base.y * 1.12, 1) })
+                .to(0.18, { scale: base }, { easing: "backOut" })
+                .delay(0.2)
+        )
+        .start();
 }
 
 /** 失败结算：翅膀耷拉，身子微微蹲下去，和胜利的弹跳反过来。 */

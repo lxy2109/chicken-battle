@@ -279,126 +279,6 @@
       243
     ]
   },
-  "chicken/figma_head": {
-    "uuid": "439beb03-5206-5597-b035-662ce90f3e88",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "chicken/figma_head_ink": {
-    "uuid": "55b6588d-dd94-51ae-a38e-09ee08fbe2a7",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "chicken/figma_neck": {
-    "uuid": "017bbcd8-984b-56c0-9b27-fb8d0d3de8bf",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      400,
-      377,
-      199
-    ]
-  },
-  "chicken/figma_neck_ink": {
-    "uuid": "50ca44e9-30d5-54dd-9a44-0f896a332b35",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      400,
-      377,
-      199
-    ]
-  },
-  "chicken/figma_body": {
-    "uuid": "f413e124-2fd6-5a0a-b014-468c18b5b9b9",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      599,
-      377,
-      325
-    ]
-  },
-  "chicken/figma_body_ink": {
-    "uuid": "432c481b-6d9a-596a-b307-de5ba18d8571",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      599,
-      377,
-      325
-    ]
-  },
-  "chicken/figma_leg_left": {
-    "uuid": "8e6fb29e-9ff4-5ddf-b275-92391cfb0143",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      924,
-      188,
-      153
-    ]
-  },
-  "chicken/figma_leg_left_ink": {
-    "uuid": "e03044fb-f660-5910-a640-854b53fc78f7",
-    "source": "角色界面-1",
-    "box": [
-      352,
-      924,
-      188,
-      153
-    ]
-  },
-  "chicken/figma_leg_right": {
-    "uuid": "0a079377-a127-518f-86de-2bc2b64841b7",
-    "source": "角色界面-1",
-    "box": [
-      540,
-      924,
-      189,
-      153
-    ]
-  },
-  "chicken/figma_leg_right_ink": {
-    "uuid": "dc90f85f-4289-5309-9b6c-bc9838853f84",
-    "source": "角色界面-1",
-    "box": [
-      540,
-      924,
-      189,
-      153
-    ]
-  },
-  "chicken/figma_wing": {
-    "uuid": "f6887db5-4e5f-5685-98ba-8df7cbec7c19",
-    "source": "角色界面-1",
-    "box": [
-      594,
-      599,
-      135,
-      225
-    ]
-  },
-  "chicken/figma_wing_ink": {
-    "uuid": "de82f6ad-66d5-5321-aea2-f9493c118aa0",
-    "source": "角色界面-1",
-    "box": [
-      594,
-      599,
-      135,
-      225
-    ]
-  },
   "chicken/s1_official": {
     "uuid": "f0679bd9-1ded-5b85-ac8a-04fd6b85f7e7",
     "source": "image 105",
@@ -1208,5 +1088,45 @@
       399,
       453
     ]
+  },
+  "chicken/头": {
+    "uuid": "053bdeac-a06d-4742-80dc-1c69ecf31724",
+    "source": "official-split",
+    "box": [0, 0, 208, 256]
+  },
+  "chicken/脖子": {
+    "uuid": "23521cf7-2230-4f38-8dfb-dc36b815d251",
+    "source": "official-split",
+    "box": [0, 0, 176, 367]
+  },
+  "chicken/身体": {
+    "uuid": "60762255-9104-48d8-b09d-e24d880f4b36",
+    "source": "official-split",
+    "box": [0, 0, 277, 379]
+  },
+  "chicken/前翅膀": {
+    "uuid": "3d993b9c-a701-48c0-b39d-cb094fd16de5",
+    "source": "official-split",
+    "box": [0, 0, 144, 239]
+  },
+  "chicken/后翅膀": {
+    "uuid": "7dff6a90-be97-4381-ad62-cc80f0bc3f46",
+    "source": "official-split",
+    "box": [0, 0, 100, 182]
+  },
+  "chicken/前腿": {
+    "uuid": "5d2f5ab7-b020-44c6-bc28-cf658aa65957",
+    "source": "official-split",
+    "box": [0, 0, 136, 183]
+  },
+  "chicken/后腿": {
+    "uuid": "b8b845fe-b15e-400a-87de-03f889c487cc",
+    "source": "official-split",
+    "box": [0, 0, 143, 182]
+  },
+  "chicken/eye": {
+    "uuid": "a8c3e1f0-4b2d-5e91-9c17-6d4f8a0b2e35",
+    "source": "eye-white",
+    "box": [0, 0, 64, 64]
   }
 }

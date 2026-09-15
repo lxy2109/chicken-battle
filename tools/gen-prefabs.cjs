@@ -509,7 +509,7 @@ function makeCharacter() {
     b.objs[equip]._active = false;
     const tray = placeNode(b, root, "SetTray", 40, 1180, 1000, 620);
     b.sprite(tray, [35, 33, 47, 210]);
-    textNode(b, tray, "LabEmpty", "尚未获得套装", 0, 0, { font: 28, w: 640, h: 80, color: INK.cream });
+    textNode(b, tray, "LabEmpty", "未集齐任何套装", 0, 0, { font: 28, w: 640, h: 80, color: INK.cream });
     placeButton(b, root, "BtnHideAppearance", "原皮出战", 250, 1000, 380, 88, "green");
     placeButton(b, root, "BtnHideHint", "!", 655, 1000, 88, 88, "yellow");
     const hint = b.node({ name: "HideHintModal", parent: root, w: 720, h: 1280, active: false });
@@ -595,7 +595,7 @@ function makeBattle() {
 function makeResult() {
     const b = new Builder("result");
     const root = panel(b, "result", F['bg/result_figma']);
-    // Fail title is painted on result_lose_figma; keep the banner node for layout but hide it at runtime.
+    // Same jagged burst as the baked WINNER heading, tinted red so fail rhymes with victory.
     const loss = placeNode(b, root, "LossBanner", 90, 36, 900, 360, { active: false });
     b.sprite(loss, [230, 76, 64, 255], 0, SF.burst_win);
     textNode(b, loss, "LabTitle", "失败", 0, 6, { font: 68, w: 460, h: 96, color: INK.cream, outline: true, outlineWidth: 6 });
@@ -681,24 +681,34 @@ function makeEnding() {
 function makeChicken() {
     const b = new Builder("chicken");
     const root = b.node({ name: "chicken", w: 260, h: 460 });
-    const shadow = b.node({ name: 'Shadow', parent: root, x: -6.75, y: -205.5, w: 222, h: 68 });
-    b.sprite(shadow, [90, 90, 90, 80], 0, F['chicken/figma_shadow']);
-    const parts = [['Head', 'head'], ['Neck', 'neck'], ['Body', 'body'], ['LegL', 'leg_left'], ['LegR', 'leg_right'], ['Wing', 'wing']];
-    for (const [name, part] of parts) {
-        const key = 'chicken/figma_' + part;
-        const [x, y, w, h] = figmaAssets[key].box;
-        const id = b.node({ name, parent: root, x: -(x + w / 2 - 540.5) / 2,
-            y: (617 - y - h / 2) / 2, w: w / 2, h: h / 2, sx: -1 });
-        b.sprite(id, [255, 255, 255, 255], 0, F[key]);
-        const ink = b.node({ name: name + 'Ink', parent: id, w: w / 2, h: h / 2 });
-        b.sprite(ink, [255, 255, 255, 255], 0, F[key + '_ink']);
-        if (name === 'Head') {
-            const face = b.node({ name: 'Face', parent: id, w: w / 2, h: h / 2 });
-            b.sprite(face, [255, 255, 255, 255], 0, F['chicken/figma_face_dumb']);
+    const shadow = b.node({ name: "Shadow", parent: root, x: -7, y: -208, w: 222, h: 68 });
+    b.sprite(shadow, [90, 90, 90, 80], 0, F["chicken/figma_shadow"]);
+    // Official split (头/脖子/身体/前翅膀/后翅膀/前腿/后腿). Display size is half the stored texture.
+    // sx=-1: source art faces left, the actor's default faces right.
+    // Back to front so the near wing covers the body and the far wing sits behind it.
+    // Positions copied from the hand-tuned chicken.prefab. Don't regenerate over editor tweaks.
+    const parts = [
+        ["WingBack", F["chicken/后翅膀"], 59.536, -18, 50, 91],
+        ["LegR", F["chicken/后腿"], -22, -166, 71.5, 91],
+        ["LegL", F["chicken/前腿"], 53.925, -166, 68, 91.5],
+        ["Neck", F["chicken/脖子"], 2, 82, 88, 183.5],
+        ["Body", F["chicken/身体"], 0, -52, 138.5, 189.5],
+        ["Head", F["chicken/头"], 27.058, 193.328, 104, 128],
+        ["Wing", F["chicken/前翅膀"], -46, -28, 72, 119.5]
+    ];
+    for (const [name, frame, x, y, w, h] of parts) {
+        const id = b.node({ name, parent: root, x, y, w, h, sx: -1 });
+        b.sprite(id, [255, 255, 255, 255], 0, frame);
+        if (name === "Head") {
+            const face = b.node({ name: "Face", parent: id, w, h, active: false });
+            b.sprite(face, [255, 255, 255, 255], 0, F["chicken/figma_face_dumb"]);
+            const eyeL = b.node({ name: "EyeL", parent: id, x: -34.531, y: -15.444, w: 36, h: 36 });
+            b.sprite(eyeL, [255, 255, 255, 255], 0, F["chicken/eye"]);
+            const eyeR = b.node({ name: "EyeR", parent: id, x: 7.558, y: -13.569, w: 45, h: 45 });
+            b.sprite(eyeR, [255, 255, 255, 255], 0, F["chicken/eye"]);
         }
     }
-    // Attachment anchors used by existing equipment and combat animation.
-    for (const [name, x, y, w, h] of [['Tail', -75, -90, 70, 80], ['Comb', 50, 210, 60, 40]])
+    for (const [name, x, y, w, h] of [["Tail", -70, -48, 70, 80], ["Comb", 16, 228, 60, 40]])
         b.node({ name, parent: root, x, y, w, h });
     writePrefab("assets/bundle/game/prefab/chicken.prefab", b.finish(root));
 }
@@ -812,23 +822,29 @@ function writeWhitePng() {
     fs.writeFileSync(path.join(dir, "white.png"), png);
 }
 
-makeCustomize();
-makeMap();
-makeCharacter();
-makePrebattle();
-makeBattle();
-makeResult();
-makeReward();
-makeShop();
-makeEnding();
-makeChicken();
-makeFx("fx_hit", "-10", [200, 60, 60, 220]);
-makeFx("fx_skill", "技能", [80, 80, 220, 220]);
-makeFx("fx_heal", "+8", [60, 180, 80, 220]);
-makeFx("fx_start", "开战！", [40, 40, 40, 230]);
-makeTauntBubble();
-makeShopItem();
-makeShopSetItem();
-makeRewardCard();
-writeWhitePng();
-console.log("prefabs generated");
+const ONLY = process.argv[2];
+function emit(name, fn) {
+    if (!ONLY || ONLY === name) fn();
+}
+emit("customize", makeCustomize);
+emit("map", makeMap);
+emit("character", makeCharacter);
+emit("prebattle", makePrebattle);
+emit("battle", makeBattle);
+emit("result", makeResult);
+emit("reward", makeReward);
+emit("shop", makeShop);
+emit("ending", makeEnding);
+emit("chicken", makeChicken);
+if (!ONLY) {
+    makeFx("fx_hit", "-10", [200, 60, 60, 220]);
+    makeFx("fx_skill", "技能", [80, 80, 220, 220]);
+    makeFx("fx_heal", "+8", [60, 180, 80, 220]);
+    makeFx("fx_start", "开战！", [40, 40, 40, 230]);
+    makeTauntBubble();
+    makeShopItem();
+    makeShopSetItem();
+    makeRewardCard();
+    writeWhitePng();
+}
+console.log(ONLY ? `prefab generated: ${ONLY}` : "prefabs generated");

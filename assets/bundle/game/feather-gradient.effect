@@ -96,7 +96,14 @@ CCProgram sprite-fs %{
     #if USE_TEXTURE
       vec4 tint = mix(topTint, middleTint, smoothstep(0.0, 0.38, uv0.y));
       tint = mix(tint, bottomTint, smoothstep(0.62, 1.0, uv0.y));
-      o *= tint;
+      // 正片叠底。纯黑会把墨线和填色糊成一块剪影，深色保底并用原稿明暗重新打光。
+      float srcLuma = dot(o.rgb, vec3(0.299, 0.587, 0.114));
+      float tintLuma = dot(tint.rgb, vec3(0.299, 0.587, 0.114));
+      vec3 mulTint = max(tint.rgb, vec3(0.2));
+      vec3 multiplied = o.rgb * mulTint;
+      vec3 lit = mulTint * (0.32 + 0.68 * srcLuma);
+      float dark = 1.0 - smoothstep(0.08, 0.42, tintLuma);
+      o.rgb = mix(multiplied, lit, dark);
     #endif
     o *= color;
     ALPHA_TEST(o);
