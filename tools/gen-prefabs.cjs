@@ -500,24 +500,31 @@ function makeCharacter() {
     placeNode(b, root, "ChickenSlot", 340, 330, 400, 660);
     for (const [key, art] of [['Hp', 'hp'], ['Atk', 'atk'], ['Combo', 'combo'], ['Spd', 'spd']]) {
         const box = figmaAssets['ui/figma_stat_' + art].box;
-        figmaImage(b, root, key + 'Card', 'ui/figma_stat_' + art);
-        placeText(b, root, 'Lab' + key, '', box[0] + 20, box[1] + 137, box[2] - 40, 50, { font: 24 });
+        const card = figmaImage(b, root, key + 'Card', 'ui/figma_stat_' + art);
+        b.objs[card]._active = false;
+        const lab = placeText(b, root, 'Lab' + key, '', box[0] + 20, box[1] + 137, box[2] - 40, 50, { font: 24 });
+        b.objs[lab]._active = false;
     }
-    figmaImage(b, root, "EquipCard", 'ui/figma_equipment_panel');
-    const hide = placeButton(b, root, "BtnHideAppearance", "隐藏外观", 60, 1080, 300, 72, "green");
-    b.objs[hide]._active = false;
-    placeButton(b, root, "BtnPagePrev", "‹", 855, 1080, 75, 55, "green");
-    placeButton(b, root, "BtnPageNext", "›", 960, 1080, 75, 55, "green");
+    const equip = figmaImage(b, root, "EquipCard", 'ui/figma_equipment_panel');
+    b.objs[equip]._active = false;
+    const tray = placeNode(b, root, "SetTray", 40, 1180, 1000, 620);
+    b.sprite(tray, [35, 33, 47, 210]);
+    textNode(b, tray, "LabEmpty", "尚未获得套装", 0, 0, { font: 28, w: 640, h: 80, color: INK.cream });
+    placeButton(b, root, "BtnHideAppearance", "原皮出战", 340, 1000, 400, 88, "green");
+    const prev = placeButton(b, root, "BtnPagePrev", "‹", 855, 1195, 75, 55, "green");
+    const next = placeButton(b, root, "BtnPageNext", "›", 960, 1195, 75, 55, "green");
+    b.objs[prev]._active = false;
+    b.objs[next]._active = false;
     for (let i = 0; i < 8; i++) {
-        const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1180 + Math.floor(i / 4) * 270, 180, 180]);
+        const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1280 + Math.floor(i / 4) * 240, 180, 180]);
+        b.objs[slot]._active = false;
         b.button(slot);
         iconNode(b, slot, "SlotIcon" + i, SF.icon_star, 0, 0, 96);
         textNode(b, slot, "LabSlot" + i, "", 0, -78, { font: 18, w: 150, h: 32, color: INK.cream });
         textNode(b, slot, "LabSlotState" + i, "", 0, 44, { font: 16, w: 110, h: 24, color: INK.cream, outline: true });
     }
-    const empty = placeText(b, root, "LabEmpty", "尚未获得套装", 100, 1450, 880, 100, { font: 25, color: INK.cream });
-    b.objs[empty]._active = false;
-    placeText(b, root, "LabSets", "", 60, 1800, 960, 110, { font: 24, color: INK.cream });
+    const sets = placeText(b, root, "LabSets", "", 60, 1800, 960, 80, { font: 22, color: INK.cream });
+    b.objs[sets]._active = false;
     writePrefab("assets/bundle/gui/character/character.prefab", b.finish(root));
 }
 

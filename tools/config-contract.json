@@ -6,7 +6,7 @@
     "character/LabPower",
     "character/BtnPagePrev/BtnPagePrevLab",
     "character/BtnPageNext/BtnPageNextLab",
-    "character/LabEmpty",
+    "character/SetTray/LabEmpty",
     "character/BtnHideAppearance/BtnHideAppearanceLab",
     "customize/CustomizePanel/NameInput/LabNamePlaceholder",
     "customize/CustomizePanel/BtnRandomName/BtnRandomNameLab",

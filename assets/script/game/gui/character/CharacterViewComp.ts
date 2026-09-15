@@ -40,13 +40,9 @@ export class CharacterViewComp extends CCView<ChickenRun> {
 
     private refreshStats(me = this.ent.run.playerFighter()) {
         setLabel(this, "LabPower", `${combatPower(me.stats)}`);
-        setLabel(this, "LabHp", `${me.stats.maxHp}`);
-        setLabel(this, "LabAtk", `${me.stats.atk}`);
-        setLabel(this, "LabCombo", `${me.stats.combo ?? 0}%`);
-        setLabel(this, "LabSpd", `${me.stats.spd}`);
         setLabel(this, "BtnHideAppearanceLab", this.ent.run.hideEquippedAppearance
             ? gameText("CharacterViewComp_013") : gameText("CharacterViewComp_012"));
-        setNodeActive(this, "BtnHideAppearance", this.ent.run.equippedIds.length > 0);
+        setSpriteColor(this.getNode("BtnHideAppearance"), this.ent.run.equippedIds.length > 0 ? "#FFFFFF" : "#9A9A9A");
     }
 
     private ownedSets() {
@@ -71,7 +67,8 @@ export class CharacterViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabEmpty", gameText("CharacterViewComp_011"));
         const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus2Count"))
             .map(set => `${set.name}：${set.desc2}${ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus4Count") ? "；" + set.desc4 : ""}`).join("\n");
-        setLabel(this, "LabSets", gameText("CharacterViewComp_008", bonuses || gameText("CharacterViewComp_007")));
+        setNodeActive(this, "LabSets", !!bonuses);
+        setLabel(this, "LabSets", bonuses ? gameText("CharacterViewComp_008", bonuses) : "");
         this.refreshStats();
         for (let i = 0; i < 8; i++) {
             if (id !== this.refreshId || !this.node.isValid) return;

@@ -62,7 +62,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
     const entrances: Record<string, string[]> = {
         customize: ["BtnStart", "LabSaveHint"],
         map: ["BtnCharacter", "GoldCard", "BtnChallenge"],
-        character: ["PowerCard", "EquipCard"],
+        character: ["PowerCard", "BtnHideAppearance"],
         result: ["LabHeader", "LabGold", "BtnNext"],
         reward: ["BtnConfirm"],
         shop: ["BtnLeave"],

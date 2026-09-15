@@ -23,9 +23,13 @@
         "id": "character/BtnPageNext/BtnPageNextLab",
         "text": "›"
     },
-    "character/LabEmpty": {
-        "id": "character/LabEmpty",
-        "text": "该部位暂无装备"
+    "character/SetTray/LabEmpty": {
+        "id": "character/SetTray/LabEmpty",
+        "text": "尚未获得套装"
+    },
+    "character/BtnHideAppearance/BtnHideAppearanceLab": {
+        "id": "character/BtnHideAppearance/BtnHideAppearanceLab",
+        "text": "原皮出战"
     },
     "customize/CustomizePanel/NameInput/LabNamePlaceholder": {
         "id": "customize/CustomizePanel/NameInput/LabNamePlaceholder",
