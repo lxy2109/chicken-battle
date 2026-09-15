@@ -16,7 +16,7 @@ export async function playResultSuitVideo(view: GameComponent, slotName: string,
     return playSlotGif(view, slotName, TEX.suitGif(suit.id));
 }
 
-/** 在指定 slot 内创建并播放 GIF，画面按 slot 尺寸等比铺满。 */
+/** 在指定 slot 内创建并播放 GIF，按原比例放入 slot，不拉伸。 */
 export async function playSlotGif(view: GameComponent, slotName: string, path: string): Promise<boolean> {
     const slot = view.getNode(slotName);
     if (!slot) return false;

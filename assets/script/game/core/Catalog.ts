@@ -23,7 +23,7 @@ export const TEX = {
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
-    /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>。 */
+    /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>.gif。 */
     suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`
 };
 

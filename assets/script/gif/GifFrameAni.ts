@@ -44,7 +44,7 @@ export default class GifFrameAni extends Component {
     private _player: SuperGif | null = null;
     private _texture: Texture2D | null = null;
     private _frame: SpriteFrame | null = null;
-    private _maxWidth = 480;
+    private _maxWidth = 0;
 
     protected start(): void {
         if (!this._inited) void this.refresh();
@@ -56,9 +56,9 @@ export default class GifFrameAni extends Component {
     }
 
     /** 运行时指定资源并等到首帧可显示。失败返回 false。 */
-    async play(asset: Asset, maxWidth = 480): Promise<boolean> {
+    async play(asset: Asset, maxWidth = 0): Promise<boolean> {
         this._asset = asset;
-        this._maxWidth = Math.max(64, maxWidth | 0);
+        this._maxWidth = Math.max(0, maxWidth | 0);
         await this.refresh();
         return this._inited;
     }
@@ -82,7 +82,7 @@ export default class GifFrameAni extends Component {
                 auto_play: true,
                 draw_while_loading: false,
                 show_progress_bar: false,
-                max_width: this._maxWidth
+                ...(this._maxWidth > 0 ? { max_width: this._maxWidth } : {})
             });
             this._player = player;
             await player.loadRaw(bytes);
@@ -144,7 +144,7 @@ export default class GifFrameAni extends Component {
         });
         const face = this.face;
         if (!face) return;
-        face.sizeMode = Sprite.SizeMode.CUSTOM;
+        if (face.sizeMode === Sprite.SizeMode.CUSTOM) face.sizeMode = Sprite.SizeMode.RAW;
         if (face.spriteFrame !== this._frame) face.spriteFrame = this._frame;
     }
 
