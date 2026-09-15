@@ -355,10 +355,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.actor(to)?.flinch(crit ? 1.65 : heavy ? 1.3 : 1, direction);
         if (crit) this.actor(from)?.flash(new Color(255, 240, 180), 0.08);
         if (target) {
-            // 用当前走位区域的地面高度，跳跃时也不会把血迹留在半空。
-            const shadowY = target.getChildByName("Shadow")?.position.y ?? -205.5;
-            const groundY = (this.actor(to)?.home.y ?? P_HOME.y) + shadowY * Math.abs(target.scale.y);
-            this.impact?.play(target, direction, heavy, crit, this.featherColors[to], groundY);
+            this.impact?.play(target, direction, heavy, crit, this.featherColors[to], this.actor(to)?.home.y);
             const p = target.worldPosition;
             this.fx?.hit(p.x, p.y, direction, style, heavy, crit);
         }

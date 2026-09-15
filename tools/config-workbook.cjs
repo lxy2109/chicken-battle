@@ -10,10 +10,16 @@ function model(wb) {
     return Object.entries(schema).map(([name, fields]) => {
         const ws = wb.getWorksheet(name);
         if (!ws) throw new Error(`Excel 缺少工作表 ${name}`);
-        const indexes = {};
-        ws.getRow(2).eachCell((cell, col) => { indexes[String(cell.value)] = col; });
-        if (Object.keys(indexes).length !== fields.length || fields.some(f => !indexes[f.key] || ws.getCell(3, indexes[f.key]).value !== f.type))
-            throw new Error(`${name}: 表头与配置结构不一致，请在 Excel 中修复前五行`);
+        const header = api.readHeaderKeys(ws, name);
+        const indexes = Object.fromEntries(header);
+        const extra = [...header.keys()].filter(k => !fields.some(f => f.key === k));
+        const missing = fields.filter(f => !header.has(f.key)).map(f => f.key);
+        const types = fields.filter(f => header.has(f.key) && api.cellKey(ws.getCell(3, header.get(f.key))) !== f.type)
+            .map(f => `${f.key} 类型应为 ${f.type}`);
+        if (extra.length || missing.length || types.length) {
+            const detail = [missing.length ? `缺少 ${missing.join(", ")}` : "", extra.length ? `多余 ${extra.join(", ")}` : "", ...types].filter(Boolean).join("；");
+            throw new Error(`${name}: 表头与配置结构不一致，请在 Excel 中修复前五行（${detail}）`);
+        }
         const columns = name === "Enemy"
             ? ["id", "name", "targetBattleSeconds", ...fields.map(f => f.key).filter(k => !["id", "name", "targetBattleSeconds"].includes(k))].map(k => fields.find(f => f.key === k))
             : fields;
@@ -45,8 +51,7 @@ async function save(file, token, sheets) {
     for (const sheet of original) {
         const draft = sheets.find(s => s.name === sheet.name);
         if (!draft || !Array.isArray(draft.rows)) throw new Error(`缺少工作表 ${sheet.name}`);
-        const ws = wb.getWorksheet(sheet.name), indexes = {};
-        ws.getRow(2).eachCell((cell, col) => { indexes[String(cell.value)] = col; });
+        const ws = wb.getWorksheet(sheet.name), indexes = Object.fromEntries(api.readHeaderKeys(ws, sheet.name));
         const remaining = new Map(sheet.rows.map(r => [r.origin, r]));
         let nextRow = ws.rowCount + 1;
         for (const row of draft.rows) {

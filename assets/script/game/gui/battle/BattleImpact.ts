@@ -51,7 +51,7 @@ export class BattleImpact {
         tween(root).delay(0.4).call(() => { this.active.delete(root); root.destroy(); }).start();
     }
 
-    play(target: Node, direction: number, heavy: boolean, critical: boolean, featherColor: string, groundY = this.floorY) {
+    play(target: Node, direction: number, heavy: boolean, critical: boolean, featherColor: string, laneY?: number) {
         if (!this.layer.isValid || !target.isValid || this.active.size >= 6) return;
         const root = new Node("BloodAndFeathers");
         root.layer = this.layer.layer;
@@ -60,8 +60,10 @@ export class BattleImpact {
         const p = this.layer.getComponent(UITransform)!.convertToNodeSpaceAR(target.worldPosition);
         root.setPosition(p.x, p.y + 40, 0);
         this.active.add(root);
-        const landing = this.floor.getComponent(UITransform)!.convertToNodeSpaceAR(target.worldPosition);
-        const landingX = landing.x + direction * (35 + Math.random() * 70);
+        const floorUI = this.floor.getComponent(UITransform)!;
+        const chest = floorUI.convertToNodeSpaceAR(target.worldPosition);
+        const groundY = this.feetY(target, chest.y, laneY);
+        const landingX = chest.x + direction * (35 + Math.random() * 70);
         tween(root).delay(0.3).call(() => this.addStain(landingX, groundY, heavy, critical)).start();
         // 短促的亮色爆点先交代碰撞，再让血滴和羽毛散开。
         const burst = new Node("HitBurst");
@@ -124,10 +126,10 @@ export class BattleImpact {
             const down = feather ? 0.65 + Math.random() * 0.2 : 0.32 + Math.random() * 0.12;
             const end = v3(dx + drift, -50 - Math.random() * 65, 0);
             if (feather) {
-                const limit = Math.max(0, this.floor.getComponent(UITransform)!.width / 2 - 30);
-                const floorPoint = v3(Math.max(-limit, Math.min(limit, landing.x + dx + drift)),
-                    groundY + (Math.random() - 0.5) * 60, 0);
-                const world = this.floor.getComponent(UITransform)!.convertToWorldSpaceAR(floorPoint);
+                const limit = Math.max(0, floorUI.width / 2 - 30);
+                const floorPoint = v3(Math.max(-limit, Math.min(limit, chest.x + dx + drift)),
+                    groundY + (Math.random() - 0.5) * 90, 0);
+                const world = floorUI.convertToWorldSpaceAR(floorPoint);
                 root.getComponent(UITransform)!.convertToNodeSpaceAR(world, end);
             }
             const opacity = node.addComponent(UIOpacity);
@@ -159,6 +161,24 @@ export class BattleImpact {
         tween(root).delay(1.15).call(() => { this.active.delete(root); root.destroy(); }).start();
     }
 
+    /**
+     * 脚底在场地里的 Y。影子节点在新预制体里偏得太远，整段落差会把残留甩到前场；
+     * 所以跟当前胸口走，偏移钳在脚的位置，跳跃时再压回本条巷的地面。
+     */
+    private feetY(target: Node, chestY: number, laneY?: number) {
+        const scaleY = Math.abs(target.scale.y) || 1;
+        const shadow = target.getChildByName("Shadow");
+        const leg = target.getChildByName("LegL") || target.getChildByName("LegR");
+        let off = -90;
+        if (leg) off = leg.position.y * scaleY - 16;
+        else if (shadow) off = shadow.position.y * scaleY;
+        off = Math.max(-120, Math.min(-70, off));
+        const live = chestY + off;
+        if (laneY == null) return live;
+        const laneGround = laneY + off;
+        return live > laneGround + 24 ? laneGround : live;
+    }
+
     private addStain(x: number, groundY: number, heavy: boolean, critical: boolean) {
         if (!this.floor.isValid) return;
         if (this.stains.size >= 24) {
@@ -179,7 +199,7 @@ export class BattleImpact {
         sprite.spriteFrame = this.frames[2];
         sprite.color = new Color(175, 100, 100);
         const limit = Math.max(0, this.floor.getComponent(UITransform)!.width / 2 - size / 2);
-        stain.setPosition(Math.max(-limit, Math.min(limit, x)), groundY + (Math.random() - 0.5) * 60, 0);
+        stain.setPosition(Math.max(-limit, Math.min(limit, x)), groundY + (Math.random() - 0.5) * 90, 0);
         stain.angle = (Math.random() - 0.5) * 360;
         const flip = Math.random() < 0.5 ? -1 : 1;
         stain.setScale(flip * 0.5, 0.5, 1);

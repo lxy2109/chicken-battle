@@ -6,6 +6,22 @@ const schema = require("./config-schema.json");
 const contract = require("./config-contract.json");
 const ROOT = path.resolve(__dirname, "..");
 
+function cellKey(cell) {
+    if (cell.value == null || cell.value === "") return "";
+    return String(typeof cell.value === "object" ? cell.text || "" : cell.value).trim();
+}
+
+function readHeaderKeys(ws, name) {
+    const indexes = new Map();
+    ws.getRow(2).eachCell((cell, col) => {
+        const key = cellKey(cell);
+        if (!key) return;
+        if (indexes.has(key)) throw new Error(`${name}: 字段 ${key} 重复`);
+        indexes.set(key, col);
+    });
+    return indexes;
+}
+
 function parseCell(type, raw, where) {
     const fail = () => { throw new Error(`${where}: 无效 ${type} 值 ${JSON.stringify(raw)}`); };
     if (raw && typeof raw === "object" && ("formula" in raw || "sharedFormula" in raw)) {
@@ -116,13 +132,8 @@ function parseWorkbook(wb) {
     for (const [name, columns] of Object.entries(schema)) {
         const ws = wb.getWorksheet(name);
         if (!ws) throw new Error(`Excel 缺少工作表 ${name}`);
-        const indexes = new Map();
-        ws.getRow(2).eachCell((cell, col) => {
-            const key = String(cell.value || "").trim();
-            if (indexes.has(key)) throw new Error(`${name}: 字段 ${key} 重复`);
-            indexes.set(key, col);
-        });
-        for (const c of columns) if (!indexes.has(c.key) || ws.getRow(3).getCell(indexes.get(c.key)).value !== c.type) throw new Error(`${name}: 缺少字段 ${c.key} 或类型应为 ${c.type}`);
+        const indexes = readHeaderKeys(ws, name);
+        for (const c of columns) if (!indexes.has(c.key) || cellKey(ws.getRow(3).getCell(indexes.get(c.key))) !== c.type) throw new Error(`${name}: 缺少字段 ${c.key} 或类型应为 ${c.type}`);
         for (const key of indexes.keys()) if (!columns.some(c => c.key === key)) throw new Error(`${name}: 未注册字段 ${key}`);
         out[name] = Object.create(null);
         ws.eachRow((row, number) => {
@@ -166,4 +177,4 @@ async function main() {
     writeTables(tables, destination);
     for (const [name, table] of Object.entries(tables)) console.log("json", name, Object.keys(table).length);
 }
-module.exports = { main, readXlsx, loadWorkbook, parseWorkbook, writeTables, validate, parseCell };
+module.exports = { main, readXlsx, loadWorkbook, parseWorkbook, writeTables, validate, parseCell, cellKey, readHeaderKeys };
