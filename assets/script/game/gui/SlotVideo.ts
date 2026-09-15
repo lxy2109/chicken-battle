@@ -1,6 +1,7 @@
 import { Asset, BufferAsset, Node, Sprite, UITransform, assetManager } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import GifFrameAni from "../../gif/GifFrameAni";
+import { readGifBytes, watchGif } from "../../gif/GifDecoder";
 import { TEX, getSets } from "../core/Catalog";
 import { Appearance } from "../core/Types";
 
@@ -26,7 +27,8 @@ export async function playSlotGif(view: GameComponent, slotName: string, path: s
     if (!asset) return false;
     if (!slot.isValid) return false;
     const ani = mountSlotGif(slot);
-    const ok = await ani.play(asset);
+    const box = slot.getComponent(UITransform);
+    const ok = await ani.play(asset, box?.width || 360, box?.height || 490, path);
     if (!ok || !ani.isValid || !slot.isValid) {
         stopSlotVideo(slot);
         return false;
@@ -38,6 +40,18 @@ export async function playSlotGif(view: GameComponent, slotName: string, path: s
 export function stopSlotVideo(slot: Node | undefined | null) {
     if (!slot?.isValid) return;
     slot.getChildByName(GIF_NODE)?.destroy();
+}
+
+/** 战斗结算演出时就开始解当前套装 GIF，进结果页时尽量只等首帧。 */
+export function preloadResultSuitGif(view: GameComponent, appearance: Appearance) {
+    const suit = suitForWinGif(appearance);
+    if (!suit) return;
+    const path = TEX.suitGif(suit.id);
+    void loadGifAsset(view, path).then(async asset => {
+        if (!asset) return;
+        const bytes = await readGifBytes(asset);
+        if (bytes) watchGif(path, bytes, () => { /* 只要把解码跑起来 */ });
+    }).catch(err => console.warn("[SuitGif] 预加载失败", path, err));
 }
 
 function suitForWinGif(appearance: Appearance) {

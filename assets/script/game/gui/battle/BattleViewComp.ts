@@ -21,6 +21,7 @@ import { ARENA_MOOD, SIGNATURE_LABEL, STYLE_LABEL, styleRhythm } from "../../cor
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
+import { preloadResultSuitGif } from "../SlotVideo";
 import { hexColor, setLabel } from "../UiUtil";
 import { playGameEffect } from "../GameAudio";
 
@@ -392,6 +393,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.fx?.finish(win);
         this.trig(win ? "toWin" : "toLose");
         this.ent.run.settle(win);
+        if (win) preloadResultSuitGif(this, this.ent.run.playerFighter().appearance);
         setLabel(this, "LabLog", win ? gameText("BattleViewComp_020") : gameText("BattleViewComp_021"));
         this.refreshHp(true);
         if (win) {
