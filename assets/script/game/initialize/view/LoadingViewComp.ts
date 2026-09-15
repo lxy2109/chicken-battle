@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 /*
  * @Author: dgflash
  * @Date: 2021-07-03 16:13:17
@@ -62,7 +63,7 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     /** 加载初始游戏内容资源 */
     private loadGameRes() {
         // 加载初始游戏内容资源时的提示文本
-        this.data.prompt = "村口擂台准备中…";
+        this.data.prompt = gameText("loading_resources");
         // 首屏只加载首页与角色；战斗、商店、地图资源由对应界面按需加载。
         oops.res.loadAny("bundle", ["gui/customize/customize", "game/prefab/chicken"],
             this.onProgressCallback.bind(this), this.onCompleteCallback.bind(this));
@@ -83,18 +84,18 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     /** 加载完成事件 */
     private async onCompleteCallback(error?: Error) {
         if (error) {
-            this.data.prompt = "资源加载失败，请刷新重试";
+            this.data.prompt = gameText("loading_failed");
             console.error("[LoadingView]", error);
             return;
         }
         // 恢复本地存档并进入首页
-        this.data.prompt = "正在准备角色与装备…";
+        this.data.prompt = gameText("loading_character");
         smc.chickenRun.RunModel.load();
         try {
             await openRunView(smc.chickenRun, CustomizeViewComp);
             this.remove();
         } catch (error) {
-            this.data.prompt = "资源加载失败，请刷新重试";
+            this.data.prompt = gameText("loading_failed");
             console.error("[LoadingView]", error);
         }
     }

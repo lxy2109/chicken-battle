@@ -27,7 +27,7 @@ function tableDir(): string {
 
 function loadTables() {
     const dir = tableDir();
-    const names = ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "Danmaku"];
+    const names = ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "Danmaku", "DanmakuRule", "Map", "GameRule", "Language", "UiText"];
     const all: Record<string, any> = {};
     for (const name of names) {
         const full = path.join(dir, name + ".json");

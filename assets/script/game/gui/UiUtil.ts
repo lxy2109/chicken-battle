@@ -1,4 +1,5 @@
-import { Button, Color, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, v3 } from "cc";
+import { Button, Color, EditBox, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, v3 } from "cc";
+import { tableOf } from "../core/Config";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { oops } from "db://oops-framework/core/Oops";
 import { playGameEffect } from "./GameAudio";
@@ -17,6 +18,19 @@ export function setLabel(view: GameComponent, name: string, text: string) {
     if (!node) return;
     const lab = node.getComponent(Label);
     if (lab) lab.string = text;
+}
+
+/** 打开预制体时绑定静态文案；动态名字和数值随后由各界面刷新。 */
+export function applyConfiguredTexts(root: Node) {
+    const texts = tableOf("UiText");
+    const visit = (node: Node, path: string) => {
+        const label = node.getComponent(Label);
+        if (label && texts[path]) label.string = texts[path].text;
+        const input = node.getComponent(EditBox);
+        if (input && texts[path + "#placeholder"]) input.placeholder = texts[path + "#placeholder"].text;
+        for (const child of node.children) visit(child, path + "/" + child.name);
+    };
+    visit(root, root.name);
 }
 
 export function setSpriteColor(node: Node | undefined, hex: string) {

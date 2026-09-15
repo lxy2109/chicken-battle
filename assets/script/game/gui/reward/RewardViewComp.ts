@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { Button, Label, Sprite, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -25,7 +26,7 @@ function rewardIcon(opt: RewardOption): string {
 /** 部位强化的牌面写清练哪儿、练到几级，纯 buff 就只有名字。 */
 function cardTitle(opt: RewardOption): string {
     if (!opt.part) return opt.title;
-    return `${PART_TEXT[opt.part]}强化\nLv${opt.nextLevel}/${opt.maxLevel}`;
+    return gameText("RewardViewComp_001", PART_TEXT[opt.part], opt.nextLevel!, opt.maxLevel!);
 }
 
 @ccclass("RewardViewComp")
@@ -52,10 +53,10 @@ export class RewardViewComp extends CCView<ChickenRun> {
         this.selectedId = null;
         const confirm = this.getNode("BtnConfirm")?.getComponent(Button);
         if (confirm) confirm.interactable = false;
-        setLabel(this, "BtnConfirmLab", "请先选择强化");
+        setLabel(this, "BtnConfirmLab", gameText("RewardViewComp_002"));
 
-        setLabel(this, "LabTitle", "选择强化");
-        setLabel(this, "LabHint", cards.length === 3 ? "请选择 1 项强化（三选一）" : `剩余 ${cards.length} 项可强化部位，请选择 1 项`);
+        setLabel(this, "LabTitle", gameText("RewardViewComp_003"));
+        setLabel(this, "LabHint", cards.length === 3 ? gameText("RewardViewComp_004") : gameText("RewardViewComp_005", cards.length));
 
         const slot = this.getNode("CardSlot");
         clearChildren(slot);
@@ -90,7 +91,7 @@ export class RewardViewComp extends CCView<ChickenRun> {
         this.getNode("CardSlot")?.children.forEach((node, i) => setSpriteColor(node, cards[i]?.id === id ? "#FFD23F" : "#FFFFFF"));
         const confirm = this.getNode("BtnConfirm")?.getComponent(Button);
         if (confirm) confirm.interactable = true;
-        setLabel(this, "BtnConfirmLab", "确认强化");
+        setLabel(this, "BtnConfirmLab", gameText("RewardViewComp_006"));
     }
 
     private async onConfirm() {

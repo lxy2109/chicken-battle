@@ -113,11 +113,11 @@
             "rookie_leg"
         ],
         "discount": 0.8,
+        "b2maxHp": 20,
         "desc2": "菜得耐打：生命+20",
         "desc4": "这把不算：正式赛失败保留一项随机部位成长",
         "unlockMap": 1,
         "rewardOnly": false,
-        "b2maxHp": 20,
         "b4retainGrowth": 1
     },
     "helicopter": {
@@ -130,11 +130,11 @@
             "helicopter_leg"
         ],
         "discount": 0.8,
+        "b2spd": 4,
         "desc2": "闻鸡起舞：敏捷+4",
         "desc4": "鸡不可失：开战时优先行动一次",
         "unlockMap": 1,
         "rewardOnly": false,
-        "b2spd": 4,
         "b4firstStrike": 1
     },
     "brawler": {
@@ -147,11 +147,11 @@
             "brawler_leg"
         ],
         "discount": 0.8,
+        "b2atk": 4,
         "desc2": "嘴硬：攻击+4",
         "desc4": "鸡飞蛋打：连续命中每次增伤8%，最多5层，落空重置",
         "unlockMap": 2,
         "rewardOnly": false,
-        "b2atk": 4,
         "b4streakBonus": 0.08
     },
     "medic": {
@@ -164,12 +164,12 @@
             "medic_leg"
         ],
         "discount": 0.8,
+        "b4revive": 1,
         "desc2": "多喝热水：治疗效果+30%",
         "desc4": "汤还热着：每场战斗增加一次复活机会",
         "unlockMap": 2,
         "rewardOnly": false,
-        "b2healBonus": 0.3,
-        "b4revive": 1
+        "b2healBonus": 0.3
     },
     "concrete": {
         "id": "concrete",
@@ -181,14 +181,14 @@
             "concrete_leg"
         ],
         "discount": 0.8,
-        "desc2": "皮实：生命+20，防御+3",
-        "desc4": "还能抢救：每场一次，致命伤害时保留1点生命",
-        "unlockMap": 3,
-        "rewardOnly": false,
         "b2maxHp": 20,
         "b2def": 3,
         "b4lockHp": 1,
-        "legacy": true
+        "legacy": true,
+        "desc2": "皮实：生命+20，防御+3",
+        "desc4": "还能抢救：每场一次，致命伤害时保留1点生命",
+        "unlockMap": 3,
+        "rewardOnly": false
     },
     "miser": {
         "id": "miser",

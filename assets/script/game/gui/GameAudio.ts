@@ -1,3 +1,4 @@
+import { gameNumber } from "../core/GameConfig";
 import { oops } from "db://oops-framework/core/Oops";
 import { RunScreen } from "../core/Types";
 
@@ -19,12 +20,12 @@ export function playScreenMusic(screen: RunScreen) {
         : screen === "customize" ? GAME_AUDIO.music.home : GAME_AUDIO.music.village;
     if (path === musicPath) return;
     musicPath = path;
-    if (path) oops.audio.playMusic(path, { bundle: "bundle", loop: true, volume: 0.35 });
+    if (path) oops.audio.playMusic(path, { bundle: "bundle", loop: true, volume: gameNumber("audio_musicVolume") });
     else oops.audio.music.stop();
 }
 
 export function playGameEffect(key: keyof typeof GAME_AUDIO.effects) {
     const path = GAME_AUDIO.effects[key];
-    if (path) void oops.audio.playEffect(path, { bundle: "bundle", volume: 0.5 })
+    if (path) void oops.audio.playEffect(path, { bundle: "bundle", volume: gameNumber("audio_effectVolume") })
         .catch(error => console.warn("[GameAudio]", key, error));
 }

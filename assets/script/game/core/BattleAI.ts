@@ -1,3 +1,4 @@
+import { gameNumber } from "./GameConfig";
 import { BattleActionKind, StrikeStyle } from "./Types";
 
 export interface AiFighter {
@@ -39,15 +40,15 @@ export type AiRule = (self: AiFighter, foe: AiFighter) => boolean;
  */
 export const AI_RULE = {
     /** 血过三成半且回血技能好了 */
-    needHeal: (s, _f) => ratio(s.hp, s.maxHp) <= 0.35 && s.healPerTurn > 0 && s.healCd <= 0,
+    needHeal: (s, _f) => ratio(s.hp, s.maxHp) <= gameNumber("ai_healRatio") && s.healPerTurn > 0 && s.healCd <= 0,
     skillReady: (s, _f) => s.skillCd <= 0,
     /** 对面残了，该收割 */
-    foeDying: (_s, f) => ratio(f.hp, f.maxHp) <= 0.3,
+    foeDying: (_s, f) => ratio(f.hp, f.maxHp) <= gameNumber("ai_finishRatio"),
     /** 自己血厚，放技能不亏 */
-    healthy: (s, _f) => ratio(s.hp, s.maxHp) >= 0.55,
+    healthy: (s, _f) => ratio(s.hp, s.maxHp) >= gameNumber("ai_healthyRatio"),
     /** 攻高过对面防不少，技能打得穿 */
-    outgun: (s, f) => n(s.atk) > n(f.def) + 4,
-    faster: (s, f) => n(s.spd) > n(f.spd) + 2,
+    outgun: (s, f) => n(s.atk) > n(f.def) + gameNumber("ai_attackAdvantage"),
+    faster: (s, f) => n(s.spd) > n(f.spd) + gameNumber("ai_speedAdvantage"),
     /** 血比对面少又打不过，只能搏命 */
     losing: (s, f) => ratio(s.hp, s.maxHp) < ratio(f.hp, f.maxHp) && n(s.atk) <= n(f.atk),
     canPierce: (s, f) => n(s.atk) > n(f.def)

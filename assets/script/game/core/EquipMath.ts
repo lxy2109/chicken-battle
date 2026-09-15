@@ -1,4 +1,5 @@
-import { getBaseStats, getItems, getSets, itemById, setById } from "./Catalog";
+import { gameNumber, gameText } from "./GameConfig";
+import { getBaseStats, routeNode, getItems, getSets, itemById, setById } from "./Catalog";
 import { Appearance, EquipItem, FaceId, PartId, Stats, addStats, cloneStats } from "./Types";
 
 export function ownedSetCount(ownedIds: string[], setId: string): number {
@@ -18,8 +19,8 @@ export function buildStats(equippedIds: string[], extra: Partial<Stats> = {}): S
     for (const setId of seen) {
         const n = ownedSetCount(equippedIds, setId);
         const def = getSets().find(s => s.id === setId)!;
-        if (n >= 2) stats = addStats(stats, def.bonus2);
-        if (n >= 4) stats = addStats(stats, def.bonus4);
+        if (n >= gameNumber("set_bonus2Count")) stats = addStats(stats, def.bonus2);
+        if (n >= gameNumber("set_bonus4Count")) stats = addStats(stats, def.bonus4);
     }
     stats = addStats(stats, extra);
     stats.hp = stats.maxHp;
@@ -60,39 +61,24 @@ export function shopStock(stage: number, ownedIds: string[]): EquipItem[] {
     return slots
         .map(slot => getItems().find(item => item.slot === slot && !locked.has(item.id)
             && !setById(item.setId).legacy && !setById(item.setId).rewardOnly
-            && setById(item.setId).unlockMap <= Math.min(5, Math.ceil(stage / 6))))
+            && setById(item.setId).unlockMap <= routeNode(stage).mapId!))
         .filter((item): item is EquipItem => !!item);
 }
 
-/** 一场里典型的挨刀次数，用来把每刀生效的属性折算成等效生命。 */
-const HITS = 9;
-/** 一场里典型的回血次数，回血冷却 6 秒、一场二三十秒。 */
-const HEALS = 4;
-/** 输出与生存的换算比，标定成让初始鸡的战力落在四百上下。 */
-const DPS_WEIGHT = 7;
-
-/**
- * 战力：纯派生展示值，不入配表。
- *
- * 权重贴着 BattleSession 的即时结算来算：
- * 速度不再只是抢先手，而是直接换算成出手间隔，所以它是输出的乘数而不是小加项 ——
- * 这里的 (1 + spd/20) 和 BattleSession.intervalOf 用的是同一个式子，速度翻倍输出就翻倍。
- * 伤害走 atk-def 的减法，防御折成"少挨 HITS 刀"的等效生命；暴击 1.5 倍，期望乘数 1+0.5*crit；
- * 复活按 40% 上限血、锁血按扛一次致命伤估。
- */
+/** 战力为派生展示值，权重由 GameRule 配置，并复用战斗的暴击、速度和复活规则。 */
 export function combatPower(s: Stats): number {
-    const dps = s.atk * (1 + 0.5 * s.crit) * (1 + s.spd / 20);
+    const dps = s.atk * (1 + (gameNumber("battle_critMultiplier") - 1) * s.crit) * (1 + s.spd / gameNumber("battle_speedReference"));
     const ehp = s.maxHp
-        + s.def * HITS
-        + s.healPerTurn * HEALS
-        + s.revive * s.maxHp * 0.4
-        + (s.lockHp ? s.maxHp * 0.3 : 0);
-    return Math.round(dps * DPS_WEIGHT + ehp + (s.combo ?? 0) * 0.2);
+        + s.def * gameNumber("power_hits")
+        + s.healPerTurn * gameNumber("power_heals")
+        + s.revive * s.maxHp * gameNumber("battle_reviveRatio")
+        + (s.lockHp ? s.maxHp * gameNumber("power_lockRatio") : 0);
+    return Math.round(dps * gameNumber("power_dpsWeight") + ehp + (s.combo ?? 0) * gameNumber("power_comboWeight"));
 }
 
 /** 单行紧凑属性串，给空间有限的界面用。 */
 export function formatStatsLine(s: Stats): string {
-    return `生命 ${s.maxHp}   攻击伤害 ${s.atk}   敏捷 ${s.spd}   连击 ${Math.round(s.combo ?? s.spd * 10)}   暴击 ${Math.round(s.crit * 100)}%`;
+    return gameText("EquipMath_001", s.maxHp, s.atk, s.spd, Math.round(s.combo ?? s.spd * 10), Math.round(s.crit * 100));
 }
 
 export function healFull(s: Stats): Stats {

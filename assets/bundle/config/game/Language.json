@@ -1,1 +1,538 @@
-{"role_level_up":{"zh":"升级","en":"Upgrade"},"role_attack":{"zh":"攻击","en":"Attack"}}
+{
+    "role_level_up": {
+        "zh": "升级",
+        "en": "Upgrade"
+    },
+    "role_attack": {
+        "zh": "攻击",
+        "en": "Attack"
+    },
+    "BattleViewComp_001": {
+        "zh": "贴身啄",
+        "en": ""
+    },
+    "BattleViewComp_002": {
+        "zh": "跳踢",
+        "en": ""
+    },
+    "BattleViewComp_003": {
+        "zh": "飞扑",
+        "en": ""
+    },
+    "BattleViewComp_004": {
+        "zh": "腾空下砸",
+        "en": ""
+    },
+    "BattleViewComp_005": {
+        "zh": "扑翅冲撞",
+        "en": ""
+    },
+    "BattleViewComp_006": {
+        "zh": "转身扫尾",
+        "en": ""
+    },
+    "BattleViewComp_007": {
+        "zh": "连啄",
+        "en": ""
+    },
+    "BattleViewComp_008": {
+        "zh": "假动作偷袭",
+        "en": ""
+    },
+    "BattleViewComp_009": {
+        "zh": "自动战斗",
+        "en": ""
+    },
+    "BattleViewComp_010": {
+        "zh": "开战！",
+        "en": ""
+    },
+    "BattleViewComp_011": {
+        "zh": "回血",
+        "en": ""
+    },
+    "BattleViewComp_012": {
+        "zh": "复活!",
+        "en": ""
+    },
+    "BattleViewComp_013": {
+        "zh": "复活",
+        "en": ""
+    },
+    "BattleViewComp_014": {
+        "zh": "锁血!",
+        "en": ""
+    },
+    "BattleViewComp_015": {
+        "zh": "锁血",
+        "en": ""
+    },
+    "BattleViewComp_016": {
+        "zh": "落空",
+        "en": ""
+    },
+    "BattleViewComp_017": {
+        "zh": "绝招·{0}",
+        "en": ""
+    },
+    "BattleViewComp_018": {
+        "zh": "暴击 -{0}",
+        "en": ""
+    },
+    "BattleViewComp_019": {
+        "zh": "暴击",
+        "en": ""
+    },
+    "BattleViewComp_020": {
+        "zh": "胜！",
+        "en": ""
+    },
+    "BattleViewComp_021": {
+        "zh": "败…",
+        "en": ""
+    },
+    "BattleViewComp_022": {
+        "zh": "我方",
+        "en": ""
+    },
+    "BattleViewComp_023": {
+        "zh": "敌方",
+        "en": ""
+    },
+    "CharacterViewComp_001": {
+        "zh": "头",
+        "en": ""
+    },
+    "CharacterViewComp_002": {
+        "zh": "翅膀",
+        "en": ""
+    },
+    "CharacterViewComp_003": {
+        "zh": "躯干",
+        "en": ""
+    },
+    "CharacterViewComp_004": {
+        "zh": "脚",
+        "en": ""
+    },
+    "CharacterViewComp_005": {
+        "zh": "{0} · 强化 Lv{1} · 已拥有 {2} 件",
+        "en": ""
+    },
+    "CharacterViewComp_006": {
+        "zh": "穿戴同套两件 / 四件可获得套装加成",
+        "en": ""
+    },
+    "CharacterViewComp_007": {
+        "zh": "暂无套装加成",
+        "en": ""
+    },
+    "CharacterViewComp_008": {
+        "zh": "点击穿戴 / 卸下，同槽位替换\n加成：{0}",
+        "en": ""
+    },
+    "CharacterViewComp_009": {
+        "zh": "已穿戴 · 卸下",
+        "en": ""
+    },
+    "CharacterViewComp_010": {
+        "zh": "点击穿戴",
+        "en": ""
+    },
+    "CharacterViewComp_011": {
+        "zh": "未集齐",
+        "en": ""
+    },
+    "CustomizeViewComp_001": {
+        "zh": "开始",
+        "en": ""
+    },
+    "CustomizeViewComp_002": {
+        "zh": "继续游戏",
+        "en": ""
+    },
+    "CustomizeViewComp_003": {
+        "zh": "进度与养成自动保存到本机",
+        "en": ""
+    },
+    "CustomizeViewComp_004": {
+        "zh": "开始",
+        "en": ""
+    },
+    "CustomizeViewComp_005": {
+        "zh": "本地存档已清除",
+        "en": ""
+    },
+    "CustomizeViewComp_006": {
+        "zh": "清除失败，请检查浏览器本地存储权限后重试。",
+        "en": ""
+    },
+    "CustomizeViewComp_007": {
+        "zh": "自定义你的专属战鸡",
+        "en": ""
+    },
+    "CustomizeViewComp_008": {
+        "zh": "选择表情",
+        "en": ""
+    },
+    "CustomizeViewComp_009": {
+        "zh": "正在染：躯干与脖子",
+        "en": ""
+    },
+    "CustomizeViewComp_010": {
+        "zh": "正在染：{0}",
+        "en": ""
+    },
+    "EndingViewComp_001": {
+        "zh": "已获得鸡王中王套 · 可在角色面板穿戴",
+        "en": ""
+    },
+    "MapViewComp_001": {
+        "zh": "战力 {0}",
+        "en": ""
+    },
+    "MapViewComp_002": {
+        "zh": "前往新地图",
+        "en": ""
+    },
+    "MapViewComp_003": {
+        "zh": "开始挑战",
+        "en": ""
+    },
+    "MapViewComp_004": {
+        "zh": "坤坤 · 最终战",
+        "en": ""
+    },
+    "MapViewComp_005": {
+        "zh": "BOSS正式赛",
+        "en": ""
+    },
+    "MapViewComp_006": {
+        "zh": "本地图已通关，请点击下方前往新地图",
+        "en": ""
+    },
+    "MapViewComp_007": {
+        "zh": "本关已完成",
+        "en": ""
+    },
+    "MapViewComp_008": {
+        "zh": "请先挑战当前关卡",
+        "en": ""
+    },
+    "MapViewComp_009": {
+        "zh": "当前节点不是战斗",
+        "en": ""
+    },
+    "MapViewComp_010": {
+        "zh": "前往 · {0}",
+        "en": ""
+    },
+    "MapViewComp_011": {
+        "zh": "地图加载失败，请重试",
+        "en": ""
+    },
+    "PreBattleViewComp_001": {
+        "zh": "生命",
+        "en": ""
+    },
+    "PreBattleViewComp_002": {
+        "zh": "攻击伤害",
+        "en": ""
+    },
+    "PreBattleViewComp_003": {
+        "zh": "敏捷",
+        "en": ""
+    },
+    "PreBattleViewComp_004": {
+        "zh": "连击",
+        "en": ""
+    },
+    "PreBattleViewComp_005": {
+        "zh": "暴击",
+        "en": ""
+    },
+    "PreBattleViewComp_006": {
+        "zh": "暴击 {0}%",
+        "en": ""
+    },
+    "PreBattleViewComp_007": {
+        "zh": "回血 {0}",
+        "en": ""
+    },
+    "PreBattleViewComp_008": {
+        "zh": "复活 {0}",
+        "en": ""
+    },
+    "PreBattleViewComp_009": {
+        "zh": "锁血",
+        "en": ""
+    },
+    "PreBattleViewComp_010": {
+        "zh": "攻击",
+        "en": ""
+    },
+    "ResultViewComp_001": {
+        "zh": "查看总战绩",
+        "en": ""
+    },
+    "ResultViewComp_002": {
+        "zh": "返回地图",
+        "en": ""
+    },
+    "ResultViewComp_003": {
+        "zh": "选择强化",
+        "en": ""
+    },
+    "ResultViewComp_004": {
+        "zh": "返回地图",
+        "en": ""
+    },
+    "ResultViewComp_005": {
+        "zh": "胜利",
+        "en": ""
+    },
+    "ResultViewComp_006": {
+        "zh": "失败",
+        "en": ""
+    },
+    "ResultViewComp_007": {
+        "zh": "首通奖励",
+        "en": ""
+    },
+    "ResultViewComp_008": {
+        "zh": "首通奖励已领取",
+        "en": ""
+    },
+    "ResultViewComp_009": {
+        "zh": "本局获得",
+        "en": ""
+    },
+    "ResultViewComp_010": {
+        "zh": "新鸡王诞生！已获得鸡王中王套",
+        "en": ""
+    },
+    "ResultViewComp_011": {
+        "zh": "{0}正式赛获胜",
+        "en": ""
+    },
+    "ResultViewComp_012": {
+        "zh": "重新准备后可再挑战坤坤",
+        "en": ""
+    },
+    "ResultViewComp_013": {
+        "zh": "本图热身赛重新开始",
+        "en": ""
+    },
+    "ResultViewComp_014": {
+        "zh": "；诸葛亮套保留一项成长",
+        "en": ""
+    },
+    "ResultViewComp_015": {
+        "zh": "{0}，成长重置，金币与装备保留{1}",
+        "en": ""
+    },
+    "ResultViewComp_016": {
+        "zh": "本节点已完成",
+        "en": ""
+    },
+    "ResultViewComp_017": {
+        "zh": "节点未完成，可以再次挑战",
+        "en": ""
+    },
+    "ResultViewComp_018": {
+        "zh": "，下一步选择一项强化",
+        "en": ""
+    },
+    "RewardViewComp_001": {
+        "zh": "{0}强化\nLv{1}/{2}",
+        "en": ""
+    },
+    "RewardViewComp_002": {
+        "zh": "请先选择强化",
+        "en": ""
+    },
+    "RewardViewComp_003": {
+        "zh": "选择强化",
+        "en": ""
+    },
+    "RewardViewComp_004": {
+        "zh": "请选择 1 项强化（三选一）",
+        "en": ""
+    },
+    "RewardViewComp_005": {
+        "zh": "剩余 {0} 项可强化部位，请选择 1 项",
+        "en": ""
+    },
+    "RewardViewComp_006": {
+        "zh": "确认强化",
+        "en": ""
+    },
+    "ShopViewComp_001": {
+        "zh": "鸡友杂货铺",
+        "en": ""
+    },
+    "ShopViewComp_002": {
+        "zh": "点击商品查看效果与价格，确认后购买",
+        "en": ""
+    },
+    "ShopViewComp_003": {
+        "zh": "已集齐",
+        "en": ""
+    },
+    "ShopViewComp_004": {
+        "zh": "补齐未拥有部件",
+        "en": ""
+    },
+    "ShopViewComp_005": {
+        "zh": "第{0}图解锁",
+        "en": ""
+    },
+    "ShopViewComp_006": {
+        "zh": "{0}\n2件 {1}\n4件 {2}",
+        "en": ""
+    },
+    "ShopViewComp_007": {
+        "zh": "已拥有\n",
+        "en": ""
+    },
+    "ShopViewComp_008": {
+        "zh": "第{0}图解锁\n",
+        "en": ""
+    },
+    "ShopViewComp_009": {
+        "zh": "商店",
+        "en": ""
+    },
+    "ShopViewComp_010": {
+        "zh": "点击购买",
+        "en": ""
+    },
+    "ShopViewComp_011": {
+        "zh": "已集齐",
+        "en": ""
+    },
+    "ShopViewComp_012": {
+        "zh": "点击查看",
+        "en": ""
+    },
+    "ShopViewComp_013": {
+        "zh": "{0} 金币 · 当前拥有 {1}",
+        "en": ""
+    },
+    "ShopViewComp_014": {
+        "zh": "确认购买",
+        "en": ""
+    },
+    "ShopViewComp_015": {
+        "zh": "暂不可购买",
+        "en": ""
+    },
+    "RunState_001": {
+        "zh": "本地图已通关，点击下方前往{0}",
+        "en": ""
+    },
+    "RunState_002": {
+        "zh": "全村注视着你：挑战鸡王坤坤！",
+        "en": ""
+    },
+    "RunState_003": {
+        "zh": "赢下正式赛，继续争霸之路",
+        "en": ""
+    },
+    "RunState_004": {
+        "zh": "本关首通金币已领取",
+        "en": ""
+    },
+    "RunState_005": {
+        "zh": "首通奖励 {0} 金币",
+        "en": ""
+    },
+    "RunState_006": {
+        "zh": "鸡王挑战",
+        "en": ""
+    },
+    "RunState_007": {
+        "zh": "节点 {0} · {1}",
+        "en": ""
+    },
+    "EquipMath_001": {
+        "zh": "生命 {0}   攻击伤害 {1}   敏捷 {2}   连击 {3}   暴击 {4}%",
+        "en": ""
+    },
+    "BattleSession_001": {
+        "zh": "上啊！",
+        "en": ""
+    },
+    "BattleSession_002": {
+        "zh": "咯咯！",
+        "en": ""
+    },
+    "Types_001": {
+        "zh": "凶",
+        "en": ""
+    },
+    "Types_002": {
+        "zh": "呆",
+        "en": ""
+    },
+    "Types_003": {
+        "zh": "傲",
+        "en": ""
+    },
+    "Types_004": {
+        "zh": "萌",
+        "en": ""
+    },
+    "Types_005": {
+        "zh": "委屈",
+        "en": ""
+    },
+    "Types_006": {
+        "zh": "眨眼",
+        "en": ""
+    },
+    "Types_007": {
+        "zh": "鸡冠",
+        "en": ""
+    },
+    "Types_008": {
+        "zh": "头部",
+        "en": ""
+    },
+    "Types_009": {
+        "zh": "脖子",
+        "en": ""
+    },
+    "Types_010": {
+        "zh": "躯干",
+        "en": ""
+    },
+    "Types_011": {
+        "zh": "翅膀",
+        "en": ""
+    },
+    "Types_012": {
+        "zh": "尾巴",
+        "en": ""
+    },
+    "Types_013": {
+        "zh": "腿部",
+        "en": ""
+    },
+    "RunModelComp_001": {
+        "zh": "存档读取失败，原存档已保留；可清除本地存档后重新开始。",
+        "en": ""
+    },
+    "loading_resources": {
+        "zh": "村口擂台准备中…",
+        "en": ""
+    },
+    "loading_failed": {
+        "zh": "资源加载失败，请刷新重试",
+        "en": ""
+    },
+    "loading_character": {
+        "zh": "正在准备角色与装备…",
+        "en": ""
+    }
+}

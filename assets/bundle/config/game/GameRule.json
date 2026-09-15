@@ -1,0 +1,235 @@
+{
+    "battle_baseInterval": {
+        "id": "battle_baseInterval",
+        "value": 1.6,
+        "desc": "基础出手间隔（秒）",
+        "min": 0.01
+    },
+    "battle_speedReference": {
+        "id": "battle_speedReference",
+        "value": 20,
+        "desc": "速度换算基数",
+        "min": 0.01
+    },
+    "battle_minInterval": {
+        "id": "battle_minInterval",
+        "value": 0.55,
+        "desc": "最短出手间隔（秒）",
+        "min": 0.01
+    },
+    "battle_damageScale": {
+        "id": "battle_damageScale",
+        "value": 0.3,
+        "desc": "即时战斗基础伤害系数",
+        "min": 0.001
+    },
+    "battle_healCooldown": {
+        "id": "battle_healCooldown",
+        "value": 6,
+        "desc": "回血冷却（秒）",
+        "min": 0.01
+    },
+    "battle_skillCooldown": {
+        "id": "battle_skillCooldown",
+        "value": 4.5,
+        "desc": "技能冷却（秒）",
+        "min": 0.01
+    },
+    "battle_hitStagger": {
+        "id": "battle_hitStagger",
+        "value": 0.12,
+        "desc": "受击追加冷却（秒）",
+        "min": 0
+    },
+    "battle_bossPace": {
+        "id": "battle_bossPace",
+        "value": 0.92,
+        "desc": "Boss战双方出手间隔倍率",
+        "min": 0.01
+    },
+    "battle_bossDamage": {
+        "id": "battle_bossDamage",
+        "value": 1.25,
+        "desc": "Boss战双方伤害倍率",
+        "min": 0.01
+    },
+    "battle_skillMultiplier": {
+        "id": "battle_skillMultiplier",
+        "value": 1.7,
+        "desc": "技能伤害倍率",
+        "min": 0.01
+    },
+    "battle_critMultiplier": {
+        "id": "battle_critMultiplier",
+        "value": 1.5,
+        "desc": "暴击伤害倍率",
+        "min": 1
+    },
+    "battle_reviveRatio": {
+        "id": "battle_reviveRatio",
+        "value": 0.4,
+        "desc": "复活恢复生命比例",
+        "min": 0.01,
+        "max": 1
+    },
+    "battle_streakCap": {
+        "id": "battle_streakCap",
+        "value": 5,
+        "desc": "连胜追击计数上限",
+        "min": 0
+    },
+    "battle_referenceSeconds": {
+        "id": "battle_referenceSeconds",
+        "value": 25,
+        "desc": "标准战斗参考时长（秒）；敌人目标时长/参考时长缩放逻辑时钟",
+        "min": 0.1
+    },
+    "ai_healRatio": {
+        "id": "ai_healRatio",
+        "value": 0.35,
+        "desc": "AI回血生命比例阈值",
+        "min": 0,
+        "max": 1
+    },
+    "ai_finishRatio": {
+        "id": "ai_finishRatio",
+        "value": 0.3,
+        "desc": "AI收割敌方生命比例阈值",
+        "min": 0,
+        "max": 1
+    },
+    "ai_healthyRatio": {
+        "id": "ai_healthyRatio",
+        "value": 0.55,
+        "desc": "AI健康生命比例阈值",
+        "min": 0,
+        "max": 1
+    },
+    "ai_attackAdvantage": {
+        "id": "ai_attackAdvantage",
+        "value": 4,
+        "desc": "AI攻击优势差值",
+        "min": 0
+    },
+    "ai_speedAdvantage": {
+        "id": "ai_speedAdvantage",
+        "value": 2,
+        "desc": "AI速度优势差值",
+        "min": 0
+    },
+    "power_hits": {
+        "id": "power_hits",
+        "value": 9,
+        "desc": "战力计算：典型受击次数",
+        "min": 0
+    },
+    "power_heals": {
+        "id": "power_heals",
+        "value": 4,
+        "desc": "战力计算：典型回血次数",
+        "min": 0
+    },
+    "power_dpsWeight": {
+        "id": "power_dpsWeight",
+        "value": 7,
+        "desc": "战力计算：输出权重",
+        "min": 0
+    },
+    "power_lockRatio": {
+        "id": "power_lockRatio",
+        "value": 0.3,
+        "desc": "战力计算：锁血等效生命比例",
+        "min": 0,
+        "max": 1
+    },
+    "power_comboWeight": {
+        "id": "power_comboWeight",
+        "value": 0.2,
+        "desc": "战力计算：连击权重",
+        "min": 0
+    },
+    "player_nameLength": {
+        "id": "player_nameLength",
+        "value": 12,
+        "desc": "玩家名称最大字符数",
+        "min": 1,
+        "max": 40
+    },
+    "reward_choices": {
+        "id": "reward_choices",
+        "value": 3,
+        "desc": "强化选项数量（现有界面最多三张）",
+        "min": 1,
+        "max": 3
+    },
+    "audio_musicVolume": {
+        "id": "audio_musicVolume",
+        "value": 0.35,
+        "desc": "背景音乐音量",
+        "min": 0,
+        "max": 1
+    },
+    "audio_effectVolume": {
+        "id": "audio_effectVolume",
+        "value": 0.5,
+        "desc": "音效音量",
+        "min": 0,
+        "max": 1
+    },
+    "set_bonus2Count": {
+        "id": "set_bonus2Count",
+        "value": 2,
+        "desc": "第一档套装加成所需件数",
+        "min": 1,
+        "max": 4
+    },
+    "set_bonus4Count": {
+        "id": "set_bonus4Count",
+        "value": 4,
+        "desc": "第二档套装加成所需件数",
+        "min": 1,
+        "max": 4
+    },
+    "danmaku_firstDelay": {
+        "id": "danmaku_firstDelay",
+        "value": 1.5,
+        "desc": "首条弹幕延迟（秒）",
+        "min": 0
+    },
+    "danmaku_warmupLimit": {
+        "id": "danmaku_warmupLimit",
+        "value": 5,
+        "desc": "热身赛弹幕总条数",
+        "min": 0
+    },
+    "danmaku_officialLimit": {
+        "id": "danmaku_officialLimit",
+        "value": 7,
+        "desc": "正式赛弹幕总条数",
+        "min": 0
+    },
+    "danmaku_bossLimit": {
+        "id": "danmaku_bossLimit",
+        "value": 9,
+        "desc": "Boss弹幕总条数",
+        "min": 0
+    },
+    "danmaku_travelSeconds": {
+        "id": "danmaku_travelSeconds",
+        "value": 8,
+        "desc": "弹幕横穿屏幕时间（秒）",
+        "min": 0.1
+    },
+    "danmaku_lowHpInterval": {
+        "id": "danmaku_lowHpInterval",
+        "value": 4.5,
+        "desc": "低血量时弹幕间隔（秒）",
+        "min": 0.1
+    },
+    "danmaku_interval": {
+        "id": "danmaku_interval",
+        "value": 6,
+        "desc": "普通弹幕间隔（秒）",
+        "min": 0.1
+    }
+}

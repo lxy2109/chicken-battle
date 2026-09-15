@@ -1,3 +1,4 @@
+import { gameNumber, gameText } from "../../core/GameConfig";
 import { _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -15,10 +16,10 @@ import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } fro
 const { ccclass } = _decorator;
 
 const TABS: Array<{ name: string; part: PartId; slots: EquipItem["slot"][] }> = [
-    { name: "头", part: "head", slots: ["comb", "head", "face"] },
-    { name: "翅膀", part: "wing", slots: ["wing"] },
-    { name: "躯干", part: "body", slots: ["body", "neck", "tail"] },
-    { name: "脚", part: "leg", slots: ["leg"] }
+    { get name() { return gameText("CharacterViewComp_001"); }, part: "head", slots: ["comb", "head", "face"] },
+    { get name() { return gameText("CharacterViewComp_002"); }, part: "wing", slots: ["wing"] },
+    { get name() { return gameText("CharacterViewComp_003"); }, part: "body", slots: ["body", "neck", "tail"] },
+    { get name() { return gameText("CharacterViewComp_004"); }, part: "leg", slots: ["leg"] }
 ];
 
 @ccclass("CharacterViewComp")
@@ -79,18 +80,18 @@ export class CharacterViewComp extends CCView<ChickenRun> {
             setSpriteColor(this.getNode(`BtnTab${i}`), i === this.tab ? "#FFFFFF" : "#000000");
             setSpriteColor(this.getNode(`EquipTabIcon${i}`), i === this.tab ? "#FFFFFF" : "#85818C");
         }
-        setLabel(this, "LabPartInfo", tab ? `${tab.name} · 强化 Lv${levelOf(run.partLevels, tab.part)} · 已拥有 ${items.length} 件` : "穿戴同套两件 / 四件可获得套装加成");
+        setLabel(this, "LabPartInfo", tab ? gameText("CharacterViewComp_005", tab.name, levelOf(run.partLevels, tab.part), items.length) : gameText("CharacterViewComp_006"));
         setNodeActive(this, "LabEmpty", entries.length === 0);
-        const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= 2)
-            .map(set => `${set.name}：${set.desc2}${ownedSetCount(run.equippedIds, set.id) >= 4 ? "；" + set.desc4 : ""}`).join("\n");
-        setLabel(this, "LabSets", `点击穿戴 / 卸下，同槽位替换\n加成：${bonuses || "暂无套装加成"}`);
+        const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus2Count"))
+            .map(set => `${set.name}：${set.desc2}${ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus4Count") ? "；" + set.desc4 : ""}`).join("\n");
+        setLabel(this, "LabSets", gameText("CharacterViewComp_008", bonuses || gameText("CharacterViewComp_007")));
         for (let i = 0; i < 8; i++) {
             if (id !== this.refreshId || !this.node.isValid) return;
             const entry = entries[this.page * 8 + i];
             setNodeActive(this, `Slot${i}`, !!entry);
             if (!entry) continue;
             setLabel(this, `LabSlot${i}`, entry.text);
-            setLabel(this, `LabSlotState${i}`, entry.equipped ? "已穿戴 · 卸下" : entry.available ? "点击穿戴" : "未集齐");
+            setLabel(this, `LabSlotState${i}`, entry.equipped ? gameText("CharacterViewComp_009") : entry.available ? gameText("CharacterViewComp_010") : gameText("CharacterViewComp_011"));
             setSpriteColor(this.getNode(`Slot${i}`), entry.equipped ? "#BCEA77" : entry.available ? "#FFFFFF" : "#808080");
             bindClick(this, `Slot${i}`, () => {
                 if (id === this.refreshId && entry.available) void this.equip(entry.id, !tab);

@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { Label, Node, Sprite, UITransform, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -17,6 +18,7 @@ interface ItemView {
     price: number;
     icon: string;
     affordable: boolean;
+    collected?: boolean;
     onBuy: () => void;
 }
 
@@ -57,10 +59,10 @@ export class ShopViewComp extends CCView<ChickenRun> {
 
     private async refresh() {
         const run = this.ent.run;
-        setLabel(this, "LabTitle", "鸡友杂货铺");
+        setLabel(this, "LabTitle", gameText("ShopViewComp_001"));
         setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", `${combatPower(run.playerFighter().stats)}`);
-        setLabel(this, "LabDesc", "点击商品查看效果与价格，确认后购买");
+        setLabel(this, "LabDesc", gameText("ShopViewComp_002"));
 
         const sets = getSets().filter(set => !set.legacy && !set.rewardOnly && set.unlockMap <= run.currentMap().id);
         this.pageCount = Math.max(1, sets.length);
@@ -73,9 +75,10 @@ export class ShopViewComp extends CCView<ChickenRun> {
             const unlocked = set.unlockMap <= run.currentMap().id;
             goods.push({
                 title: set.name,
-                desc: owned >= set.pieceIds.length ? "已集齐" : `${unlocked ? "补齐未拥有部件" : `第${set.unlockMap}图解锁`}\n2件 ${set.desc2}\n4件 ${set.desc4}`,
+                desc: owned >= set.pieceIds.length ? gameText("ShopViewComp_003") : gameText("ShopViewComp_006", unlocked ? gameText("ShopViewComp_004") : gameText("ShopViewComp_005", set.unlockMap), set.desc2, set.desc4),
                 price, icon: `game/texture/equip/set_${set.id}/spriteFrame`,
                 affordable: unlocked && run.gold >= price && owned < set.pieceIds.length,
+                collected: owned >= set.pieceIds.length,
                 onBuy: () => this.buySet(set.id)
             });
             for (const id of set.pieceIds) {
@@ -84,7 +87,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
                 const price = run.itemPrice(id);
                 goods.push({
                     title: item.name,
-                    desc: `${owned ? "已拥有\n" : !unlocked ? `第${set.unlockMap}图解锁\n` : ""}${item.desc}`,
+                    desc: `${owned ? gameText("ShopViewComp_007") : !unlocked ? gameText("ShopViewComp_008", set.unlockMap) : ""}${item.desc}`,
                     price, icon: TEX.equip(id),
                     affordable: unlocked && !owned && run.gold >= price,
                     onBuy: () => this.buyItem(id)
@@ -93,7 +96,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
         }
         await setNodeSprite(this, "shop", TEX.background(this.page % 2 ? "shop_weapon_figma" : "shop_figma"));
         if (!this.node.isValid) return;
-        setLabel(this, "LabShopPage", `${set?.name || "商店"} · ${this.page + 1} / ${this.pageCount}`);
+        setLabel(this, "LabShopPage", `${set?.name || gameText("ShopViewComp_009")} · ${this.page + 1} / ${this.pageCount}`);
         setSpriteColor(this.getNode("BtnShopPrev"), this.page > 0 ? "#FFFFFF" : "#777777");
         setSpriteColor(this.getNode("BtnShopNext"), this.page < this.pageCount - 1 ? "#FFFFFF" : "#777777");
         const itemSlot = this.getNode("ItemSlot");
@@ -118,7 +121,7 @@ export class ShopViewComp extends CCView<ChickenRun> {
             if (lab) lab.string = value;
         };
         text(node.getChildByName("LabTitle"), view.title);
-        text(node.getChildByName("LabDesc"), view.affordable ? "点击购买" : view.desc === "已集齐" ? "已集齐" : "点击查看");
+        text(node.getChildByName("LabDesc"), view.affordable ? gameText("ShopViewComp_010") : view.collected ? gameText("ShopViewComp_011") : gameText("ShopViewComp_012"));
         text(node.getChildByName("PriceRow")?.getChildByName("LabPrice") ?? null, `${view.price}`);
 
         const icon = node.getChildByName("IconSlot")?.getChildByName("Icon")?.getComponent(Sprite);
@@ -143,8 +146,8 @@ export class ShopViewComp extends CCView<ChickenRun> {
         this.selected = view;
         setLabel(this, "LabPurchaseTitle", view.title);
         setLabel(this, "LabPurchaseDesc", view.desc);
-        setLabel(this, "LabPurchasePrice", `${view.price} 金币 · 当前拥有 ${this.ent.run.gold}`);
-        setLabel(this, "BtnConfirmBuyLab", view.affordable ? "确认购买" : "暂不可购买");
+        setLabel(this, "LabPurchasePrice", gameText("ShopViewComp_013", view.price, this.ent.run.gold));
+        setLabel(this, "BtnConfirmBuyLab", view.affordable ? gameText("ShopViewComp_014") : gameText("ShopViewComp_015"));
         setSpriteColor(this.getNode("BtnConfirmBuy"), view.affordable ? "#FFFFFF" : "#9A9A9A");
         void setNodeSprite(this, "PurchaseIcon", view.icon);
         setNodeActive(this, "PurchaseModal", true);

@@ -1,3 +1,5 @@
+import { gameText } from "./GameConfig";
+import { hasTables, tableRow } from "./Config";
 /** 斗鸡部位。顺序按从头到脚排，染色按钮和装备槽都跟着这个顺序摆。 */
 export type PartId = "comb" | "head" | "neck" | "body" | "wing" | "tail" | "leg";
 
@@ -10,22 +12,22 @@ export type SpecialId = "none" | "heal" | "revive" | "lockHp";
 export const PARTS: PartId[] = ["comb", "head", "neck", "body", "wing", "tail", "leg"];
 
 export const FACE_TEXT: Record<FaceId, string> = {
-    fierce: "凶",
-    dumb: "呆",
-    proud: "傲",
-    cute: "萌",
-    sad: "委屈",
-    wink: "眨眼"
+    get fierce() { return gameText("Types_001"); },
+    get dumb() { return gameText("Types_002"); },
+    get proud() { return gameText("Types_003"); },
+    get cute() { return gameText("Types_004"); },
+    get sad() { return gameText("Types_005"); },
+    get wink() { return gameText("Types_006"); }
 };
 
 export const PART_TEXT: Record<PartId, string> = {
-    comb: "鸡冠",
-    head: "头部",
-    neck: "脖子",
-    body: "躯干",
-    wing: "翅膀",
-    tail: "尾巴",
-    leg: "腿部"
+    get comb() { return gameText("Types_007"); },
+    get head() { return gameText("Types_008"); },
+    get neck() { return gameText("Types_009"); },
+    get body() { return gameText("Types_010"); },
+    get wing() { return gameText("Types_011"); },
+    get tail() { return gameText("Types_012"); },
+    get leg() { return gameText("Types_013"); }
 };
 
 export interface Stats {
@@ -93,6 +95,9 @@ export interface SetDef {
 }
 
 export interface FighterSnapshot {
+    danmakuGroup?: string;
+    /** 战斗目标秒数，按参考时长缩放节奏；仍以血量归零结束。 */
+    targetBattleSeconds?: number;
     name: string;
     appearance: Appearance;
     stats: Stats;
@@ -243,6 +248,11 @@ export function addStats(base: Stats, extra: Partial<Stats>): Stats {
 }
 
 export function defaultAppearance(): Appearance {
+    if (hasTables()) {
+        const p = tableRow("Player", 1);
+        return { face: p.face, colors: { comb: p.colorComb, head: p.colorHead, neck: p.colorNeck,
+            body: p.colorBody, wing: p.colorWing, tail: p.colorTail, leg: p.colorLeg } };
+    }
     return {
         colors: {
             comb: "#B91C1C",

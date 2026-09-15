@@ -1,3 +1,4 @@
+import { gameNumber } from "./GameConfig";
 import { getUpgrades } from "./Catalog";
 import { PartLevels, canUpgrade, levelOf } from "./PartUpgrade";
 import { Rng } from "./Rng";
@@ -28,7 +29,7 @@ function roll(pool: UpgradeDef[], stage: number, seed: number, levels: PartLevel
     const rng = new Rng(seed);
     const bag = pool.filter(u => u.weight > 0);
     const picked: UpgradeDef[] = [];
-    while (picked.length < 3 && bag.length > 0) {
+    while (picked.length < gameNumber("reward_choices") && bag.length > 0) {
         const idx = weightedPick(bag, rng);
         picked.push(bag[idx]);
         bag.splice(idx, 1);

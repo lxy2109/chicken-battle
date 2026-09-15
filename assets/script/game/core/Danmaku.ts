@@ -9,20 +9,21 @@ export class DanmakuPool {
 
     next(active: string[]): string | undefined {
         const data = tableOf("Danmaku") as Record<string, string[]>;
-        const name = this.enemy === "鸡王坤坤" ? "坤坤鸡" : this.enemy;
+        const rule = tableOf("DanmakuRule")[this.enemy] || tableOf("DanmakuRule").common;
+        const name = rule.group;
         const special = data[name] || [];
-        const repeat = ["缝纫鸡", "哈鸡米", "坤坤鸡"].includes(name);
+        const repeat = rule.repeat;
         const excluded = repeat ? [] : [...active, ...this.recent];
         let pool = this.kind === "warmup" || !special.length ? data.common
-            : this.kind === "boss" || this.random() >= 0.7 ? special : data.common;
-        if (this.kind === "boss" && name === "坤坤鸡") {
-            pool = this.random() < 0.8 ? ["鸡你太美"] : special.filter(text => text !== "鸡你太美");
+            : this.kind === "boss" || this.random() >= rule.commonChance ? special : data.common;
+        if (this.kind === "boss" && rule.featuredText) {
+            pool = this.random() < rule.featuredChance ? [rule.featuredText] : special.filter(text => text !== rule.featuredText);
         }
         const candidates = pool.filter(text => !excluded.includes(text));
         if (!candidates.length) return;
         const text = candidates[Math.floor(this.random() * candidates.length)];
         this.recent.push(text);
-        this.recent = this.recent.slice(-8);
+        this.recent = rule.recentCount > 0 ? this.recent.slice(-rule.recentCount) : [];
         return text;
     }
 }

@@ -6,6 +6,7 @@ import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { ECSCtor, ECSView } from "db://oops-framework/module/common/CCEntity";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { ChickenRun } from "../chicken/ChickenRun";
+import { applyConfiguredTexts } from "./UiUtil";
 
 const preparedDirectories = new Map<string, Promise<void>>();
 
@@ -46,6 +47,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         })
     ]);
     const node = await oops.gui.open(key, { preload: true });
+    applyConfiguredTexts(node);
     // LayerGame resets prefab scale on open. Keep the game's 720x1280 local
     // coordinates proportional to the project's current design canvas.
     const scale = view.getDesignResolutionSize().height / 1280;

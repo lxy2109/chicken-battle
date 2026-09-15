@@ -25,13 +25,13 @@ const { defaultAppearance } = require(path.join(G, "core/Types.js"));
 
 const dir = path.resolve(__dirname, "../assets/bundle/config/game");
 const tables = {};
-for (const n of ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward"]) {
+for (const n of ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "GameRule", "Map", "Language", "DanmakuRule"]) {
     tables[n] = JSON.parse(fs.readFileSync(path.join(dir, n + ".json"), "utf8"));
 }
 bindTables(tables);
 
 /** BattleSession 里的 MIN_INTERVAL：出手间隔再快也不会低于这个数。 */
-const MIN_INTERVAL = 0.55;
+const MIN_INTERVAL = tables.GameRule.battle_minInterval.value;
 /** 双方站位相距 377，躯干包围盒相交就算打着，所以真正要挪的大约是这么多。 */
 const GAP = 267;
 const DT = 1 / 60;
@@ -70,10 +70,13 @@ function play(player, enemy, boss, anim) {
     s.intro();
     s.beginCombat();
     const due = { player: -1, enemy: -1 };
+    // 无演出比较保持相同逻辑步长，避免不同取整误差改变同帧出手顺序。
+    const reference = tables.GameRule.battle_referenceSeconds.value;
+    const step = anim ? DT : DT * (enemy.targetBattleSeconds ?? reference) / reference;
     let t = 0;
     let guard = 0;
     while (!s.done && guard++ < 60000) {
-        for (const ev of s.tick(DT)) {
+        for (const ev of s.tick(step)) {
             if (ev.type === "action" && ev.kind !== "heal") {
                 due[ev.side] = t + (anim ? LEAD[ev.style] : 0);
             }
@@ -84,7 +87,7 @@ function play(player, enemy, boss, anim) {
                 if (s.striking(side)) s.resolveStrike(side, true);
             }
         }
-        t += DT;
+        t += step;
     }
     return t;
 }
@@ -199,7 +202,20 @@ for (const [label, p, e, boss, lo, hi] of cases) {
         + ("不含演出 " + bare.toFixed(1) + "s").padEnd(18)
         + ("含演出 " + full.toFixed(1) + "s").padEnd(16)
         + "演出拖了 " + (full - bare).toFixed(1) + "s");
-    if (full < lo || full > hi) bad.push(`${label} ${full.toFixed(1)}s 不在 ${lo}~${hi}s 区间`);
+    const reference = tables.GameRule.battle_referenceSeconds.value;
+    const ratio = (e.targetBattleSeconds ?? reference) / reference;
+    if (ratio === 1) {
+        if (full < lo || full > hi) bad.push(`${label} ${full.toFixed(1)}s 不在 ${lo}~${hi}s 区间`);
+    }
+    else {
+        // 单怪时长可配以后，不再用固定的45秒上限约束Boss。
+        // 与同一属性、同一随机种子的参考节奏比较，检查逻辑缩放和演出趋势。
+        const baseEnemy = { ...e, targetBattleSeconds: reference };
+        const baseBare = play(p, baseEnemy, boss, false);
+        const baseFull = play(p, baseEnemy, boss, true);
+        if (Math.abs(bare / baseBare - ratio) > 0.1) bad.push(`${label} 逻辑时长未按单怪配置缩放`);
+        if (ratio > 1 && full < baseFull || ratio < 1 && full > baseFull) bad.push(`${label} 演出后时长变化方向错误`);
+    }
 }
 
 if (bad.length) {

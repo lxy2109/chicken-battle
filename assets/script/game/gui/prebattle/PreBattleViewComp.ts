@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { Color, Tween, Label, Mask, Graphics, UIOpacity, UITransform, tween, v3, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -14,20 +15,20 @@ import { bindClick, setLabel } from "../UiUtil";
 
 const { ccclass } = _decorator;
 
-const ROWS: Array<{ name: string; value: (stats: Stats) => number }> = [
-    { name: "生命", value: stats => stats.maxHp },
-    { name: "攻击伤害", value: stats => stats.atk },
-    { name: "敏捷", value: stats => stats.spd },
-    { name: "连击", value: stats => Math.round(stats.combo ?? stats.spd * 10) },
-    { name: "暴击", value: stats => Math.round(stats.crit * 100) }
+const ROWS: Array<{ name: string; suffix: string; value: (stats: Stats) => number }> = [
+    { get name() { return gameText("PreBattleViewComp_001"); }, suffix: "Hp", value: stats => stats.maxHp },
+    { get name() { return gameText("PreBattleViewComp_002"); }, suffix: "Atk", value: stats => stats.atk },
+    { get name() { return gameText("PreBattleViewComp_003"); }, suffix: "Spd", value: stats => stats.spd },
+    { get name() { return gameText("PreBattleViewComp_004"); }, suffix: "Combo", value: stats => Math.round(stats.combo ?? stats.spd * 10) },
+    { get name() { return gameText("PreBattleViewComp_005"); }, suffix: "Crit", value: stats => Math.round(stats.crit * 100) }
 ];
 
 /** 特殊能力摘要，没有的项不占位。 */
 function extraText(s: Stats): string {
-    const parts = [`暴击 ${Math.round(s.crit * 100)}%`];
-    if (s.healPerTurn > 0) parts.push(`回血 ${s.healPerTurn}`);
-    if (s.revive > 0) parts.push(`复活 ${s.revive}`);
-    if (s.lockHp) parts.push("锁血");
+    const parts = [gameText("PreBattleViewComp_006", Math.round(s.crit * 100))];
+    if (s.healPerTurn > 0) parts.push(gameText("PreBattleViewComp_007", s.healPerTurn));
+    if (s.revive > 0) parts.push(gameText("PreBattleViewComp_008", s.revive));
+    if (s.lockHp) parts.push(gameText("PreBattleViewComp_009"));
     return parts.join("   ");
 }
 
@@ -64,9 +65,9 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
         this.emphasize("LabPlayerPower", combatPower(a) > combatPower(b));
         for (const row of ROWS) {
             const delta = row.value(a) - row.value(b);
-            const suffix = row.name === "攻击伤害" ? "Atk" : row.name === "生命" ? "Hp" : row.name === "敏捷" ? "Spd" : row.name === "连击" ? "Combo" : "Crit";
-            const unit = row.name === "暴击" ? "%" : "";
-            setLabel(this, `LabDiff${suffix}`, `${row.name === "攻击伤害" ? "攻击" : row.name} ${delta >= 0 ? "+" : ""}${delta}${unit}`);
+            const suffix = row.suffix;
+            const unit = row.suffix === "Crit" ? "%" : "";
+            setLabel(this, `LabDiff${suffix}`, `${row.suffix === "Atk" ? gameText("PreBattleViewComp_010") : row.name} ${delta >= 0 ? "+" : ""}${delta}${unit}`);
             setLabel(this, `LabPlayer${suffix}`, `${row.value(a)}${unit}`);
             setLabel(this, `LabEnemy${suffix}`, `${row.value(b)}${unit}`);
             this.emphasize(`LabPlayer${suffix}`, delta > 0);

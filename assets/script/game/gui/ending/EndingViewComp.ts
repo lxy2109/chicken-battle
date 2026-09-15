@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -20,7 +21,7 @@ export class EndingViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabTitle", this.ent.run.playerFighter().name);
         setLabel(this, "LabGold", `${this.ent.run.gold}`);
         setLabel(this, "LabDesc", getPlayer().storyEnding);
-        setLabel(this, "LabHint", "已获得鸡王中王套 · 可在角色面板穿戴");
+        setLabel(this, "LabHint", gameText("EndingViewComp_001"));
         await spawnChicken(this, "ChickenSlot", this.ent.run.playerFighter().appearance, 0.72);
         const slot = this.getNode("ChickenSlot");
         if (slot) {

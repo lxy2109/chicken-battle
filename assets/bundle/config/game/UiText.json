@@ -1,0 +1,250 @@
+{
+    "battle/BarPlayer/LabPlayerHp": {
+        "id": "battle/BarPlayer/LabPlayerHp",
+        "text": "0/0"
+    },
+    "battle/BarEnemy/LabEnemyHp": {
+        "id": "battle/BarEnemy/LabEnemyHp",
+        "text": "0/0"
+    },
+    "character/LabGold": {
+        "id": "character/LabGold",
+        "text": "0"
+    },
+    "character/LabPower": {
+        "id": "character/LabPower",
+        "text": "0"
+    },
+    "character/BtnPagePrev/BtnPagePrevLab": {
+        "id": "character/BtnPagePrev/BtnPagePrevLab",
+        "text": "‹"
+    },
+    "character/BtnPageNext/BtnPageNextLab": {
+        "id": "character/BtnPageNext/BtnPageNextLab",
+        "text": "›"
+    },
+    "character/LabEmpty": {
+        "id": "character/LabEmpty",
+        "text": "该部位暂无装备"
+    },
+    "customize/CustomizePanel/NameInput/LabNamePlaceholder": {
+        "id": "customize/CustomizePanel/NameInput/LabNamePlaceholder",
+        "text": "点击输入名字"
+    },
+    "customize/CustomizePanel/BtnRandomName/BtnRandomNameLab": {
+        "id": "customize/CustomizePanel/BtnRandomName/BtnRandomNameLab",
+        "text": "随机名字"
+    },
+    "customize/StartPanel/BtnStart/BtnStartLab": {
+        "id": "customize/StartPanel/BtnStart/BtnStartLab",
+        "text": "开始"
+    },
+    "customize/StartPanel/BtnClearSave/BtnClearSaveLab": {
+        "id": "customize/StartPanel/BtnClearSave/BtnClearSaveLab",
+        "text": "清除本地存档"
+    },
+    "customize/StartPanel/LabSaveHint": {
+        "id": "customize/StartPanel/LabSaveHint",
+        "text": "进度与养成自动保存到本机"
+    },
+    "customize/ClearSaveModal/LabClearTitle": {
+        "id": "customize/ClearSaveModal/LabClearTitle",
+        "text": "清除本地存档"
+    },
+    "customize/ClearSaveModal/LabClearDesc": {
+        "id": "customize/ClearSaveModal/LabClearDesc",
+        "text": "将删除关卡进度、强化、金币、装备和首通记录。此操作无法撤销。"
+    },
+    "customize/ClearSaveModal/BtnCancelClear/BtnCancelClearLab": {
+        "id": "customize/ClearSaveModal/BtnCancelClear/BtnCancelClearLab",
+        "text": "取消"
+    },
+    "customize/ClearSaveModal/BtnConfirmClear/BtnConfirmClearLab": {
+        "id": "customize/ClearSaveModal/BtnConfirmClear/BtnConfirmClearLab",
+        "text": "确认清除"
+    },
+    "ending/LabHeaderBg/LabHeader": {
+        "id": "ending/LabHeaderBg/LabHeader",
+        "text": "路线通关"
+    },
+    "ending/Burst/LabTitle": {
+        "id": "ending/Burst/LabTitle",
+        "text": "村口鸡王"
+    },
+    "ending/GainCard/LabGold": {
+        "id": "ending/GainCard/LabGold",
+        "text": "0"
+    },
+    "ending/BtnCharacter/BtnCharacterLab": {
+        "id": "ending/BtnCharacter/BtnCharacterLab",
+        "text": "查看奖励套装"
+    },
+    "ending/BtnRestart/BtnRestartLab": {
+        "id": "ending/BtnRestart/BtnRestartLab",
+        "text": "返回首页"
+    },
+    "loading/pro_progress/lab_prompt": {
+        "id": "loading/pro_progress/lab_prompt",
+        "text": "战鸡正在整装待发…"
+    },
+    "loading/pro_progress/lab_progress": {
+        "id": "loading/pro_progress/lab_progress",
+        "text": "{{0}}%"
+    },
+    "map/LabTitle": {
+        "id": "map/LabTitle",
+        "text": "选择关卡"
+    },
+    "map/BtnHome/BtnHomeLab": {
+        "id": "map/BtnHome/BtnHomeLab",
+        "text": "首页"
+    },
+    "map/LabGold": {
+        "id": "map/LabGold",
+        "text": "0"
+    },
+    "map/BtnStage1/LabStageNum1": {
+        "id": "map/BtnStage1/LabStageNum1",
+        "text": "1"
+    },
+    "map/BtnStage2/LabStageNum2": {
+        "id": "map/BtnStage2/LabStageNum2",
+        "text": "2"
+    },
+    "map/BtnStage3/LabStageNum3": {
+        "id": "map/BtnStage3/LabStageNum3",
+        "text": "3"
+    },
+    "map/BtnStage4/LabStageNum4": {
+        "id": "map/BtnStage4/LabStageNum4",
+        "text": "4"
+    },
+    "map/BtnStage5/LabStageNum5": {
+        "id": "map/BtnStage5/LabStageNum5",
+        "text": "5"
+    },
+    "map/LabShopName": {
+        "id": "map/LabShopName",
+        "text": "小卖部"
+    },
+    "map/LabBossName": {
+        "id": "map/LabBossName",
+        "text": "鸡王"
+    },
+    "map/BtnChallenge/BtnChallengeLab": {
+        "id": "map/BtnChallenge/BtnChallengeLab",
+        "text": "开始挑战"
+    },
+    "prebattle/LabTitle": {
+        "id": "prebattle/LabTitle",
+        "text": "1-1"
+    },
+    "prebattle/PlayerPanel/LabPlayerPower": {
+        "id": "prebattle/PlayerPanel/LabPlayerPower",
+        "text": "0"
+    },
+    "prebattle/PlayerPanel/LabPlayerHp": {
+        "id": "prebattle/PlayerPanel/LabPlayerHp",
+        "text": "0"
+    },
+    "prebattle/PlayerPanel/LabPlayerAtk": {
+        "id": "prebattle/PlayerPanel/LabPlayerAtk",
+        "text": "0"
+    },
+    "prebattle/PlayerPanel/LabPlayerSpd": {
+        "id": "prebattle/PlayerPanel/LabPlayerSpd",
+        "text": "0"
+    },
+    "prebattle/PlayerPanel/LabPlayerCombo": {
+        "id": "prebattle/PlayerPanel/LabPlayerCombo",
+        "text": "0"
+    },
+    "prebattle/PlayerPanel/LabPlayerCrit": {
+        "id": "prebattle/PlayerPanel/LabPlayerCrit",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemyPower": {
+        "id": "prebattle/EnemyPanel/LabEnemyPower",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemyHp": {
+        "id": "prebattle/EnemyPanel/LabEnemyHp",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemyAtk": {
+        "id": "prebattle/EnemyPanel/LabEnemyAtk",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemySpd": {
+        "id": "prebattle/EnemyPanel/LabEnemySpd",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemyCombo": {
+        "id": "prebattle/EnemyPanel/LabEnemyCombo",
+        "text": "0"
+    },
+    "prebattle/EnemyPanel/LabEnemyCrit": {
+        "id": "prebattle/EnemyPanel/LabEnemyCrit",
+        "text": "0"
+    },
+    "prebattle/BtnFight/BtnFightLab": {
+        "id": "prebattle/BtnFight/BtnFightLab",
+        "text": "开始"
+    },
+    "result/LabDesc": {
+        "id": "result/LabDesc",
+        "text": "本局获得"
+    },
+    "result/LabGold": {
+        "id": "result/LabGold",
+        "text": "+0"
+    },
+    "result/BtnNext/BtnNextLab": {
+        "id": "result/BtnNext/BtnNextLab",
+        "text": "选择强化"
+    },
+    "reward/LabTitle": {
+        "id": "reward/LabTitle",
+        "text": "选择强化"
+    },
+    "reward/LabHint": {
+        "id": "reward/LabHint",
+        "text": "选择一项强化"
+    },
+    "reward/BtnConfirm/BtnConfirmLab": {
+        "id": "reward/BtnConfirm/BtnConfirmLab",
+        "text": "下一关"
+    },
+    "shop/LabGold": {
+        "id": "shop/LabGold",
+        "text": "0"
+    },
+    "shop/BtnShopPrev/BtnShopPrevLab": {
+        "id": "shop/BtnShopPrev/BtnShopPrevLab",
+        "text": "‹"
+    },
+    "shop/BtnShopNext/BtnShopNextLab": {
+        "id": "shop/BtnShopNext/BtnShopNextLab",
+        "text": "›"
+    },
+    "shop/LabShopPage": {
+        "id": "shop/LabShopPage",
+        "text": "1 / 1"
+    },
+    "shop/BtnLeave/BtnLeaveLab": {
+        "id": "shop/BtnLeave/BtnLeaveLab",
+        "text": "返回地图"
+    },
+    "shop/PurchaseModal/LabPurchaseTitle": {
+        "id": "shop/PurchaseModal/LabPurchaseTitle",
+        "text": "商品"
+    },
+    "shop/PurchaseModal/BtnCancelBuy/BtnCancelBuyLab": {
+        "id": "shop/PurchaseModal/BtnCancelBuy/BtnCancelBuyLab",
+        "text": "取消"
+    },
+    "shop/PurchaseModal/BtnConfirmBuy/BtnConfirmBuyLab": {
+        "id": "shop/PurchaseModal/BtnConfirmBuy/BtnConfirmBuyLab",
+        "text": "购买"
+    }
+}

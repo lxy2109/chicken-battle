@@ -1,4 +1,6 @@
-import { MAPS, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
+import { gameNumber, gameText } from "./GameConfig";
+import { hasTables } from "./Config";
+import { getMaps, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
 import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
 import { PartLevels, canUpgrade, partScale, upgradeBonus } from "./PartUpgrade";
 import { rollUpgrades } from "./RewardGen";
@@ -16,7 +18,7 @@ import {
  * 商店货架由 EquipMath 固定生成，不存在刷新或随机换货。
  */
 export class RunState {
-    gold = 0;
+    gold = hasTables() ? getPlayer().initialGold : 0;
     /** 首通领取记录和大关通关记录不参与正式赛战败回退。 */
     claimedGoldNodes: number[] = [];
     completedMaps: number[] = [];
@@ -34,7 +36,7 @@ export class RunState {
     screen: RunScreen = "customize";
     appearance: Appearance = defaultAppearance();
     /** 自定义页的名称只属于本局，不修改 Player 配表。 */
-    playerName = "无名鸡";
+    playerName = hasTables() ? getPlayer().name : "";
     ownedIds: string[] = [];
     /** 背包与穿戴分开；同一装备槽最多一件。 */
     equippedIds: string[] = [];
@@ -78,13 +80,13 @@ export class RunState {
     }
 
     currentMap() {
-        return MAPS.find(map => map.id === (this.currentRoute().mapId || 1))!;
+        return getMaps().find(map => map.id === (this.currentRoute().mapId || 1))!;
     }
 
     get nextMap() {
         const map = this.currentMap();
         return this.currentRoute().kind === "boss" && this.completedMaps.includes(map.id)
-            ? MAPS.find(next => next.id === map.id + 1) : undefined;
+            ? getMaps().find(next => next.id === map.id + 1) : undefined;
     }
 
     enterNextMap() {
@@ -102,7 +104,7 @@ export class RunState {
     }
 
     setPlayerName(name: string) {
-        const clean = name.trim().slice(0, 12);
+        const clean = name.trim().slice(0, gameNumber("player_nameLength"));
         if (clean) this.playerName = clean;
         this.onChanged?.();
     }
@@ -308,15 +310,15 @@ export class RunState {
     }
 
     mapHint(): string {
-        if (this.nextMap) return `本地图已通关，点击下方前往${this.nextMap.name}`;
+        if (this.nextMap) return gameText("RunState_001", this.nextMap.name);
         const node = this.currentRoute();
-        if (node.kind === "boss") return node.encounter === "final" ? "全村注视着你：挑战鸡王坤坤！" : "赢下正式赛，继续争霸之路";
-        return this.claimedGoldNodes.includes(node.id) ? "本关首通金币已领取" : `首通奖励 ${node.goldWin || 0} 金币`;
+        if (node.kind === "boss") return node.encounter === "final" ? gameText("RunState_002") : gameText("RunState_003");
+        return this.claimedGoldNodes.includes(node.id) ? gameText("RunState_004") : gameText("RunState_005", node.goldWin || 0);
     }
 
     fightTitle(): string {
         const node = this.currentRoute();
-        return node.kind === "boss" ? "鸡王挑战" : `节点 ${node.id} · ${node.name}`;
+        return node.kind === "boss" ? gameText("RunState_006") : gameText("RunState_007", node.id, node.name);
     }
 
     rng(): Rng {

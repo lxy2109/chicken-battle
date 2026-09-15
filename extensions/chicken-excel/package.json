@@ -1,0 +1,28 @@
+{
+  "package_version": 2,
+  "name": "chicken-excel",
+  "title": "斗鸡 Excel 配表",
+  "version": "1.0.0",
+  "description": "在 Creator 中校验、预览并导出斗鸡 Excel 配置",
+  "editor": ">=3.8.6",
+  "main": "./main.js",
+  "panels": {
+    "default": {
+      "title": "斗鸡 Excel 配表",
+      "type": "dockable",
+      "main": "./panel.js",
+      "size": { "width": 980, "height": 680, "min-width": 660, "min-height": 440 }
+    }
+  },
+  "contributions": {
+    "menu": [{ "path": "i18n:menu.extension", "label": "斗鸡 Excel 配表", "message": "open-panel" }],
+    "messages": {
+      "open-panel": { "methods": ["openPanel"] },
+      "get-source": { "methods": ["getSource"] },
+      "choose-source": { "methods": ["chooseSource"] },
+      "open-source": { "methods": ["openSource"] },
+      "inspect": { "methods": ["inspect"] },
+      "export": { "methods": ["exportConfig"] }
+    }
+  }
+}

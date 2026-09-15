@@ -1,28 +1,9 @@
+import { gameNumber, gameText } from "./GameConfig";
 import { AiFighter, BattleDecision, decide } from "./BattleAI";
 import { Rng } from "./Rng";
 import { BattleEvent, BattleSide, FighterSnapshot, Stats, StrikeStyle, cloneStats } from "./Types";
 
-/**
- * 即时战斗的节奏常量。
- *
- * 配表是按回合制配的，一场只够砍五到十刀。这套数值直接搬进即时制，会变成双方
- * 每隔三四秒才动一下的慢动作，所以这里把单刀伤害等比缩小、出手频率提上来，
- * 让一场打满二三十刀。等比缩放不改变谁强谁弱，配表一个字都不用动。
- */
-const BASE_INTERVAL = 1.6;
-const SPD_REF = 20;
-const MIN_INTERVAL = 0.55;
-const DMG_SCALE = 0.3;
-const HEAL_CD = 6;
-const SKILL_CD = 4.5;
-/** 挨打会打断节奏，下一刀稍微延后，避免双方永远整齐地对拍。 */
-const HIT_STAGGER = 0.12;
-/**
- * 鸡王血厚、带回血和复活，按常规节奏要打四十多秒。决战可以久一点但不该拖沓，
- * 双方同步加快加重，强弱关系不变，只是把这一场压回三十秒出头。
- */
-const BOSS_PACE = 0.92;
-const BOSS_DMG_BOOST = 1.25;
+/** 战斗规则来自 GameRule，单怪目标时长由 Enemy 快照传入。 */
 
 /** 出招决策的来源，默认是 BattleAI.decide，运行时换成行为树。 */
 export type Decider = (self: AiFighter, foe: AiFighter) => BattleDecision;
@@ -68,7 +49,7 @@ function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
 
 /** 速度直接换算成出手间隔，这是 spd 在即时制里的唯一作用。 */
 function intervalOf(spd: number): number {
-    return Math.max(MIN_INTERVAL, BASE_INTERVAL / (1 + Math.max(0, spd) / SPD_REF));
+    return Math.max(gameNumber("battle_minInterval"), gameNumber("battle_baseInterval") / (1 + Math.max(0, spd) / gameNumber("battle_speedReference")));
 }
 
 /**
@@ -78,7 +59,7 @@ function intervalOf(spd: number): number {
  */
 function dmgOf(atk: number, def: number, skill: boolean, crit: boolean, scale: number, rng: Rng): number {
     const raw = Math.max(1, atk - def);
-    const exact = raw * (skill ? 1.7 : 1) * (crit ? 1.5 : 1) * scale;
+    const exact = raw * (skill ? gameNumber("battle_skillMultiplier") : 1) * (crit ? gameNumber("battle_critMultiplier") : 1) * scale;
     const base = Math.floor(exact);
     return Math.max(1, base + (rng.chance(exact - base) ? 1 : 0));
 }
@@ -92,7 +73,7 @@ function applyDamage(target: LiveFighter, dmg: number): { dmg: number; locked: b
     target.stats.hp = Math.max(0, target.stats.hp - dmg);
     if (target.stats.hp <= 0 && target.stats.revive > 0) {
         target.stats.revive -= 1;
-        target.stats.hp = Math.max(1, Math.floor(target.stats.maxHp * 0.4));
+        target.stats.hp = Math.max(1, Math.floor(target.stats.maxHp * gameNumber("battle_reviveRatio")));
         return { dmg, locked: false, revived: true };
     }
     return { dmg, locked: false, revived: false };
@@ -114,6 +95,7 @@ export class BattleSession {
     private pending: Record<BattleSide, PendingStrike | null> = { player: null, enemy: null };
     private pace: number;
     private dmgScale: number;
+    private durationScale: number;
     private decider: Decider;
 
     /**
@@ -123,13 +105,16 @@ export class BattleSession {
      */
     constructor(player: FighterSnapshot, enemy: FighterSnapshot, seed: number, boss: boolean, decider?: Decider) {
         this.decider = decider || decide;
-        this.pace = boss ? BOSS_PACE : 1;
-        this.dmgScale = DMG_SCALE * (boss ? BOSS_DMG_BOOST : 1);
+        const reference = gameNumber("battle_referenceSeconds");
+        this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
+        if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
+        this.pace = boss ? gameNumber("battle_bossPace") : 1;
+        this.dmgScale = gameNumber("battle_damageScale") * (boss ? gameNumber("battle_bossDamage") : 1);
         this.player = toLive(player, this.pace);
         this.enemy = toLive(enemy, this.pace);
         this.rng = new Rng(seed);
-        this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : ["上啊！"]) });
-        this.events.push({ type: "taunt", side: "enemy", text: this.rng.pick(enemy.taunts.length ? enemy.taunts : ["咯咯！"]) });
+        this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : [gameText("BattleSession_001")]) });
+        this.events.push({ type: "taunt", side: "enemy", text: this.rng.pick(enemy.taunts.length ? enemy.taunts : [gameText("BattleSession_002")]) });
         this.events.push({ type: "start" });
     }
 
@@ -177,6 +162,7 @@ export class BattleSession {
     tick(dt: number): BattleEvent[] {
         const out: BattleEvent[] = [];
         if (this.phase !== "combat" || dt <= 0) return out;
+        dt /= this.durationScale;
 
         for (const side of SIDES) {
             const actor = this.live(side);
@@ -197,12 +183,12 @@ export class BattleSession {
                 const amount = Math.min(actor.stats.maxHp - actor.stats.hp,
                     Math.round(actor.stats.healPerTurn * (1 + (actor.stats.healBonus || 0))));
                 actor.stats.hp = Math.min(actor.stats.maxHp, actor.stats.hp + amount);
-                actor.healCd = HEAL_CD;
+                actor.healCd = gameNumber("battle_healCooldown");
                 actor.atkCd = this.interval(actor);
                 out.push({ type: "heal", side, amount, remain: actor.stats.hp });
             }
             else {
-                if (d.kind === "skill") actor.skillCd = SKILL_CD;
+                if (d.kind === "skill") actor.skillCd = gameNumber("battle_skillCooldown");
                 actor.busy = true;
                 this.pending[side] = { to: foe, skill: d.kind === "skill" };
             }
@@ -235,10 +221,10 @@ export class BattleSession {
         const victim = this.live(p.to);
         const crit = this.rng.chance(actor.stats.crit);
         const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit,
-            this.dmgScale * (1 + Math.min(5, actor.streak) * (actor.stats.streakBonus || 0)), this.rng);
+            this.dmgScale * (1 + Math.min(gameNumber("battle_streakCap"), actor.streak) * (actor.stats.streakBonus || 0)), this.rng);
         actor.streak += 1;
         const result = applyDamage(victim, dmg);
-        victim.atkCd += HIT_STAGGER * this.pace;
+        victim.atkCd += gameNumber("battle_hitStagger") * this.pace;
 
         const batch: BattleEvent[] = [];
         if (result.locked) batch.push({ type: "lock", side: p.to });

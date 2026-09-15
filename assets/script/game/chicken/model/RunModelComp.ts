@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { RunState } from "../../core/RunState";
 import { Game, game, sys } from "cc";
@@ -19,7 +20,7 @@ export class RunModelComp extends ecs.Comp {
         this.loadError = "";
         try { this.data = this.store.load(); }
         catch (error) {
-            this.loadError = "存档读取失败，原存档已保留；可清除本地存档后重新开始。";
+            this.loadError = gameText("RunModelComp_001");
             console.error("[RunSave] 读档失败", error);
         }
         this.cleared = false;

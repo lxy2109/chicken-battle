@@ -1,3 +1,4 @@
+import { gameNumber, gameText } from "../../core/GameConfig";
 import { _decorator, EditBox } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -27,6 +28,8 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     start() {
         this.nodeTreeInfoLite();
         this.nameInput = this.getNode("NameInput")!.getComponent(EditBox)!;
+        this.nameInput.maxLength = gameNumber("player_nameLength");
+        this.nameInput.string = this.ent.run.playerName;
         this.nameInput.node.on(EditBox.EventType.EDITING_DID_ENDED, () => {
             this.ent.run.setPlayerName(this.nameInput.string);
             this.nameInput.string = this.ent.run.playerName;
@@ -46,8 +49,8 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
             setNodeActive(this, "StartPanel", false);
             setNodeActive(this, "CustomizePanel", true);
         });
-        setLabel(this, "BtnStartLab", this.ent.run.screen === "customize" ? "开始" : "继续游戏");
-        setLabel(this, "LabSaveHint", this.ent.RunModel.loadError || "进度与养成自动保存到本机");
+        setLabel(this, "BtnStartLab", this.ent.run.screen === "customize" ? gameText("CustomizeViewComp_001") : gameText("CustomizeViewComp_002"));
+        setLabel(this, "LabSaveHint", this.ent.RunModel.loadError || gameText("CustomizeViewComp_003"));
         bindClick(this, "BtnClearSave", () => setNodeActive(this, "ClearSaveModal", true));
         bindClick(this, "BtnCancelClear", () => setNodeActive(this, "ClearSaveModal", false));
         bindClick(this, "BtnConfirmClear", () => {
@@ -56,11 +59,11 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
                 this.draft = defaultAppearance();
                 this.part = "head";
                 setNodeActive(this, "ClearSaveModal", false);
-                setLabel(this, "BtnStartLab", "开始");
-                setLabel(this, "LabSaveHint", "本地存档已清除");
+                setLabel(this, "BtnStartLab", gameText("CustomizeViewComp_004"));
+                setLabel(this, "LabSaveHint", gameText("CustomizeViewComp_005"));
                 void this.refresh();
             } catch {
-                setLabel(this, "LabClearDesc", "清除失败，请检查浏览器本地存储权限后重试。");
+                setLabel(this, "LabClearDesc", gameText("CustomizeViewComp_006"));
             }
         });
         bindClick(this, "BtnEnter", this.onEnter.bind(this));
@@ -104,9 +107,9 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     }
 
     private async refresh() {
-        setLabel(this, "LabTitle", "自定义你的专属战鸡");
+        setLabel(this, "LabTitle", gameText("CustomizeViewComp_007"));
         this.nameInput.string = this.ent.run.playerName;
-        setLabel(this, "LabPart", this.part === "face" ? "选择表情" : this.part === "body" ? "正在染：躯干与脖子" : `正在染：${PART_TEXT[this.part]}`);
+        setLabel(this, "LabPart", this.part === "face" ? gameText("CustomizeViewComp_008") : this.part === "body" ? gameText("CustomizeViewComp_009") : gameText("CustomizeViewComp_010", PART_TEXT[this.part]));
         setNodeActive(this, "ColorOptions", this.part !== "face");
         setNodeActive(this, "FaceOptions", this.part === "face");
         getFaceList().forEach((face, i) => setSpriteColor(this.getNode(`BtnFace${i}`), face === this.draft.face ? "#FFFFFF" : "#898596"));
@@ -141,7 +144,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
     }
 
     private onRandomName() {
-        const names = ["呆头王鸡", "铁嘴战鸡", "闪电羽", "村口霸王", "小鸡大将", "彩羽勇者"]
+        const names = (getPlayer().randomNames as string[])
             .filter(name => name !== this.nameInput.string.trim());
         this.ent.run.setPlayerName(names[Math.floor(Math.random() * names.length)]);
         this.nameInput.string = this.ent.run.playerName;

@@ -1,0 +1,101 @@
+{
+    "common": {
+        "id": "common",
+        "group": "common",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "直升鸡": {
+        "id": "直升鸡",
+        "group": "直升鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "肯德鸡": {
+        "id": "肯德鸡",
+        "group": "肯德鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "电视鸡": {
+        "id": "电视鸡",
+        "group": "电视鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "挖掘鸡": {
+        "id": "挖掘鸡",
+        "group": "挖掘鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "新一鸡": {
+        "id": "新一鸡",
+        "group": "新一鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "哈鸡米": {
+        "id": "哈鸡米",
+        "group": "哈鸡米",
+        "repeat": true,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "菜鸡": {
+        "id": "菜鸡",
+        "group": "菜鸡",
+        "repeat": false,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "缝纫鸡": {
+        "id": "缝纫鸡",
+        "group": "缝纫鸡",
+        "repeat": true,
+        "commonChance": 0.7,
+        "featuredText": "",
+        "featuredChance": 0,
+        "recentCount": 8
+    },
+    "坤坤鸡": {
+        "id": "坤坤鸡",
+        "group": "坤坤鸡",
+        "repeat": true,
+        "commonChance": 0.7,
+        "featuredText": "鸡你太美",
+        "featuredChance": 0.8,
+        "recentCount": 8
+    },
+    "鸡王坤坤": {
+        "id": "鸡王坤坤",
+        "group": "坤坤鸡",
+        "repeat": true,
+        "commonChance": 0.7,
+        "featuredText": "鸡你太美",
+        "featuredChance": 0.8,
+        "recentCount": 8
+    }
+}

@@ -19,7 +19,12 @@
         "leg": "#E09F3E",
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
-        "taunt3": "回去喝汤吧。"
+        "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
+        "illustration": "s1_warmup"
     },
     "s1_official": {
         "id": "s1_official",
@@ -41,7 +46,12 @@
         "leg": "#E09F3E",
         "taunt1": "我的战术目前只有勇气！",
         "taunt2": "这鸡的装备比它本人有自信",
-        "taunt3": "盾牌已经替它投降了"
+        "taunt3": "盾牌已经替它投降了",
+        "targetBattleSeconds": 35,
+        "danmakuGroup": "菜鸡",
+        "combo": 90,
+        "neck": "#F4D35E",
+        "illustration": "s1_official"
     },
     "s2_warmup": {
         "id": "s2_warmup",
@@ -63,7 +73,12 @@
         "leg": "#E09F3E",
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
-        "taunt3": "回去喝汤吧。"
+        "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
+        "illustration": "s2_warmup"
     },
     "s2_official": {
         "id": "s2_official",
@@ -85,7 +100,12 @@
         "leg": "#E09F3E",
         "taunt1": "胜负不重要，火候很重要！",
         "taunt2": "这鸡看起来已经腌入味了",
-        "taunt3": "对面打轻点，别提前出锅"
+        "taunt3": "对面打轻点，别提前出锅",
+        "targetBattleSeconds": 35,
+        "danmakuGroup": "肯德鸡",
+        "combo": 100,
+        "neck": "#C87438",
+        "illustration": "s2_official"
     },
     "s3_warmup": {
         "id": "s3_warmup",
@@ -107,7 +127,12 @@
         "leg": "#E09F3E",
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
-        "taunt3": "回去喝汤吧。"
+        "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
+        "illustration": "s3_warmup"
     },
     "s3_official": {
         "id": "s3_official",
@@ -129,7 +154,12 @@
         "leg": "#E09F3E",
         "taunt1": "先喵再说！",
         "taunt2": "这鸡怎么开始猫叫了",
-        "taunt3": "可爱是可爱，物种有点复杂"
+        "taunt3": "可爱是可爱，物种有点复杂",
+        "targetBattleSeconds": 35,
+        "danmakuGroup": "哈鸡米",
+        "combo": 110,
+        "neck": "#F5E7D0",
+        "illustration": "s3_official"
     },
     "s4_warmup": {
         "id": "s4_warmup",
@@ -151,7 +181,12 @@
         "leg": "#E09F3E",
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
-        "taunt3": "回去喝汤吧。"
+        "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
+        "illustration": "s4_warmup"
     },
     "s4_official": {
         "id": "s4_official",
@@ -173,7 +208,12 @@
         "leg": "#E09F3E",
         "taunt1": "真相只有一个！",
         "taunt2": "这鸡已经推理出对面要挨打",
-        "taunt3": "现场留下了三根鸡毛"
+        "taunt3": "现场留下了三根鸡毛",
+        "targetBattleSeconds": 35,
+        "danmakuGroup": "新一鸡",
+        "combo": 120,
+        "neck": "#3498DB",
+        "illustration": "s4_official"
     },
     "s5_warmup": {
         "id": "s5_warmup",
@@ -195,7 +235,12 @@
         "leg": "#E09F3E",
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
-        "taunt3": "回去喝汤吧。"
+        "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
+        "illustration": "s5_warmup"
     },
     "s5_official": {
         "id": "s5_official",
@@ -217,7 +262,12 @@
         "leg": "#E09F3E",
         "taunt1": "大针宽线，安排上了！",
         "taunt2": "这根线它又长又宽",
-        "taunt3": "大针宽线，安排上了"
+        "taunt3": "大针宽线，安排上了",
+        "targetBattleSeconds": 35,
+        "danmakuGroup": "缝纫鸡",
+        "combo": 130,
+        "neck": "#AA77BB",
+        "illustration": "s5_official"
     },
     "kun_boss": {
         "id": "kun_boss",
@@ -239,7 +289,12 @@
         "leg": "#E09F3E",
         "taunt1": "鸡你太美",
         "taunt2": "唱、跳、Rap、篮球……再加一脚蹬！",
-        "taunt3": "坤坤在此，谁敢争锋！"
+        "taunt3": "坤坤在此，谁敢争锋！",
+        "targetBattleSeconds": 45,
+        "danmakuGroup": "坤坤鸡",
+        "combo": 140,
+        "neck": "#111111",
+        "illustration": "kun_boss"
     },
     "s1_warmup_1": {
         "id": "s1_warmup_1",
@@ -262,6 +317,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
         "illustration": "warmup_1"
     },
     "s1_warmup_2": {
@@ -285,6 +344,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
         "illustration": "warmup_2"
     },
     "s1_warmup_3": {
@@ -308,6 +371,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
         "illustration": "warmup_3"
     },
     "s1_warmup_4": {
@@ -331,6 +398,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
         "illustration": "warmup_4"
     },
     "s1_warmup_5": {
@@ -354,6 +425,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 60,
+        "neck": "#F4D35E",
         "illustration": "warmup_5"
     },
     "s2_warmup_1": {
@@ -377,6 +452,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
         "illustration": "warmup_6"
     },
     "s2_warmup_2": {
@@ -400,6 +479,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
         "illustration": "warmup_7"
     },
     "s2_warmup_3": {
@@ -423,6 +506,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
         "illustration": "warmup_8"
     },
     "s2_warmup_4": {
@@ -446,6 +533,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
         "illustration": "warmup_9"
     },
     "s2_warmup_5": {
@@ -469,6 +560,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 70,
+        "neck": "#EE964B",
         "illustration": "warmup_10"
     },
     "s3_warmup_1": {
@@ -492,6 +587,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
         "illustration": "warmup_11"
     },
     "s3_warmup_2": {
@@ -515,6 +614,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
         "illustration": "warmup_12"
     },
     "s3_warmup_3": {
@@ -538,6 +641,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
         "illustration": "warmup_1"
     },
     "s3_warmup_4": {
@@ -561,6 +668,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
         "illustration": "warmup_2"
     },
     "s3_warmup_5": {
@@ -584,6 +695,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 80,
+        "neck": "#7B4B2A",
         "illustration": "warmup_3"
     },
     "s4_warmup_1": {
@@ -607,6 +722,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
         "illustration": "warmup_4"
     },
     "s4_warmup_2": {
@@ -630,6 +749,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
         "illustration": "warmup_5"
     },
     "s4_warmup_3": {
@@ -653,6 +776,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
         "illustration": "warmup_6"
     },
     "s4_warmup_4": {
@@ -676,6 +803,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
         "illustration": "warmup_7"
     },
     "s4_warmup_5": {
@@ -699,6 +830,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#2A9D8F",
         "illustration": "warmup_8"
     },
     "s5_warmup_1": {
@@ -722,6 +857,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
         "illustration": "warmup_9"
     },
     "s5_warmup_2": {
@@ -745,6 +884,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
         "illustration": "warmup_10"
     },
     "s5_warmup_3": {
@@ -768,6 +911,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
         "illustration": "warmup_11"
     },
     "s5_warmup_4": {
@@ -791,6 +938,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
         "illustration": "warmup_12"
     },
     "s5_warmup_5": {
@@ -814,6 +965,10 @@
         "taunt1": "咯咯咯，你也配上擂台？",
         "taunt2": "羽毛挺花，打人不行。",
         "taunt3": "回去喝汤吧。",
+        "targetBattleSeconds": 25,
+        "danmakuGroup": "common",
+        "combo": 90,
+        "neck": "#264653",
         "illustration": "warmup_1"
     }
 }

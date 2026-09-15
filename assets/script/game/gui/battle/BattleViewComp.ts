@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
@@ -32,14 +33,14 @@ const LOG_HOLD = 1.6;
 
 /** 战报里管招式叫什么。 */
 const STYLE_TEXT: Record<StrikeStyle, string> = {
-    peck: "贴身啄",
-    jump: "跳踢",
-    dive: "飞扑",
-    leap: "腾空下砸",
-    charge: "扑翅冲撞",
-    tail: "转身扫尾",
-    combo: "连啄",
-    feint: "假动作偷袭"
+    get peck() { return gameText("BattleViewComp_001"); },
+    get jump() { return gameText("BattleViewComp_002"); },
+    get dive() { return gameText("BattleViewComp_003"); },
+    get leap() { return gameText("BattleViewComp_004"); },
+    get charge() { return gameText("BattleViewComp_005"); },
+    get tail() { return gameText("BattleViewComp_006"); },
+    get combo() { return gameText("BattleViewComp_007"); },
+    get feint() { return gameText("BattleViewComp_008"); }
 };
 
 /** 各招式打中时的震屏力度，整只砸下来的自然要比啄一口重。 */
@@ -90,14 +91,14 @@ export class BattleViewComp extends CCView<ChickenRun> {
         const me = run.playerFighter();
         const foe = run.enemyFighter();
         this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
-        setLabel(this, "LabTitle", "自动战斗");
+        setLabel(this, "LabTitle", gameText("BattleViewComp_009"));
         setLabel(this, "LabPlayerName", me.name);
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabLog", "");
         const layer = this.getNode("DanmakuLayer");
         const encounter = run.currentRoute().encounter;
         if (layer) this.danmaku = new BattleDanmaku(layer,
-            new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.name));
+            new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.danmakuGroup || "common"));
 
         const playerPortrait = await spawnChicken(this, "PlayerPortrait", run.appearance, 0.76, true);
         playerPortrait?.setPosition(33.6, -128.6, 0);
@@ -198,7 +199,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         if (this.closed) return;
         this.trig("toStart");
         playGameEffect("start");
-        await this.spawnFx(PREFAB_PATH.fxStart, "player", "开战！", 0.55);
+        await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.55);
         this.trig("toCombat");
     }
 
@@ -232,20 +233,20 @@ export class BattleViewComp extends CCView<ChickenRun> {
             playGameEffect("heal");
             this.actor(ev.side)?.hop();
             void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, `+${ev.amount}`, 0.5);
-            this.log(ev.side, "回血");
+            this.log(ev.side, gameText("BattleViewComp_011"));
         }
         else if (ev.type === "revive") {
-            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, "复活!", 0.7);
+            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, gameText("BattleViewComp_012"), 0.7);
             this.actor(ev.side)?.hop();
             this.screenEffects?.play(14, true);
-            this.log(ev.side, "复活");
+            this.log(ev.side, gameText("BattleViewComp_013"));
         }
         else if (ev.type === "lock") {
-            void this.spawnFx(PREFAB_PATH.fxSkill, ev.side, "锁血!", 0.6);
-            this.log(ev.side, "锁血");
+            void this.spawnFx(PREFAB_PATH.fxSkill, ev.side, gameText("BattleViewComp_014"), 0.6);
+            this.log(ev.side, gameText("BattleViewComp_015"));
         }
         else if (ev.type === "miss") {
-            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, "落空", 0.4);
+            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameText("BattleViewComp_016"), 0.4);
         }
         else if (ev.type === "end") {
             void this.finish(ev.win);
@@ -263,7 +264,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         // 记下这一击用的招式，等伤害事件回来时按招式定震屏力度。
         this.styleOf[side] = style;
         this.skillOf[side] = skill;
-        this.log(side, skill ? `绝招·${STYLE_TEXT[style]}` : STYLE_TEXT[style]);
+        this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : STYLE_TEXT[style]);
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         });
@@ -291,12 +292,12 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
-            crit ? `暴击 -${dmg}` : `-${dmg}`,
+            crit ? gameText("BattleViewComp_018", dmg) : `-${dmg}`,
             crit ? 0.8 : 0.6, crit ? 1.65 : heavy ? 1.25 : 1.1
         );
         // 整只砸下来和啄一口不该抖得一样重，按招式给个底，暴击再往上加。
         this.screenEffects?.play(HIT_QUAKE[style] + (crit ? 11 : heavy ? 4 : 2), heavy, crit, direction);
-        if (crit) this.log(to === "player" ? "enemy" : "player", "暴击");
+        if (crit) this.log(to === "player" ? "enemy" : "player", gameText("BattleViewComp_019"));
         this.refreshHp(false);
     }
 
@@ -308,7 +309,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.stopTick();
         this.trig(win ? "toWin" : "toLose");
         this.ent.run.settle(win);
-        setLabel(this, "LabLog", win ? "胜！" : "败…");
+        setLabel(this, "LabLog", win ? gameText("BattleViewComp_020") : gameText("BattleViewComp_021"));
         this.refreshHp(true);
         if (win) {
             this.playerActor?.win();
@@ -359,7 +360,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     }
 
     private log(side: BattleSide, word: string) {
-        setLabel(this, "LabLog", `${side === "player" ? "我方" : "敌方"} ${word}`);
+        setLabel(this, "LabLog", `${side === "player" ? gameText("BattleViewComp_022") : gameText("BattleViewComp_023")} ${word}`);
         this.logLeft = LOG_HOLD;
     }
 

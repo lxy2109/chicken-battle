@@ -15,9 +15,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "iron_head": {
         "id": "iron_head",
@@ -35,9 +33,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "iron_body": {
         "id": "iron_body",
@@ -55,9 +51,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "iron_wing": {
         "id": "iron_wing",
@@ -75,9 +69,7 @@
         "crit": 0.04,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "stone_comb": {
         "id": "stone_comb",
@@ -95,9 +87,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "stone_head": {
         "id": "stone_head",
@@ -115,9 +105,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "stone_body": {
         "id": "stone_body",
@@ -135,9 +123,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "stone_leg": {
         "id": "stone_leg",
@@ -155,9 +141,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "gale_wing": {
         "id": "gale_wing",
@@ -175,9 +159,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "gale_tail": {
         "id": "gale_tail",
@@ -195,9 +177,7 @@
         "crit": 0.05,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "gale_leg": {
         "id": "gale_leg",
@@ -215,9 +195,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "gale_body": {
         "id": "gale_body",
@@ -235,9 +213,7 @@
         "crit": 0,
         "revive": 0,
         "healPerTurn": 0,
-        "lockHp": 0,
-        "skinFace": "",
-        "skinColor": ""
+        "lockHp": 0
     },
     "kun_face": {
         "id": "kun_face",
@@ -256,8 +232,7 @@
         "revive": 0,
         "healPerTurn": 8,
         "lockHp": 0,
-        "skinFace": "proud",
-        "skinColor": ""
+        "skinFace": "proud"
     },
     "kun_comb": {
         "id": "kun_comb",
@@ -276,7 +251,6 @@
         "revive": 1,
         "healPerTurn": 0,
         "lockHp": 0,
-        "skinFace": "",
         "skinColor": "#FF4D6D"
     },
     "kun_body": {
@@ -296,7 +270,6 @@
         "revive": 0,
         "healPerTurn": 0,
         "lockHp": 1,
-        "skinFace": "",
         "skinColor": "#1D1D1D"
     },
     "kun_tail": {
@@ -316,7 +289,6 @@
         "revive": 0,
         "healPerTurn": 4,
         "lockHp": 0,
-        "skinFace": "",
         "skinColor": "#FFD60A"
     },
     "rookie_head": {
@@ -326,9 +298,9 @@
         "slot": "head",
         "setId": "rookie",
         "price": 45,
-        "icon": "rookie_head",
         "maxHp": 5,
-        "atk": 2
+        "atk": 2,
+        "icon": "rookie_head"
     },
     "rookie_neck": {
         "id": "rookie_neck",
@@ -337,9 +309,9 @@
         "slot": "body",
         "setId": "rookie",
         "price": 50,
-        "icon": "rookie_neck",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "rookie_neck"
     },
     "rookie_wing": {
         "id": "rookie_wing",
@@ -348,9 +320,9 @@
         "slot": "wing",
         "setId": "rookie",
         "price": 55,
-        "icon": "rookie_wing",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "rookie_wing"
     },
     "rookie_leg": {
         "id": "rookie_leg",
@@ -359,9 +331,9 @@
         "slot": "neck",
         "setId": "rookie",
         "price": 60,
-        "icon": "rookie_leg",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "rookie_leg"
     },
     "helicopter_head": {
         "id": "helicopter_head",
@@ -370,9 +342,9 @@
         "slot": "head",
         "setId": "helicopter",
         "price": 45,
-        "icon": "helicopter_head",
         "maxHp": 5,
-        "atk": 2
+        "atk": 2,
+        "icon": "helicopter_head"
     },
     "helicopter_neck": {
         "id": "helicopter_neck",
@@ -381,9 +353,9 @@
         "slot": "body",
         "setId": "helicopter",
         "price": 50,
-        "icon": "helicopter_neck",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "helicopter_neck"
     },
     "helicopter_wing": {
         "id": "helicopter_wing",
@@ -392,9 +364,9 @@
         "slot": "wing",
         "setId": "helicopter",
         "price": 55,
-        "icon": "helicopter_wing",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "helicopter_wing"
     },
     "helicopter_leg": {
         "id": "helicopter_leg",
@@ -403,9 +375,9 @@
         "slot": "neck",
         "setId": "helicopter",
         "price": 60,
-        "icon": "helicopter_leg",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "helicopter_leg"
     },
     "brawler_head": {
         "id": "brawler_head",
@@ -414,9 +386,9 @@
         "slot": "head",
         "setId": "brawler",
         "price": 55,
-        "icon": "brawler_head",
         "maxHp": 5,
-        "atk": 2
+        "atk": 2,
+        "icon": "brawler_head"
     },
     "brawler_neck": {
         "id": "brawler_neck",
@@ -425,9 +397,9 @@
         "slot": "body",
         "setId": "brawler",
         "price": 60,
-        "icon": "brawler_neck",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "brawler_neck"
     },
     "brawler_wing": {
         "id": "brawler_wing",
@@ -436,9 +408,9 @@
         "slot": "wing",
         "setId": "brawler",
         "price": 65,
-        "icon": "brawler_wing",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "brawler_wing"
     },
     "brawler_leg": {
         "id": "brawler_leg",
@@ -447,9 +419,9 @@
         "slot": "neck",
         "setId": "brawler",
         "price": 70,
-        "icon": "brawler_leg",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "brawler_leg"
     },
     "medic_head": {
         "id": "medic_head",
@@ -458,9 +430,9 @@
         "slot": "head",
         "setId": "medic",
         "price": 55,
-        "icon": "medic_head",
         "maxHp": 5,
-        "healPerTurn": 2
+        "healPerTurn": 2,
+        "icon": "medic_head"
     },
     "medic_neck": {
         "id": "medic_neck",
@@ -469,9 +441,9 @@
         "slot": "body",
         "setId": "medic",
         "price": 60,
-        "icon": "medic_neck",
         "maxHp": 5,
-        "healPerTurn": 2
+        "healPerTurn": 2,
+        "icon": "medic_neck"
     },
     "medic_wing": {
         "id": "medic_wing",
@@ -480,9 +452,9 @@
         "slot": "wing",
         "setId": "medic",
         "price": 65,
-        "icon": "medic_wing",
         "maxHp": 5,
-        "healPerTurn": 2
+        "healPerTurn": 2,
+        "icon": "medic_wing"
     },
     "medic_leg": {
         "id": "medic_leg",
@@ -491,9 +463,9 @@
         "slot": "neck",
         "setId": "medic",
         "price": 70,
-        "icon": "medic_leg",
         "maxHp": 5,
-        "healPerTurn": 2
+        "healPerTurn": 2,
+        "icon": "medic_leg"
     },
     "concrete_head": {
         "id": "concrete_head",
@@ -502,9 +474,9 @@
         "slot": "head",
         "setId": "concrete",
         "price": 65,
-        "icon": "iron_head",
         "maxHp": 5,
-        "atk": 2
+        "atk": 2,
+        "icon": "iron_head"
     },
     "concrete_neck": {
         "id": "concrete_neck",
@@ -513,9 +485,9 @@
         "slot": "neck",
         "setId": "concrete",
         "price": 70,
-        "icon": "stone_comb",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "stone_comb"
     },
     "concrete_wing": {
         "id": "concrete_wing",
@@ -524,9 +496,9 @@
         "slot": "wing",
         "setId": "concrete",
         "price": 75,
-        "icon": "gale_wing",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "gale_wing"
     },
     "concrete_leg": {
         "id": "concrete_leg",
@@ -535,9 +507,9 @@
         "slot": "leg",
         "setId": "concrete",
         "price": 80,
-        "icon": "stone_leg",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "stone_leg"
     },
     "miser_head": {
         "id": "miser_head",
@@ -546,9 +518,9 @@
         "slot": "head",
         "setId": "miser",
         "price": 65,
-        "icon": "miser_head",
         "maxHp": 5,
-        "atk": 2
+        "atk": 2,
+        "icon": "miser_head"
     },
     "miser_neck": {
         "id": "miser_neck",
@@ -557,9 +529,9 @@
         "slot": "body",
         "setId": "miser",
         "price": 70,
-        "icon": "miser_neck",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "miser_neck"
     },
     "miser_wing": {
         "id": "miser_wing",
@@ -568,9 +540,9 @@
         "slot": "wing",
         "setId": "miser",
         "price": 75,
-        "icon": "miser_wing",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "miser_wing"
     },
     "miser_leg": {
         "id": "miser_leg",
@@ -579,9 +551,9 @@
         "slot": "neck",
         "setId": "miser",
         "price": 80,
-        "icon": "miser_leg",
         "maxHp": 5,
-        "atk": 1
+        "atk": 1,
+        "icon": "miser_leg"
     },
     "champion_head": {
         "id": "champion_head",

@@ -24,18 +24,9 @@ export const TEX = {
 };
 
 /** shop 使用 1080×1920 坐标；entrances 使用归一化图像坐标（左上为原点），依次为五关和 BOSS 的道路落点。 */
-export const MAPS = [
-    { id: 1, name: "鸡鸣村", background: "map_figma", shop: { x: 940, y: 1390, scale: 0.72 },
-        entrances: [[0.583, 0.867], [0.569, 0.742], [0.479, 0.617], [0.583, 0.492], [0.493, 0.375], [0.34, 0.25]] },
-    { id: 2, name: "青竹溪", background: "map_2_figma", shop: { x: 955, y: 1000, scale: 0.66 },
-        entrances: [[0.549, 0.867], [0.542, 0.742], [0.493, 0.617], [0.611, 0.492], [0.431, 0.375], [0.417, 0.25]] },
-    { id: 3, name: "金穗田", background: "map_3_figma", shop: { x: 950, y: 1450, scale: 0.7 },
-        entrances: [[0.451, 0.867], [0.458, 0.742], [0.486, 0.617], [0.556, 0.492], [0.486, 0.375], [0.36, 0.25]] },
-    { id: 4, name: "古祠镇", background: "map_4_figma", shop: { x: 940, y: 1320, scale: 0.7 },
-        entrances: [[0.438, 0.867], [0.549, 0.758], [0.486, 0.645], [0.493, 0.531], [0.458, 0.418], [0.45, 0.295]] },
-    { id: 5, name: "鸡王山", background: "map_5_figma", shop: { x: 940, y: 1340, scale: 0.72 },
-        entrances: [[0.569, 0.867], [0.583, 0.746], [0.458, 0.633], [0.625, 0.52], [0.417, 0.406], [0.52, 0.28]] }
-];
+export function getMaps(): Array<{ id: number; name: string; background: string; shop: { x: number; y: number; scale: number }; entrances: number[][] }> {
+    return tableRows("Map");
+}
 
 export const PART_NODE: Record<PartId, string> = {
     comb: "Comb",
@@ -165,13 +156,13 @@ export function enemyToFighter(id: string) {
         atk: e.atk,
         def: e.def,
         spd: e.spd,
-        combo: Number(e.combo) || e.spd * 10,
+        combo: e.combo == null ? e.spd * 10 : Number(e.combo),
         crit: e.crit,
         revive: e.revive,
         lockHp: !!e.lockHp,
         healPerTurn: e.healPerTurn
     };
-    return { name: e.name, appearance, stats, taunts: enemyTaunts(id) };
+    return { name: e.name, appearance, stats, taunts: enemyTaunts(id), targetBattleSeconds: e.targetBattleSeconds, danmakuGroup: e.danmakuGroup };
 }
 
 export function getBaseStats(): Stats {
@@ -182,11 +173,11 @@ export function getBaseStats(): Stats {
         atk: p.atk,
         def: p.def,
         spd: p.spd,
-        combo: Number(p.combo) || p.spd * 10,
+        combo: p.combo == null ? p.spd * 10 : Number(p.combo),
         crit: p.crit,
-        revive: 0,
-        lockHp: false,
-        healPerTurn: 0
+        revive: p.revive,
+        lockHp: !!p.lockHp,
+        healPerTurn: p.healPerTurn
     };
 }
 

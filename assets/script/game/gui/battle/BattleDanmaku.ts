@@ -1,3 +1,4 @@
+import { gameNumber } from "../../core/GameConfig";
 import { Color, Label, Node, UITransform } from "cc";
 import { DanmakuPool } from "../../core/Danmaku";
 
@@ -6,13 +7,13 @@ export class BattleDanmaku {
     private lines: Array<{ node: Node; text: string; width: number; speed: number; row: number }> = [];
     private low = false;
     private elapsed = 0;
-    private nextAt = 1.5;
+    private nextAt = gameNumber("danmaku_firstDelay");
     private emitted = 0;
     private readonly limit: number;
     private width: number;
     constructor(private layer: Node, private pool: DanmakuPool) {
         this.width = layer.getComponent(UITransform)!.width;
-        this.limit = pool.kind === "warmup" ? 5 : pool.kind === "official" ? 7 : 9;
+        this.limit = pool.kind === "warmup" ? gameNumber("danmaku_warmupLimit") : pool.kind === "official" ? gameNumber("danmaku_officialLimit") : gameNumber("danmaku_bossLimit");
     }
 
     tick(dt: number, lowHp: boolean) {
@@ -46,10 +47,10 @@ export class BattleDanmaku {
             label.updateRenderData(true);
             const width = node.getComponent(UITransform)!.width;
             node.setPosition((this.width + width) / 2, 35 - row * 64);
-            const speed = (this.width + width) / 8;
+            const speed = (this.width + width) / gameNumber("danmaku_travelSeconds");
             this.lines.push({ node, text, width, speed, row });
             this.emitted++;
-            this.nextAt = this.elapsed + (this.low ? 4.5 : 6);
+            this.nextAt = this.elapsed + (this.low ? gameNumber("danmaku_lowHpInterval") : gameNumber("danmaku_interval"));
             break;
         }
     }

@@ -19,6 +19,27 @@
         "story2": "围观的鸡群渐渐安静，开始认真看你的比赛。",
         "story3": "有人开始为你喝彩：无名鸡，继续冲！",
         "story4": "全村都在期待，你能走到多远。",
-        "story5": "走完最后的赛程，在全村注视下挑战坤坤。"
+        "story5": "走完最后的赛程，在全村注视下挑战坤坤。",
+        "randomNames": [
+            "呆头王鸡",
+            "铁嘴战鸡",
+            "闪电羽",
+            "村口霸王",
+            "小鸡大将",
+            "彩羽勇者"
+        ],
+        "combo": 100,
+        "colorComb": "#B91C1C",
+        "colorHead": "#F03E53",
+        "colorNeck": "#F03E53",
+        "colorBody": "#F03E53",
+        "colorWing": "#AD8E6A",
+        "colorTail": "#7B4B2A",
+        "colorLeg": "#C5A077",
+        "face": "fierce",
+        "initialGold": 0,
+        "revive": 0,
+        "healPerTurn": 0,
+        "lockHp": false
     }
 }

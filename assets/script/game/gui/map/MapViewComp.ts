@@ -1,3 +1,4 @@
+import { gameText } from "../../core/GameConfig";
 import { BlockInputEvents, Color, Graphics, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, view, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -68,7 +69,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         graphic.stroke();
         sign.setSiblingIndex(this.node.children.length - 1);
         setLabel(this, "LabGold", `${run.gold}`);
-        setLabel(this, "LabPower", `战力 ${combatPower(run.playerFighter().stats)}`);
+        setLabel(this, "LabPower", gameText("MapViewComp_001", combatPower(run.playerFighter().stats)));
         setLabel(this, "LabRouteTitle", run.currentRoute().name.split(" · ").pop()!);
         setLabel(this, "LabHint", run.mapHint());
         // Portrait uses the player's chosen colours/expression, cropped to the visible head.
@@ -77,7 +78,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
         bindClick(this, "BtnHome", () => goScreen(this, "customize"));
-        setLabel(this, "BtnChallengeLab", run.nextMap ? "前往新地图" : "开始挑战");
+        setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : gameText("MapViewComp_003"));
         bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : this.onBattleNode(run.routeNode));
         bindClick(this, "BtnShop", this.onShop.bind(this));
         bindClick(this, "LabShopName", this.onShop.bind(this));
@@ -121,7 +122,7 @@ export class MapViewComp extends CCView<ChickenRun> {
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
             bossView.setScale(active ? 1.16 : 1, active ? 1.16 : 1, 1);
             if (boss.enemyId) await this.placeEnemy("MapBossSlot", boss.enemyId, bossView, 0.32, true);
-            setLabel(this, "LabBossName", boss.encounter === "final" ? "坤坤 · 最终战" : "BOSS正式赛");
+            setLabel(this, "LabBossName", boss.encounter === "final" ? gameText("MapViewComp_004") : gameText("MapViewComp_005"));
             bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
         }
     }
@@ -144,7 +145,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         if (this.switchingMap) return;
         const run = this.ent.run;
         if (run.nextMap) {
-            this.warn("本地图已通关，请点击下方前往新地图");
+            this.warn(gameText("MapViewComp_006"));
             return;
         }
         if (run.currentRoute().encounter === "final" && run.claimedGoldNodes.includes(run.routeNode)) {
@@ -152,12 +153,12 @@ export class MapViewComp extends CCView<ChickenRun> {
             return;
         }
         if (id !== run.routeNode) {
-            this.warn(id < run.routeNode ? "本关已完成" : "请先挑战当前关卡");
+            this.warn(id < run.routeNode ? gameText("MapViewComp_007") : gameText("MapViewComp_008"));
             return;
         }
         const node = run.currentRoute();
         if (node.kind !== "battle" && node.kind !== "boss") {
-            this.warn("当前节点不是战斗");
+            this.warn(gameText("MapViewComp_009"));
             return;
         }
         run.enterFight();
@@ -210,7 +211,7 @@ export class MapViewComp extends CCView<ChickenRun> {
         title.parent = curtain;
         title.addComponent(UITransform).setContentSize(640, 100);
         const label = title.addComponent(Label);
-        label.string = `前往 · ${next.name}`;
+        label.string = gameText("MapViewComp_010", next.name);
         label.fontSize = 42;
         label.lineHeight = 56;
         label.horizontalAlign = Label.HorizontalAlign.CENTER;
@@ -229,7 +230,7 @@ export class MapViewComp extends CCView<ChickenRun> {
             await new Promise<void>(resolve => tween(opacity).delay(0.3).to(0.45, { opacity: 0 }).call(() => resolve()).start());
         } catch (error) {
             console.error("[MapView] 切换地图失败", error);
-            this.warn("地图加载失败，请重试");
+            this.warn(gameText("MapViewComp_011"));
         } finally {
             curtain.destroy();
             this.switchingMap = false;
