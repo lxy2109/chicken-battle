@@ -123,24 +123,6 @@
       "required": true
     },
     {
-      "key": "taunt1",
-      "type": "string",
-      "label": "垃圾话1",
-      "required": true
-    },
-    {
-      "key": "taunt2",
-      "type": "string",
-      "label": "垃圾话2",
-      "required": true
-    },
-    {
-      "key": "taunt3",
-      "type": "string",
-      "label": "垃圾话3",
-      "required": true
-    },
-    {
       "key": "targetBattleSeconds",
       "type": "float",
       "label": "目标战斗时长（秒）",
@@ -168,6 +150,12 @@
       "key": "illustration",
       "type": "string",
       "label": "立绘资源ID",
+      "required": true
+    },
+    {
+      "key": "tauntGroup",
+      "label": "台词组ID",
+      "type": "string",
       "required": true
     }
   ],
@@ -383,84 +371,6 @@
       "required": true
     },
     {
-      "key": "bossEnemyId",
-      "type": "string",
-      "label": "鸡王敌人id",
-      "required": true
-    },
-    {
-      "key": "bossGoldWin",
-      "type": "int",
-      "label": "击败鸡王金币",
-      "required": true
-    },
-    {
-      "key": "hintBoss",
-      "type": "string",
-      "label": "鸡王提示",
-      "required": true
-    },
-    {
-      "key": "taunt1",
-      "type": "string",
-      "label": "垃圾话1",
-      "required": true
-    },
-    {
-      "key": "taunt2",
-      "type": "string",
-      "label": "垃圾话2",
-      "required": true
-    },
-    {
-      "key": "taunt3",
-      "type": "string",
-      "label": "垃圾话3",
-      "required": true
-    },
-    {
-      "key": "storyIntro",
-      "type": "string",
-      "label": "开场剧情",
-      "required": true
-    },
-    {
-      "key": "storyEnding",
-      "type": "string",
-      "label": "结局剧情",
-      "required": true
-    },
-    {
-      "key": "story1",
-      "type": "string",
-      "label": "第1图剧情",
-      "required": true
-    },
-    {
-      "key": "story2",
-      "type": "string",
-      "label": "第2图剧情",
-      "required": true
-    },
-    {
-      "key": "story3",
-      "type": "string",
-      "label": "第3图剧情",
-      "required": true
-    },
-    {
-      "key": "story4",
-      "type": "string",
-      "label": "第4图剧情",
-      "required": true
-    },
-    {
-      "key": "story5",
-      "type": "string",
-      "label": "第5图剧情",
-      "required": true
-    },
-    {
       "key": "randomNames",
       "type": "any",
       "label": "随机名称池（JSON数组）",
@@ -542,6 +452,12 @@
       "key": "lockHp",
       "type": "bool",
       "label": "基础锁血能力",
+      "required": true
+    },
+    {
+      "key": "tauntGroup",
+      "label": "台词组ID",
+      "type": "string",
       "required": true
     }
   ],
@@ -696,6 +612,12 @@
       "key": "shopAfter",
       "type": "bool",
       "label": "战后打开商店",
+      "required": false
+    },
+    {
+      "key": "storyId",
+      "label": "剧情覆盖ID（空=地图剧情）",
+      "type": "string",
       "required": false
     }
   ],
@@ -961,6 +883,12 @@
       "type": "any",
       "label": "关卡坐标（JSON数组）",
       "required": true
+    },
+    {
+      "key": "storyId",
+      "label": "地图剧情ID",
+      "type": "string",
+      "required": true
     }
   ],
   "UiText": [
@@ -1050,6 +978,46 @@
       "key": "recentCount",
       "type": "int",
       "label": "最近去重条数",
+      "required": true
+    }
+  ],
+  "Story": [
+    {
+      "key": "id",
+      "label": "剧情ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "text",
+      "label": "剧情正文",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "Taunt": [
+    {
+      "key": "id",
+      "label": "台词ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "group",
+      "label": "台词组ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "order",
+      "label": "组内顺序",
+      "type": "int",
+      "required": true
+    },
+    {
+      "key": "text",
+      "label": "台词正文",
+      "type": "string",
       "required": true
     }
   ]

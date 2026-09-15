@@ -75,13 +75,25 @@ function validate(t) {
         check(r.shop && Number.isFinite(r.shop.x) && Number.isFinite(r.shop.y) && r.shop.scale > 0, `Map ${r.id}: 商店坐标无效`);
     }
     check(Array.isArray(t.Player[1]?.randomNames) && new Set(t.Player[1].randomNames).size >= 2 && t.Player[1].randomNames.every(x => typeof x === "string" && x.trim()), "Player 1: 名称池至少填写两个不同的非空名字");
-    ref("Enemy", t.Player[1].bossEnemyId, "Player 1");
+    for (const id of ["intro", "ending"]) ref("Story", id, "剧情入口");
+    for (const r of rows("Story")) check(r.text.trim().length > 0, `Story ${r.id}: 剧情正文不能为空`);
+    for (const r of rows("Map")) ref("Story", r.storyId, `Map ${r.id}`);
+    for (const r of rows("Route")) if (r.storyId) ref("Story", r.storyId, `Route ${r.id}`);
+    const tauntGroups = new Set(rows("Taunt").map(r => r.group));
+    const orders = new Set();
+    for (const r of rows("Taunt")) {
+        check(r.group.trim() && r.text.trim() && r.order >= 0, `Taunt ${r.id}: 分组/正文/顺序无效`);
+        const key = JSON.stringify([r.group, r.order]);
+        check(!orders.has(key), `Taunt ${r.id}: 同组顺序重复`); orders.add(key);
+    }
+    for (const name of ["Player", "Enemy"]) for (const r of rows(name))
+        check(tauntGroups.has(r.tauntGroup), `${name} ${r.id}: Taunt 不存在分组 ${r.tauntGroup}`);
     const groups = new Set(rows("Danmaku").map(r => r.group));
     check(groups.has("common"), "Danmaku: 缺少 common 通用弹幕");
     for (const r of rows("DanmakuRule")) check(groups.has(r.group) && r.commonChance >= 0 && r.commonChance <= 1 && r.featuredChance >= 0 && r.featuredChance <= 1 && r.recentCount >= 0, `DanmakuRule ${r.id}: 分组或概率无效`);
 }
 
-async function readXlsx(xlsx) {
+async function loadWorkbook(xlsx) {
     const wb = new ExcelJS.Workbook();
     // ExcelJS 仅识别无前缀的 SpreadsheetML 标签。将合法的 x: 命名空间
     // 等价转换为默认命名空间，只处理内存副本，不改动策划工作簿。
@@ -94,6 +106,14 @@ async function readXlsx(xlsx) {
         }
     }
     await wb.xlsx.load(await zip.generateAsync({ type: "nodebuffer" }));
+    return wb;
+}
+
+async function readXlsx(xlsx) {
+    return parseWorkbook(await loadWorkbook(xlsx));
+}
+
+function parseWorkbook(wb) {
     const out = {};
     for (const [name, columns] of Object.entries(schema)) {
         const ws = wb.getWorksheet(name);
@@ -148,4 +168,4 @@ async function main() {
     writeTables(tables, destination);
     for (const [name, table] of Object.entries(tables)) console.log("json", name, Object.keys(table).length);
 }
-module.exports = { main, readXlsx, writeTables, validate, parseCell };
+module.exports = { main, readXlsx, loadWorkbook, parseWorkbook, writeTables, validate, parseCell };

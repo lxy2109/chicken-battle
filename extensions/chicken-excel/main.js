@@ -57,6 +57,12 @@ async function processWorkbook(file, write) {
 }
 
 exports.methods = {
+    async loadWorkbook(file) {
+        return editWorkbook(file);
+    },
+    async saveWorkbook(file, revision, sheets) {
+        return editWorkbook(file, { revision, sheets });
+    },
     openPanel() { return Editor.Panel.open("chicken-excel"); },
     getSource() { return { source: DEFAULT_SOURCE, destination: DESTINATION }; },
     async chooseSource() {
@@ -74,3 +80,16 @@ exports.methods = {
 };
 exports.load = function () {};
 exports.unload = function () {};
+
+async function editWorkbook(file, draft) {
+    if (busy) return { ok: false, message: "正在处理配表，请稍候。" };
+    busy = true;
+    try {
+        const source = sourceFile(file);
+        exporter();
+        const editor = require(path.join(ROOT, "tools/config-workbook.cjs"));
+        const result = draft ? await editor.save(source, draft.revision, draft.sheets) : await editor.load(source);
+        return { ok: true, source, ...result, message: draft ? "Excel 已保存。点击导出并刷新资源后，重新预览游戏生效。" : "已加载全部记录，可直接编辑。" };
+    } catch (error) { return { ok: false, message: error.message || String(error) }; }
+    finally { busy = false; }
+}

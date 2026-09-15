@@ -5,7 +5,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { getPlayer } from "../../core/Catalog";
+import { getStory } from "../../core/Catalog";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel, playSparkles } from "../UiUtil";
@@ -20,7 +20,7 @@ export class EndingViewComp extends CCView<ChickenRun> {
         this.nodeTreeInfoLite();
         setLabel(this, "LabTitle", this.ent.run.playerFighter().name);
         setLabel(this, "LabGold", `${this.ent.run.gold}`);
-        setLabel(this, "LabDesc", getPlayer().storyEnding);
+        setLabel(this, "LabDesc", getStory("ending"));
         setLabel(this, "LabHint", gameText("EndingViewComp_001"));
         await spawnChicken(this, "ChickenSlot", this.ent.run.playerFighter().appearance, 0.72);
         const slot = this.getNode("ChickenSlot");

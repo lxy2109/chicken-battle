@@ -1,7 +1,7 @@
 import { JsonUtil } from "db://oops-framework/core/utils/JsonUtil";
 import { bindTables } from "../core/Config";
 
-const TABLE_NAMES = ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "Danmaku", "DanmakuRule", "Map", "GameRule", "Language", "UiText"];
+const TABLE_NAMES = ["Story", "Taunt", "Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "Danmaku", "DanmakuRule", "Map", "GameRule", "Language", "UiText"];
 
 export async function loadGameTables() {
     await JsonUtil.loadDir();

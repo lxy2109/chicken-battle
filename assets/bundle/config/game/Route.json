@@ -337,6 +337,7 @@
         "enemyId": "kun_boss",
         "goldWin": 300,
         "goldLose": 0,
-        "encounter": "final"
+        "encounter": "final",
+        "storyId": "boss"
     }
 }

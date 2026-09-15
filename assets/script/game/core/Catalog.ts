@@ -24,7 +24,7 @@ export const TEX = {
 };
 
 /** shop 使用 1080×1920 坐标；entrances 使用归一化图像坐标（左上为原点），依次为五关和 BOSS 的道路落点。 */
-export function getMaps(): Array<{ id: number; name: string; background: string; shop: { x: number; y: number; scale: number }; entrances: number[][] }> {
+export function getMaps(): Array<{ id: number; name: string; storyId: string; background: string; shop: { x: number; y: number; scale: number }; entrances: number[][] }> {
     return tableRows("Map");
 }
 
@@ -42,42 +42,23 @@ export function getPlayer() {
     return tableRow("Player", 1);
 }
 
+export function getStory(id: string): string {
+    return tableRow("Story", id).text;
+}
+
 export function getStages() {
     return tableRows("Stage");
 }
 
-/** v7 线性路线。旧项目没有 Route 表时退回 Stage 表，方便编辑器缓存或旧导出继续启动。 */
+/** 路线表统一管理战斗节点、敌人、奖励与剧情覆盖。 */
 export function getRoute(): RouteNode[] {
-    try {
-        return tableRows("Route").map(row => ({
-            id: Number(row.id),
-            encounter: row.encounter,
-            shopAfter: !!row.shopAfter,
-            mapId: Number(row.mapId) || 1,
-            kind: String(row.kind || row.type) as RouteNode["kind"],
-            name: String(row.name || "路线节点"),
-            enemyId: row.enemyId ? String(row.enemyId) : undefined,
-            goldWin: Number(row.goldWin) || 0,
-            goldLose: Number(row.goldLose) || 0
-        }));
-    }
-    catch {
-        const stages = getStages();
-        const route: RouteNode[] = stages.slice(0, 3).map((row, i) => ({
-            id: i < 2 ? i + 1 : 4,
-            kind: "battle",
-            name: String(row.name || `节点 ${i + 1}`),
-            enemyId: String(row.officialEnemyId || row.warmupEnemyId),
-            goldWin: Number(row.officialGoldWin) || 0,
-            goldLose: 0
-        }));
-        route.splice(2, 0, { id: 3, kind: "shop", name: "鸡市 · 中场" });
-        route.push({ id: 5, kind: "shop", name: "鸡市 · 决战前" });
-        route.push({ id: 6, kind: "boss", name: "鸡王", enemyId: getPlayer().bossEnemyId, goldWin: getPlayer().bossGoldWin });
-        return route;
-    }
+    return tableRows("Route").map(row => ({
+        id: Number(row.id), encounter: row.encounter, shopAfter: !!row.shopAfter,
+        mapId: Number(row.mapId), kind: row.kind, name: row.name,
+        enemyId: row.enemyId || undefined, storyId: row.storyId || undefined,
+        goldWin: Number(row.goldWin) || 0, goldLose: Number(row.goldLose) || 0
+    }));
 }
-
 export function routeNode(id: number): RouteNode {
     const node = getRoute().find(v => v.id === id);
     if (!node) throw new Error(`路线没有节点 id=${id}`);
@@ -125,13 +106,11 @@ export function setById(id: string): SetDef {
 }
 
 export function playerTaunts(): string[] {
-    const p = getPlayer();
-    return texts(p.taunt1, p.taunt2, p.taunt3);
+    return taunts(getPlayer().tauntGroup);
 }
 
 export function enemyTaunts(id: string): string[] {
-    const e = getEnemy(id);
-    return texts(e.taunt1, e.taunt2, e.taunt3);
+    return taunts(getEnemy(id).tauntGroup);
 }
 
 export function enemyToFighter(id: string) {
@@ -181,8 +160,8 @@ export function getBaseStats(): Stats {
     };
 }
 
-function texts(...xs: any[]): string[] {
-    return xs.map(v => String(v || "").trim()).filter(v => v.length > 0);
+function taunts(group: string): string[] {
+    return tableRows("Taunt").filter(row => row.group === group).sort((a, b) => a.order - b.order).map(row => row.text);
 }
 
 function packStats(row: any, prefix = ""): Partial<Stats> {

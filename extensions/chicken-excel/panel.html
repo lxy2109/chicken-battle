@@ -1,11 +1,13 @@
-<header><h2>斗鸡 Excel 配表</h2><p>保存 Excel → 校验预览 → 导出并刷新资源</p></header>
+<header><h2>斗鸡 Excel 配表</h2><p>直接编辑 → 保存 Excel → 导出并刷新资源</p></header>
 <section class="source">
-  <label for="source">配置文件</label>
-  <div class="file-row"><input id="source" readonly /><button id="choose">选择文件…</button><button id="open">打开 Excel</button></div>
-  <div class="output">输出到 <span id="destination"></span></div>
+<label for="source">配置文件</label>
+<div class="file-row"><input id="source" readonly /><button id="choose">选择文件…</button><button id="open">打开 Excel</button></div>
+<div class="output">输出到 <span id="destination"></span></div>
 </section>
-<div class="actions"><button id="inspect">校验预览</button><button id="export" class="primary">导出并刷新资源</button><span>导出会重新读取已保存的文件</span></div>
+<div class="actions"><button id="inspect">重新加载</button><button id="save" class="primary">保存 Excel</button><button id="export">导出并刷新资源</button><span id="dirty">已保存</span></div>
 <pre id="status" role="status" aria-live="polite">正在读取工作簿…</pre>
-<div class="preview-tools"><label for="sheets">工作表</label><select id="sheets" disabled></select><span id="count"></span></div>
-<div class="table-wrap"><table><thead id="head"></thead><tbody id="rows"></tbody></table><div id="empty">校验后显示数据预览</div></div>
-<footer>Enemy 的「目标战斗时长」可逐怪配置。前五行表头不要修改；文本中的 {0}、{1} 等占位符需要保留。</footer>
+<section id="confirm" hidden><span id="confirmText"></span><button id="yes">确认</button><button id="no">取消</button></section>
+<div class="preview-tools"><label for="sheets">工作表</label><select id="sheets"></select><input id="search" placeholder="搜索当前表的任意字段" aria-label="搜索记录" /><button id="add">新增记录</button></div>
+<div class="table-wrap"><table><thead id="head"></thead><tbody id="rows"></tbody></table><div id="empty">暂无记录</div></div>
+<div class="preview-tools pages"><span id="count"></span><button id="prev">上一页</button><button id="next">下一页</button></div>
+<footer>支持全部记录，每页 50 条。数组/对象填写 JSON，布尔值填写 true/false。公式只读；表头和说明页请在 Excel 中维护。</footer>

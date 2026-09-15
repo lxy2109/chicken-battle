@@ -139,6 +139,7 @@ export type StagePhase = "battle" | "shop" | "boss" | "warmup" | "official";
 export type RouteNodeKind = "battle" | "shop" | "boss";
 
 export interface RouteNode {
+    storyId?: string;
     encounter?: "warmup" | "official" | "final";
     shopAfter?: boolean;
     id: number;

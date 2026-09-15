@@ -25,7 +25,7 @@ const { defaultAppearance } = require(path.join(G, "core/Types.js"));
 
 const dir = path.resolve(__dirname, "../assets/bundle/config/game");
 const tables = {};
-for (const n of ["Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "GameRule", "Map", "Language", "DanmakuRule"]) {
+for (const n of ["Story", "Taunt", "Player", "Stage", "Route", "Enemy", "Item", "Set", "Part", "Reward", "GameRule", "Map", "Language", "DanmakuRule"]) {
     tables[n] = JSON.parse(fs.readFileSync(path.join(dir, n + ".json"), "utf8"));
 }
 bindTables(tables);

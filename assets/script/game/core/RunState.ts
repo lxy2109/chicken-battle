@@ -67,7 +67,8 @@ export class RunState {
 
     enemyFighter(): FighterSnapshot {
         const node = this.currentRoute();
-        const id = node.enemyId || getPlayer().bossEnemyId;
+        const id = node.enemyId;
+        if (!id) throw new Error(`路线节点 ${node.id} 没有配置敌人`);
         return enemyToFighter(id);
     }
 

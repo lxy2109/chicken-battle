@@ -122,7 +122,7 @@ extensions/               编辑器插件源码
 | `Part` | 捏鸡时可选的颜色与表情 |
 | `Reward` | 三选一池：部位对应属性、每级撑大多少、上限、权重 |
 
-配置源统一为 `excel/斗鸡配置.xlsx`。保存后在 Creator 的 **扩展 → 斗鸡 Excel 配表** 中校验预览，再点击 **导出并刷新资源**。首次在扩展管理器的项目页刷新并启用 `chicken-excel`。命令行 `node tools/excel-kit.cjs` 仍可使用，请勿直接修改生成的JSON。新增 Map、GameRule、UiText、Danmaku、DanmakuRule 表，动态文本使用 Language 表。详见 [配表说明](excel/配表说明.md)。
+配置源统一为 `excel/斗鸡配置.xlsx`。在 Creator 的 **扩展 → 斗鸡 Excel 配表** 中直接搜索、增删和编辑记录，点击 **保存 Excel** 后再点击 **导出并刷新资源**。首次在扩展管理器的项目页刷新并启用 `chicken-excel`。命令行 `node tools/excel-kit.cjs` 仍可使用，请勿直接修改生成的JSON。新增 Map、GameRule、UiText、Danmaku、DanmakuRule 表，动态文本使用 Language 表；剧情独立在 Story 表，Map.storyId 指定地图剧情，Route.storyId 可覆盖。角色台词独立在 Taunt 表，Player/Enemy.tauntGroup 引用，按 order 排序。最终敌人及奖励统一由 Route 管理。详见 [配表说明](excel/配表说明.md)。
 
 ## 界面与美术管线
 
@@ -223,7 +223,7 @@ cd extensions\cocos-mcp-server && npm install
 - 套装名称与造型按用户最新确认以 Figma 为准：诸葛亮、关羽、医疗鸡、直升鸡、铁公鸡共5套20件；保留鸡王中王通关奖励。旧钢鸡混凝土与更早装备只供旧存档兼容，不再售卖。两/四件加成仍沿用补充配置。
 - 新增效果初值：连续命中每层8%、最多5层；治疗+30%；金币+20%；额外购物85折。文档未给具体数值，这些是可调初值。商店按未拥有部件计整套价。
 - 新存档version为3，保留原存储键。Figma 道袍/配饰调整到身体/脖子槽，旧版本先按旧槽校验，再按新槽保留最后穿戴的一件，已购装备不会丢失。旧装备仍可穿戴，旧商店进度迁移到后续战斗节点，旧结局开放新增坤坤挑战；不清除用户存档。
-- 剧情配置在 Player 表，通过角色创建、赛前和结局显示。最终战奖励只发放一次，结局可进入角色面板穿戴，配有复用 Guandan 星光贴图的加冕效果。
+- 剧情配置在独立 Story 表，通过角色创建、赛前和结局显示。最终战奖励只发放一次，结局可进入角色面板穿戴，配有复用 Guandan 星光贴图的加冕效果。
 
 资源导入命令：
 

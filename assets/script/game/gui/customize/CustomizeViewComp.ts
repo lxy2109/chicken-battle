@@ -5,7 +5,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
-import { getColorPalette, getFaceList, getPlayer } from "../../core/Catalog";
+import { getColorPalette, getFaceList, getPlayer, getStory } from "../../core/Catalog";
 import { Appearance, FaceId, PART_TEXT, PARTS, PartId, defaultAppearance } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -34,7 +34,7 @@ export class CustomizeViewComp extends CCView<ChickenRun> {
             this.ent.run.setPlayerName(this.nameInput.string);
             this.nameInput.string = this.ent.run.playerName;
         }, this);
-        setLabel(this, "LabStory", getPlayer().storyIntro);
+        setLabel(this, "LabStory", getStory("intro"));
         this.draft = {
             face: this.ent.run.appearance.face,
             colors: { ...this.ent.run.appearance.colors }

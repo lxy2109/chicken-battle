@@ -1,0 +1,668 @@
+{
+    "player_1_1": {
+        "id": "player_1_1",
+        "group": "player_1",
+        "order": 1,
+        "text": "今儿个让你见识村口一霸！"
+    },
+    "player_1_2": {
+        "id": "player_1_2",
+        "group": "player_1",
+        "order": 2,
+        "text": "你这只鸡，看着就嫩。"
+    },
+    "player_1_3": {
+        "id": "player_1_3",
+        "group": "player_1",
+        "order": 3,
+        "text": "热身都站不稳？正式赛更别来。"
+    },
+    "enemy_s1_warmup_1": {
+        "id": "enemy_s1_warmup_1",
+        "group": "enemy_s1_warmup",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_2": {
+        "id": "enemy_s1_warmup_2",
+        "group": "enemy_s1_warmup",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_3": {
+        "id": "enemy_s1_warmup_3",
+        "group": "enemy_s1_warmup",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s1_official_1": {
+        "id": "enemy_s1_official_1",
+        "group": "enemy_s1_official",
+        "order": 1,
+        "text": "我的战术目前只有勇气！"
+    },
+    "enemy_s1_official_2": {
+        "id": "enemy_s1_official_2",
+        "group": "enemy_s1_official",
+        "order": 2,
+        "text": "这鸡的装备比它本人有自信"
+    },
+    "enemy_s1_official_3": {
+        "id": "enemy_s1_official_3",
+        "group": "enemy_s1_official",
+        "order": 3,
+        "text": "盾牌已经替它投降了"
+    },
+    "enemy_s2_warmup_1": {
+        "id": "enemy_s2_warmup_1",
+        "group": "enemy_s2_warmup",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_2": {
+        "id": "enemy_s2_warmup_2",
+        "group": "enemy_s2_warmup",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_3": {
+        "id": "enemy_s2_warmup_3",
+        "group": "enemy_s2_warmup",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_official_1": {
+        "id": "enemy_s2_official_1",
+        "group": "enemy_s2_official",
+        "order": 1,
+        "text": "胜负不重要，火候很重要！"
+    },
+    "enemy_s2_official_2": {
+        "id": "enemy_s2_official_2",
+        "group": "enemy_s2_official",
+        "order": 2,
+        "text": "这鸡看起来已经腌入味了"
+    },
+    "enemy_s2_official_3": {
+        "id": "enemy_s2_official_3",
+        "group": "enemy_s2_official",
+        "order": 3,
+        "text": "对面打轻点，别提前出锅"
+    },
+    "enemy_s3_warmup_1": {
+        "id": "enemy_s3_warmup_1",
+        "group": "enemy_s3_warmup",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_2": {
+        "id": "enemy_s3_warmup_2",
+        "group": "enemy_s3_warmup",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_3": {
+        "id": "enemy_s3_warmup_3",
+        "group": "enemy_s3_warmup",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_official_1": {
+        "id": "enemy_s3_official_1",
+        "group": "enemy_s3_official",
+        "order": 1,
+        "text": "先喵再说！"
+    },
+    "enemy_s3_official_2": {
+        "id": "enemy_s3_official_2",
+        "group": "enemy_s3_official",
+        "order": 2,
+        "text": "这鸡怎么开始猫叫了"
+    },
+    "enemy_s3_official_3": {
+        "id": "enemy_s3_official_3",
+        "group": "enemy_s3_official",
+        "order": 3,
+        "text": "可爱是可爱，物种有点复杂"
+    },
+    "enemy_s4_warmup_1": {
+        "id": "enemy_s4_warmup_1",
+        "group": "enemy_s4_warmup",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_2": {
+        "id": "enemy_s4_warmup_2",
+        "group": "enemy_s4_warmup",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_3": {
+        "id": "enemy_s4_warmup_3",
+        "group": "enemy_s4_warmup",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_official_1": {
+        "id": "enemy_s4_official_1",
+        "group": "enemy_s4_official",
+        "order": 1,
+        "text": "真相只有一个！"
+    },
+    "enemy_s4_official_2": {
+        "id": "enemy_s4_official_2",
+        "group": "enemy_s4_official",
+        "order": 2,
+        "text": "这鸡已经推理出对面要挨打"
+    },
+    "enemy_s4_official_3": {
+        "id": "enemy_s4_official_3",
+        "group": "enemy_s4_official",
+        "order": 3,
+        "text": "现场留下了三根鸡毛"
+    },
+    "enemy_s5_warmup_1": {
+        "id": "enemy_s5_warmup_1",
+        "group": "enemy_s5_warmup",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_2": {
+        "id": "enemy_s5_warmup_2",
+        "group": "enemy_s5_warmup",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_3": {
+        "id": "enemy_s5_warmup_3",
+        "group": "enemy_s5_warmup",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_official_1": {
+        "id": "enemy_s5_official_1",
+        "group": "enemy_s5_official",
+        "order": 1,
+        "text": "大针宽线，安排上了！"
+    },
+    "enemy_s5_official_2": {
+        "id": "enemy_s5_official_2",
+        "group": "enemy_s5_official",
+        "order": 2,
+        "text": "这根线它又长又宽"
+    },
+    "enemy_s5_official_3": {
+        "id": "enemy_s5_official_3",
+        "group": "enemy_s5_official",
+        "order": 3,
+        "text": "大针宽线，安排上了"
+    },
+    "enemy_kun_boss_1": {
+        "id": "enemy_kun_boss_1",
+        "group": "enemy_kun_boss",
+        "order": 1,
+        "text": "鸡你太美"
+    },
+    "enemy_kun_boss_2": {
+        "id": "enemy_kun_boss_2",
+        "group": "enemy_kun_boss",
+        "order": 2,
+        "text": "唱、跳、Rap、篮球……再加一脚蹬！"
+    },
+    "enemy_kun_boss_3": {
+        "id": "enemy_kun_boss_3",
+        "group": "enemy_kun_boss",
+        "order": 3,
+        "text": "坤坤在此，谁敢争锋！"
+    },
+    "enemy_s1_warmup_1_1": {
+        "id": "enemy_s1_warmup_1_1",
+        "group": "enemy_s1_warmup_1",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_1_2": {
+        "id": "enemy_s1_warmup_1_2",
+        "group": "enemy_s1_warmup_1",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_1_3": {
+        "id": "enemy_s1_warmup_1_3",
+        "group": "enemy_s1_warmup_1",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s1_warmup_2_1": {
+        "id": "enemy_s1_warmup_2_1",
+        "group": "enemy_s1_warmup_2",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_2_2": {
+        "id": "enemy_s1_warmup_2_2",
+        "group": "enemy_s1_warmup_2",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_2_3": {
+        "id": "enemy_s1_warmup_2_3",
+        "group": "enemy_s1_warmup_2",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s1_warmup_3_1": {
+        "id": "enemy_s1_warmup_3_1",
+        "group": "enemy_s1_warmup_3",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_3_2": {
+        "id": "enemy_s1_warmup_3_2",
+        "group": "enemy_s1_warmup_3",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_3_3": {
+        "id": "enemy_s1_warmup_3_3",
+        "group": "enemy_s1_warmup_3",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s1_warmup_4_1": {
+        "id": "enemy_s1_warmup_4_1",
+        "group": "enemy_s1_warmup_4",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_4_2": {
+        "id": "enemy_s1_warmup_4_2",
+        "group": "enemy_s1_warmup_4",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_4_3": {
+        "id": "enemy_s1_warmup_4_3",
+        "group": "enemy_s1_warmup_4",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s1_warmup_5_1": {
+        "id": "enemy_s1_warmup_5_1",
+        "group": "enemy_s1_warmup_5",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s1_warmup_5_2": {
+        "id": "enemy_s1_warmup_5_2",
+        "group": "enemy_s1_warmup_5",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s1_warmup_5_3": {
+        "id": "enemy_s1_warmup_5_3",
+        "group": "enemy_s1_warmup_5",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_warmup_1_1": {
+        "id": "enemy_s2_warmup_1_1",
+        "group": "enemy_s2_warmup_1",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_1_2": {
+        "id": "enemy_s2_warmup_1_2",
+        "group": "enemy_s2_warmup_1",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_1_3": {
+        "id": "enemy_s2_warmup_1_3",
+        "group": "enemy_s2_warmup_1",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_warmup_2_1": {
+        "id": "enemy_s2_warmup_2_1",
+        "group": "enemy_s2_warmup_2",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_2_2": {
+        "id": "enemy_s2_warmup_2_2",
+        "group": "enemy_s2_warmup_2",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_2_3": {
+        "id": "enemy_s2_warmup_2_3",
+        "group": "enemy_s2_warmup_2",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_warmup_3_1": {
+        "id": "enemy_s2_warmup_3_1",
+        "group": "enemy_s2_warmup_3",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_3_2": {
+        "id": "enemy_s2_warmup_3_2",
+        "group": "enemy_s2_warmup_3",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_3_3": {
+        "id": "enemy_s2_warmup_3_3",
+        "group": "enemy_s2_warmup_3",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_warmup_4_1": {
+        "id": "enemy_s2_warmup_4_1",
+        "group": "enemy_s2_warmup_4",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_4_2": {
+        "id": "enemy_s2_warmup_4_2",
+        "group": "enemy_s2_warmup_4",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_4_3": {
+        "id": "enemy_s2_warmup_4_3",
+        "group": "enemy_s2_warmup_4",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s2_warmup_5_1": {
+        "id": "enemy_s2_warmup_5_1",
+        "group": "enemy_s2_warmup_5",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s2_warmup_5_2": {
+        "id": "enemy_s2_warmup_5_2",
+        "group": "enemy_s2_warmup_5",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s2_warmup_5_3": {
+        "id": "enemy_s2_warmup_5_3",
+        "group": "enemy_s2_warmup_5",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_warmup_1_1": {
+        "id": "enemy_s3_warmup_1_1",
+        "group": "enemy_s3_warmup_1",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_1_2": {
+        "id": "enemy_s3_warmup_1_2",
+        "group": "enemy_s3_warmup_1",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_1_3": {
+        "id": "enemy_s3_warmup_1_3",
+        "group": "enemy_s3_warmup_1",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_warmup_2_1": {
+        "id": "enemy_s3_warmup_2_1",
+        "group": "enemy_s3_warmup_2",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_2_2": {
+        "id": "enemy_s3_warmup_2_2",
+        "group": "enemy_s3_warmup_2",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_2_3": {
+        "id": "enemy_s3_warmup_2_3",
+        "group": "enemy_s3_warmup_2",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_warmup_3_1": {
+        "id": "enemy_s3_warmup_3_1",
+        "group": "enemy_s3_warmup_3",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_3_2": {
+        "id": "enemy_s3_warmup_3_2",
+        "group": "enemy_s3_warmup_3",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_3_3": {
+        "id": "enemy_s3_warmup_3_3",
+        "group": "enemy_s3_warmup_3",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_warmup_4_1": {
+        "id": "enemy_s3_warmup_4_1",
+        "group": "enemy_s3_warmup_4",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_4_2": {
+        "id": "enemy_s3_warmup_4_2",
+        "group": "enemy_s3_warmup_4",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_4_3": {
+        "id": "enemy_s3_warmup_4_3",
+        "group": "enemy_s3_warmup_4",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s3_warmup_5_1": {
+        "id": "enemy_s3_warmup_5_1",
+        "group": "enemy_s3_warmup_5",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s3_warmup_5_2": {
+        "id": "enemy_s3_warmup_5_2",
+        "group": "enemy_s3_warmup_5",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s3_warmup_5_3": {
+        "id": "enemy_s3_warmup_5_3",
+        "group": "enemy_s3_warmup_5",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_warmup_1_1": {
+        "id": "enemy_s4_warmup_1_1",
+        "group": "enemy_s4_warmup_1",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_1_2": {
+        "id": "enemy_s4_warmup_1_2",
+        "group": "enemy_s4_warmup_1",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_1_3": {
+        "id": "enemy_s4_warmup_1_3",
+        "group": "enemy_s4_warmup_1",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_warmup_2_1": {
+        "id": "enemy_s4_warmup_2_1",
+        "group": "enemy_s4_warmup_2",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_2_2": {
+        "id": "enemy_s4_warmup_2_2",
+        "group": "enemy_s4_warmup_2",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_2_3": {
+        "id": "enemy_s4_warmup_2_3",
+        "group": "enemy_s4_warmup_2",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_warmup_3_1": {
+        "id": "enemy_s4_warmup_3_1",
+        "group": "enemy_s4_warmup_3",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_3_2": {
+        "id": "enemy_s4_warmup_3_2",
+        "group": "enemy_s4_warmup_3",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_3_3": {
+        "id": "enemy_s4_warmup_3_3",
+        "group": "enemy_s4_warmup_3",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_warmup_4_1": {
+        "id": "enemy_s4_warmup_4_1",
+        "group": "enemy_s4_warmup_4",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_4_2": {
+        "id": "enemy_s4_warmup_4_2",
+        "group": "enemy_s4_warmup_4",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_4_3": {
+        "id": "enemy_s4_warmup_4_3",
+        "group": "enemy_s4_warmup_4",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s4_warmup_5_1": {
+        "id": "enemy_s4_warmup_5_1",
+        "group": "enemy_s4_warmup_5",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s4_warmup_5_2": {
+        "id": "enemy_s4_warmup_5_2",
+        "group": "enemy_s4_warmup_5",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s4_warmup_5_3": {
+        "id": "enemy_s4_warmup_5_3",
+        "group": "enemy_s4_warmup_5",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_warmup_1_1": {
+        "id": "enemy_s5_warmup_1_1",
+        "group": "enemy_s5_warmup_1",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_1_2": {
+        "id": "enemy_s5_warmup_1_2",
+        "group": "enemy_s5_warmup_1",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_1_3": {
+        "id": "enemy_s5_warmup_1_3",
+        "group": "enemy_s5_warmup_1",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_warmup_2_1": {
+        "id": "enemy_s5_warmup_2_1",
+        "group": "enemy_s5_warmup_2",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_2_2": {
+        "id": "enemy_s5_warmup_2_2",
+        "group": "enemy_s5_warmup_2",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_2_3": {
+        "id": "enemy_s5_warmup_2_3",
+        "group": "enemy_s5_warmup_2",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_warmup_3_1": {
+        "id": "enemy_s5_warmup_3_1",
+        "group": "enemy_s5_warmup_3",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_3_2": {
+        "id": "enemy_s5_warmup_3_2",
+        "group": "enemy_s5_warmup_3",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_3_3": {
+        "id": "enemy_s5_warmup_3_3",
+        "group": "enemy_s5_warmup_3",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_warmup_4_1": {
+        "id": "enemy_s5_warmup_4_1",
+        "group": "enemy_s5_warmup_4",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_4_2": {
+        "id": "enemy_s5_warmup_4_2",
+        "group": "enemy_s5_warmup_4",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_4_3": {
+        "id": "enemy_s5_warmup_4_3",
+        "group": "enemy_s5_warmup_4",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    },
+    "enemy_s5_warmup_5_1": {
+        "id": "enemy_s5_warmup_5_1",
+        "group": "enemy_s5_warmup_5",
+        "order": 1,
+        "text": "咯咯咯，你也配上擂台？"
+    },
+    "enemy_s5_warmup_5_2": {
+        "id": "enemy_s5_warmup_5_2",
+        "group": "enemy_s5_warmup_5",
+        "order": 2,
+        "text": "羽毛挺花，打人不行。"
+    },
+    "enemy_s5_warmup_5_3": {
+        "id": "enemy_s5_warmup_5_3",
+        "group": "enemy_s5_warmup_5",
+        "order": 3,
+        "text": "回去喝汤吧。"
+    }
+}

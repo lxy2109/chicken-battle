@@ -3,7 +3,7 @@
   "name": "chicken-excel",
   "title": "斗鸡 Excel 配表",
   "version": "1.0.0",
-  "description": "在 Creator 中校验、预览并导出斗鸡 Excel 配置",
+  "description": "在 Creator 中增删查改、保存并导出斗鸡 Excel 配置",
   "editor": ">=3.8.6",
   "main": "./main.js",
   "panels": {
@@ -22,6 +22,8 @@
       "choose-source": { "methods": ["chooseSource"] },
       "open-source": { "methods": ["openSource"] },
       "inspect": { "methods": ["inspect"] },
+      "load-workbook": { "methods": ["loadWorkbook"] },
+      "save-workbook": { "methods": ["saveWorkbook"] },
       "export": { "methods": ["exportConfig"] }
     }
   }

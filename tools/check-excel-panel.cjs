@@ -32,13 +32,13 @@ async function main() {
     assert.equal((await methods.exportConfig(source)).ok, false, "并发导出应被阻止");
     const preview = await reading;
     assert(preview.ok, preview.message);
-    assert.equal(preview.sheets.length, 14);
+    assert.equal(preview.sheets.length, Object.keys(require('./config-schema.json')).length);
     assert.equal(preview.sheets.find(s => s.name === "Enemy").columns[2].key, "targetBattleSeconds");
     assert.equal(preview.sheets.find(s => s.name === "Danmaku").count, 185);
     assert.equal(preview.sheets.find(s => s.name === "Danmaku").rows.length, 100);
     assert.equal(writes, 0);
     assert.equal(refreshes, 0);
-    console.log("PASS 校验预览14张表、怪物时长列、弹幕计数和预览上限；未写文件");
+    console.log("PASS 全表校验预览、怪物时长列、弹幕计数和预览上限；未写文件");
     const exported = await methods.exportConfig(source);
     assert(exported.ok && exported.exported && !exported.warning);
     assert.equal(writes, 1); assert.equal(refreshes, 1);
