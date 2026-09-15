@@ -30,19 +30,19 @@ export class BattleImpact {
         burst.parent = root;
         burst.addComponent(UITransform);
         const g = burst.addComponent(Graphics);
-        g.fillColor = new Color(255, 236, 120);
-        const radius = 92;
+        g.fillColor = new Color(18, 8, 6);
+        const radius = 108;
         for (let i = 0; i < 20; i++) {
             const angle = i * Math.PI / 10;
-            const r = i % 2 === 0 ? radius : radius * 0.32;
+            const r = i % 2 === 0 ? radius : radius * 0.3;
             const x = Math.cos(angle) * r, y = Math.sin(angle) * r;
             if (i === 0) g.moveTo(x, y);
             else g.lineTo(x, y);
         }
         g.close();
         g.fill();
-        g.fillColor = new Color(255, 255, 245);
-        g.circle(0, 0, radius * 0.2);
+        g.fillColor = new Color(255, 248, 230);
+        g.circle(0, 0, radius * 0.18);
         g.fill();
         burst.setScale(0.35, 0.35, 1);
         tween(burst).to(0.05, { scale: v3(1.15, 1.15, 1) }, { easing: "quadOut" })

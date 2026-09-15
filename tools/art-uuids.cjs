@@ -75,6 +75,17 @@ const EQUIPS = [
 const BGS = ["bg_home", "bg_map", "bg_arena", "bg_prebattle",
     "bg_start_figma", "bg_village_figma", "bg_arena_figma", "bg_shop_figma", "bg_map_figma"];
 
+const FX = [
+    "comic_slash",
+    "comic_star",
+    "shock_ring",
+    "speed_line",
+    "focus_burst",
+    "ground_crack",
+    "ink_burst",
+    "charge_ring"
+];
+
 const uuids = Object.assign(
     {},
     alloc("1001", CHICKEN),
@@ -82,12 +93,13 @@ const uuids = Object.assign(
     alloc("2003", ICONS),
     alloc("2004", NODES),
     alloc("2005", EQUIPS),
-    alloc("3002", BGS)
+    alloc("3002", BGS),
+    alloc("4004", FX)
 );
 
 module.exports = uuids;
 
-module.exports.groups = { CHICKEN, UI_SLICED, UI_PLAIN, ICONS, NODES, EQUIPS, BGS };
+module.exports.groups = { CHICKEN, UI_SLICED, UI_PLAIN, ICONS, NODES, EQUIPS, BGS, FX };
 
 module.exports.frame = function frame(uuid) {
     return uuid + "@f9941";

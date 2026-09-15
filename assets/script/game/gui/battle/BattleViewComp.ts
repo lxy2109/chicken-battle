@@ -1,5 +1,5 @@
 import { gameText, gameTextOr } from "../../core/GameConfig";
-import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { Color, JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -14,6 +14,7 @@ import { PREFAB_PATH } from "../../core/Catalog";
 import { BattleSession } from "../../core/BattleSession";
 import { DanmakuPool } from "../../core/Danmaku";
 import { BattleDanmaku } from "./BattleDanmaku";
+import { BattleFx } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
@@ -82,6 +83,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
     private danmaku?: BattleDanmaku;
     private impact?: BattleImpact;
     private screenEffects?: BattleScreenEffects;
+    private fx?: BattleFx;
     private skillOf: Record<BattleSide, boolean> = { player: false, enemy: false };
     private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
@@ -171,6 +173,28 @@ export class BattleViewComp extends CCView<ChickenRun> {
             this.impact = new BattleImpact(fxLayer, frames as SpriteFrame[], arena, floorY);
         }
         this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
+        const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
+        const fxFrames = await Promise.all(fxKeys.map(async name => {
+            try {
+                return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
+            }
+            catch {
+                return null;
+            }
+        }));
+        if (this.closed) return;
+        if (arena) {
+            this.fx = new BattleFx(this.node, arena, {
+                slash: fxFrames[0] || undefined,
+                star: fxFrames[1] || undefined,
+                ring: fxFrames[2] || undefined,
+                streak: fxFrames[3] || undefined,
+                focus: fxFrames[4] || undefined,
+                crack: fxFrames[5] || undefined,
+                ink: fxFrames[6] || undefined,
+                charge: fxFrames[7] || undefined
+            });
+        }
         await this.playIntro();
         if (this.closed) return;
         this.playerActor?.startRoam();
@@ -250,29 +274,41 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }
         else if (ev.type === "dodge") {
             playGameEffect("wing");
-            this.actor(ev.side)?.hop();
+            const who = this.actor(ev.side);
+            const dir = ev.side === "player" ? -1 : 1;
+            this.fx?.dodge(who, dir);
+            who?.hop();
             void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameTextOr("BattleViewComp_025", "躲开了"), 0.45, 1.2);
             this.log(ev.side, gameTextOr("BattleViewComp_025", "躲开了"));
         }
         else if (ev.type === "clash") {
             playGameEffect("skill");
+            this.playerActor?.flash(new Color(20, 10, 10), 0.1);
+            this.enemyActor?.flash(new Color(20, 10, 10), 0.1);
             this.playerActor?.bounce();
             this.enemyActor?.bounce();
             const a = this.playerNode?.worldPosition;
             const b = this.enemyNode?.worldPosition;
-            if (a && b) this.impact?.playClash((a.x + b.x) / 2, (a.y + b.y) / 2);
+            if (a && b) {
+                this.impact?.playClash((a.x + b.x) / 2, (a.y + b.y) / 2);
+                this.fx?.clash((a.x + b.x) / 2, (a.y + b.y) / 2);
+            }
             this.screenEffects?.play(22, true, true, ev.winner === "player" ? 1 : -1);
             this.log(ev.winner, gameTextOr("BattleViewComp_024", "对撞！"));
         }
         else if (ev.type === "rage") {
             playGameEffect("critical");
-            this.actor(ev.side)?.pulse();
+            const who = this.actor(ev.side);
+            who?.pulse();
+            this.fx?.rage(who);
             this.screenEffects?.play(12, true, false, ev.side === "player" ? 1 : -1);
             this.log(ev.side, gameTextOr("BattleViewComp_026", "红眼了！"));
         }
         else if (ev.type === "enrage") {
             playGameEffect("skill");
-            this.actor(ev.side)?.pulse();
+            const who = this.actor(ev.side);
+            who?.pulse();
+            this.fx?.enrage(who);
             this.screenEffects?.play(18, true, true, -1);
             this.log(ev.side, gameTextOr("BattleViewComp_027", "暴走！"));
         }
@@ -293,10 +329,14 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.styleOf[side] = style;
         this.skillOf[side] = skill;
         this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : STYLE_TEXT[style]);
-        if (skill) void this.spawnFx(PREFAB_PATH.fxSkill, side, gameText("BattleViewComp_017", STYLE_TEXT[style]), 0.45, 1.15);
+        if (skill) {
+            this.fx?.skillWindup(self);
+            void this.spawnFx(PREFAB_PATH.fxSkill, side, gameText("BattleViewComp_017", STYLE_TEXT[style]), 0.45, 1.15);
+        }
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         });
+        if (skill) this.fx?.skillDone();
     }
 
     private applyResult(evs: BattleEvent[]) {
@@ -313,11 +353,14 @@ export class BattleViewComp extends CCView<ChickenRun> {
         playGameEffect(crit ? "critical" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
         this.actor(to)?.flinch(crit ? 1.65 : heavy ? 1.3 : 1, direction);
+        if (crit) this.actor(from)?.flash(new Color(255, 240, 180), 0.08);
         if (target) {
             // 用当前走位区域的地面高度，跳跃时也不会把血迹留在半空。
             const shadowY = target.getChildByName("Shadow")?.position.y ?? -205.5;
             const groundY = (this.actor(to)?.home.y ?? P_HOME.y) + shadowY * Math.abs(target.scale.y);
             this.impact?.play(target, direction, heavy, crit, this.featherColors[to], groundY);
+            const p = target.worldPosition;
+            this.fx?.hit(p.x, p.y, direction, style, heavy, crit);
         }
         void this.spawnFx(
             crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
@@ -336,6 +379,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.danmaku?.clear();
         playGameEffect(win ? "win" : "lose");
         this.stopTick();
+        this.fx?.finish(win);
         this.trig(win ? "toWin" : "toLose");
         this.ent.run.settle(win);
         setLabel(this, "LabLog", win ? gameText("BattleViewComp_020") : gameText("BattleViewComp_021"));
@@ -467,6 +511,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
 
     reset() {
         this.closed = true;
+        this.fx?.clear();
         this.screenEffects?.clear();
         this.impact?.clear();
         this.danmaku?.clear();
