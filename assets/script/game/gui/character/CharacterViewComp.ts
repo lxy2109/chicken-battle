@@ -1,5 +1,5 @@
 import { gameNumber, gameText } from "../../core/GameConfig";
-import { _decorator } from "cc";
+import { Button, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -36,13 +36,23 @@ export class CharacterViewComp extends CCView<ChickenRun> {
         bindClick(this, "BtnPagePrev", () => { this.page = Math.max(0, this.page - 1); void this.fillSlots(); });
         bindClick(this, "BtnPageNext", () => { this.page++; void this.fillSlots(); });
         bindClick(this, "BtnHideAppearance", () => void this.toggleHide());
+        bindClick(this, "BtnHideHint", () => {
+            setLabel(this, "LabHideHintTitle", gameText("CharacterViewComp_015"));
+            setLabel(this, "LabHideHintDesc", gameText("CharacterViewComp_016"));
+            setLabel(this, "BtnCloseHideHintLab", gameText("CharacterViewComp_017"));
+            setNodeActive(this, "HideHintModal", true);
+        });
+        bindClick(this, "BtnCloseHideHint", () => setNodeActive(this, "HideHintModal", false));
     }
 
     private refreshStats(me = this.ent.run.playerFighter()) {
         setLabel(this, "LabPower", `${combatPower(me.stats)}`);
-        setLabel(this, "BtnHideAppearanceLab", this.ent.run.hideEquippedAppearance
+        const worn = this.ent.run.equippedIds.length > 0;
+        setLabel(this, "BtnHideAppearanceLab", worn && this.ent.run.hideEquippedAppearance
             ? gameText("CharacterViewComp_013") : gameText("CharacterViewComp_012"));
-        setSpriteColor(this.getNode("BtnHideAppearance"), this.ent.run.equippedIds.length > 0 ? "#FFFFFF" : "#9A9A9A");
+        setSpriteColor(this.getNode("BtnHideAppearance"), worn ? "#FFFFFF" : "#9A9A9A");
+        const btn = this.getNode("BtnHideAppearance")?.getComponent(Button);
+        if (btn) btn.interactable = worn;
     }
 
     private ownedSets() {

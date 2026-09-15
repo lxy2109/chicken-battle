@@ -510,7 +510,15 @@ function makeCharacter() {
     const tray = placeNode(b, root, "SetTray", 40, 1180, 1000, 620);
     b.sprite(tray, [35, 33, 47, 210]);
     textNode(b, tray, "LabEmpty", "尚未获得套装", 0, 0, { font: 28, w: 640, h: 80, color: INK.cream });
-    placeButton(b, root, "BtnHideAppearance", "原皮出战", 340, 1000, 400, 88, "green");
+    placeButton(b, root, "BtnHideAppearance", "原皮出战", 250, 1000, 380, 88, "green");
+    placeButton(b, root, "BtnHideHint", "!", 655, 1000, 88, 88, "yellow");
+    const hint = b.node({ name: "HideHintModal", parent: root, w: 720, h: 1280, active: false });
+    b.sprite(hint, [0, 0, 0, 185]);
+    b.addComp(hint, null, { type: "cc.BlockInputEvents" });
+    placeCard(b, hint, "HideHintCard", 140, 620, 800, 560, SF.panel_cream);
+    placeText(b, hint, "LabHideHintTitle", "原皮出战", 200, 680, 680, 80, { font: 32 });
+    placeText(b, hint, "LabHideHintDesc", "穿上套装后可选择原皮出战：保留套装属性和加成，外观仍用自定义染色。再点一次可切换回套装外观。", 220, 790, 640, 200, { font: 23 });
+    placeButton(b, hint, "BtnCloseHideHint", "知道了", 360, 1020, 360, 105, "green");
     const prev = placeButton(b, root, "BtnPagePrev", "‹", 855, 1195, 75, 55, "green");
     const next = placeButton(b, root, "BtnPageNext", "›", 960, 1195, 75, 55, "green");
     b.objs[prev]._active = false;

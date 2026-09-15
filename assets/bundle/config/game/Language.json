@@ -148,11 +148,23 @@
         "en": ""
     },
     "CharacterViewComp_013": {
-        "zh": "显示套装",
+        "zh": "套装出战",
         "en": ""
     },
     "CharacterViewComp_014": {
         "zh": "已隐藏",
+        "en": ""
+    },
+    "CharacterViewComp_015": {
+        "zh": "原皮出战",
+        "en": ""
+    },
+    "CharacterViewComp_016": {
+        "zh": "穿上套装后可选择原皮出战：保留套装属性和加成，外观仍使用自定义染色。再点一次可切换回套装外观。",
+        "en": ""
+    },
+    "CharacterViewComp_017": {
+        "zh": "知道了",
         "en": ""
     },
     "CustomizeViewComp_001": {

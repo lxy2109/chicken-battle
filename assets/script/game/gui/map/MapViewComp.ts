@@ -77,6 +77,8 @@ export class MapViewComp extends CCView<ChickenRun> {
         bindClick(this, "BtnHome", () => goScreen(this, "customize"));
         setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : gameText("MapViewComp_003"));
         bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : this.onBattleNode(run.routeNode));
+        const shop = this.getNode("BtnShop");
+        if (shop && shop.scale.z === 0) shop.setScale(shop.scale.x, shop.scale.y, 1);
         bindClick(this, "BtnShop", this.onShop.bind(this));
         bindClick(this, "LabShopName", this.onShop.bind(this));
     }
