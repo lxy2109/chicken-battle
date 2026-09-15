@@ -209,26 +209,6 @@
       766
     ]
   },
-  "ui/figma_customize_panel": {
-    "uuid": "9e094c72-672b-5427-b2c1-1d0eae861277",
-    "source": "角色界面-1",
-    "box": [
-      0,
-      1100,
-      1080,
-      820
-    ]
-  },
-  "ui/figma_customize_controls": {
-    "uuid": "4581c492-3571-5910-a27a-6883af862b8a",
-    "source": "角色界面-1",
-    "box": [
-      0,
-      1100,
-      1080,
-      820
-    ]
-  },
   "ui/figma_button_yellow": {
     "uuid": "1e1668b6-4eaf-5a92-8d58-aa725ad98e8d",
     "source": "角色界面-1",
@@ -241,36 +221,6 @@
   },
   "chicken/figma_face_dumb": {
     "uuid": "4a03e01b-bd7e-59fd-83be-a546dac30e2c",
-    "source": "角色界面",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "chicken/figma_face_fierce": {
-    "uuid": "1bc8abc6-904b-5055-9626-02905bc028b0",
-    "source": "角色界面",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "chicken/figma_face_proud": {
-    "uuid": "9ea1d5de-4d2f-5df6-b26c-54bf7f368068",
-    "source": "角色界面",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "chicken/figma_face_cute": {
-    "uuid": "dd488b30-d628-5bda-b0e5-df785ee33018",
     "source": "角色界面",
     "box": [
       352,
@@ -869,16 +819,6 @@
       100
     ]
   },
-  "ui/figma_tab_set": {
-    "uuid": "1edd5866-741a-5a4c-8841-a2f28e3630b9",
-    "source": "image 79",
-    "box": [
-      882,
-      1075,
-      118,
-      97
-    ]
-  },
   "ui/figma_expression_dumb": {
     "uuid": "3a6d8bfa-bf72-590c-b191-3a6a1578f347",
     "source": "角色界面",
@@ -907,16 +847,6 @@
       1368,
       136,
       140
-    ]
-  },
-  "chicken/figma_face_sad": {
-    "uuid": "e3127935-dc51-5bee-8d8a-d373717a5548",
-    "source": "角色界面",
-    "box": [
-      352,
-      157,
-      377,
-      243
     ]
   },
   "ui/figma_expression_fierce": {
@@ -949,26 +879,6 @@
       140
     ]
   },
-  "chicken/figma_face_wink": {
-    "uuid": "c33b2bd6-6132-5d24-83a1-4cf57306dbfe",
-    "source": "角色界面",
-    "box": [
-      352,
-      157,
-      377,
-      243
-    ]
-  },
-  "bg/shop_weapon_figma": {
-    "uuid": "72407456-54a9-5fc4-b108-4c243e437bd8",
-    "source": "image 75",
-    "box": [
-      0,
-      235,
-      1080,
-      1920
-    ]
-  },
   "chicken/warmup_1": {
     "uuid": "e1d0fcc6-354a-559a-8f9c-b551a7fcccd5",
     "source": "image 61",
@@ -987,16 +897,6 @@
       0,
       371,
       579
-    ]
-  },
-  "chicken/warmup_3": {
-    "uuid": "52df8092-301c-5ca5-9670-3945fb32bcb5",
-    "source": "image 63",
-    "box": [
-      0,
-      0,
-      383,
-      453
     ]
   },
   "chicken/warmup_4": {
@@ -1092,41 +992,81 @@
   "chicken/头": {
     "uuid": "053bdeac-a06d-4742-80dc-1c69ecf31724",
     "source": "official-split",
-    "box": [0, 0, 208, 256]
+    "box": [
+      0,
+      0,
+      208,
+      256
+    ]
   },
   "chicken/脖子": {
     "uuid": "23521cf7-2230-4f38-8dfb-dc36b815d251",
     "source": "official-split",
-    "box": [0, 0, 176, 367]
+    "box": [
+      0,
+      0,
+      176,
+      367
+    ]
   },
   "chicken/身体": {
     "uuid": "60762255-9104-48d8-b09d-e24d880f4b36",
     "source": "official-split",
-    "box": [0, 0, 277, 379]
+    "box": [
+      0,
+      0,
+      277,
+      379
+    ]
   },
   "chicken/前翅膀": {
     "uuid": "3d993b9c-a701-48c0-b39d-cb094fd16de5",
     "source": "official-split",
-    "box": [0, 0, 144, 239]
+    "box": [
+      0,
+      0,
+      144,
+      239
+    ]
   },
   "chicken/后翅膀": {
     "uuid": "7dff6a90-be97-4381-ad62-cc80f0bc3f46",
     "source": "official-split",
-    "box": [0, 0, 100, 182]
+    "box": [
+      0,
+      0,
+      100,
+      182
+    ]
   },
   "chicken/前腿": {
     "uuid": "5d2f5ab7-b020-44c6-bc28-cf658aa65957",
     "source": "official-split",
-    "box": [0, 0, 136, 183]
+    "box": [
+      0,
+      0,
+      136,
+      183
+    ]
   },
   "chicken/后腿": {
     "uuid": "b8b845fe-b15e-400a-87de-03f889c487cc",
     "source": "official-split",
-    "box": [0, 0, 143, 182]
+    "box": [
+      0,
+      0,
+      143,
+      182
+    ]
   },
   "chicken/eye": {
     "uuid": "a8c3e1f0-4b2d-5e91-9c17-6d4f8a0b2e35",
     "source": "eye-white",
-    "box": [0, 0, 64, 64]
+    "box": [
+      0,
+      0,
+      64,
+      64
+    ]
   }
 }

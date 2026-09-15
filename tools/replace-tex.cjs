@@ -47,12 +47,6 @@ const JOBS = [
         from: draw.spinner, w: 138, h: 138
     },
     {
-        // 原图是 1600x720 的横图，挂在 720x1280 的竖屏节点上一直被压扁着显示。
-        // 主界面那张草地背景本来就是竖构图，直接借过来，风格也跟游戏里对得上。
-        to: "assets/bundle/gui/loading/texture/bg.png",
-        from: "assets/bundle/game/texture/bg/home.png", w: 720, h: 1280
-    },
-    {
         to: "assets/bundle/gui/loading/texture/icon_loading_bar.png",
         from: draw.barFill, w: 549, h: 47
     },

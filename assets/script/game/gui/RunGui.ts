@@ -21,7 +21,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
     if (key === "BattleView") directories.push("fx");
     if (key === "MapView") gui.internal.getConfig(key).prefab = mapPrefab(entity.run.currentMap().id);
     const prefab = gui.internal.getConfig(key).prefab;
-    const backgrounds = key === "ShopView" ? ["shop_figma", "shop_weapon_figma"]
+    const backgrounds = key === "ShopView" ? ["shop_figma"]
         : key === "ResultView" ? ["result_figma", "result_lose_figma"] : [];
     await Promise.all([
         ...directories.map(dir => {

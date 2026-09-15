@@ -241,8 +241,7 @@ class Builder {
 const BTN = {
     yellow: { frame: F['ui/figma_button_yellow'], ink: INK.cream, outline: true },
     green: { frame: F['ui/figma_button_green'], ink: INK.cream, outline: true },
-    red: { frame: F['ui/figma_button_red'], ink: INK.cream, outline: true },
-    orange: { frame: SF.btn_orange, ink: INK.cream, outline: true }
+    red: { frame: F['ui/figma_button_red'], ink: INK.cream, outline: true }
 };
 
 /** 主按钮：九宫格底图 + 居中文字，文字节点名为 <name>Lab。 */
@@ -304,7 +303,7 @@ function figmaImage(b, parent, name, asset, box) {
     return id;
 }
 
-function placeCard(b, parent, name, x, y, w, h, frame = SF.panel_white) {
+function placeCard(b, parent, name, x, y, w, h, frame = SF.panel_cream) {
     const r = layoutBox(x, y, w, h);
     return card(b, parent, name, r.x, r.y, r.w, r.h, frame);
 }
@@ -337,26 +336,17 @@ function iconNode(b, parent, name, frame, x, y, s) {
 }
 
 /** Internal combat coordinates stay 720x1280; the project uses the Figma 1080x1920 canvas. */
-function panel(b, name, bg = SF.bg_home) {
+function panel(b, name, bg) {
     const root = b.node({ name, w: 720, h: 1280, x: 0, y: 0, sx: 1.5, sy: 1.5 });
     b.widget(root);
     b.sprite(root, [255, 255, 255, 255], 0, bg);
     return root;
 }
 
-function card(b, parent, name, x, y, w, h, frame = SF.panel_white) {
+function card(b, parent, name, x, y, w, h, frame = SF.panel_cream) {
     const id = b.node({ name, parent, x, y, w, h });
     b.sprite(id, [255, 255, 255, 255], 1, frame);
     return id;
-}
-
-/** 血条：外框 + 可填充内条，内条按 fillRange 收缩。 */
-function hpBar(b, parent, name, fillName, x, y, fillCol) {
-    const frame = b.node({ name, parent, x, y, w: 580, h: 46 });
-    b.sprite(frame, [255, 255, 255, 255], 1, SF.bar_track);
-    const fill = b.node({ name: fillName, parent: frame, w: 540, h: 24 });
-    b.sprite(fill, fillCol, 3, WHITE, 1);
-    return frame;
 }
 
 function writePrefab(rel, objs) {
