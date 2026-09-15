@@ -595,8 +595,10 @@ function makeBattle() {
 function makeResult() {
     const b = new Builder("result");
     const root = panel(b, "result", F['bg/result_figma']);
-    const loss = placeNode(b, root, "LossBanner", 65, 70, 950, 415, { active: false });
-    b.sprite(loss, [255, 255, 255, 255], 0, SF.burst_lose);
+    // Fail title is painted on result_lose_figma; keep the banner node for layout but hide it at runtime.
+    const loss = placeNode(b, root, "LossBanner", 90, 36, 900, 360, { active: false });
+    b.sprite(loss, [230, 76, 64, 255], 0, SF.burst_win);
+    textNode(b, loss, "LabTitle", "失败", 0, 6, { font: 68, w: 460, h: 96, color: INK.cream, outline: true, outlineWidth: 6 });
     placeNode(b, root, "ChickenSlot", 272, 544, 539, 734);
     placeText(b, root, "LabHeader", "", 375, 1330, 330, 95, { font: 30, color: INK.cream, outline: true });
     placeText(b, root, "LabDesc", "本局获得", 210, 1470, 440, 56, { font: 24, color: INK.cream });

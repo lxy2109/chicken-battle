@@ -251,3 +251,19 @@ export function celebrateChicken(root: Node | null, appearance: Appearance) {
             .repeatForever(tween().to(0.85, { angle: side * 16 }).to(0.85, { angle: side * 8 })).start();
     }
 }
+
+/** 失败结算：翅膀耷拉，身子微微蹲下去，和胜利的弹跳反过来。 */
+export function mournChicken(root: Node | null) {
+    if (!root) return;
+    for (const name of ["Wing", "WingBack"]) {
+        const wing = root.getChildByName(name);
+        if (!wing) continue;
+        const rest = wing.angle;
+        tween(wing).stop();
+        tween(wing).to(0.4, { angle: rest - 16 }, { easing: "quadOut" }).start();
+    }
+    const base = root.scale.clone();
+    tween(root)
+        .to(0.35, { scale: v3(base.x * 1.03, base.y * 0.9, 1) }, { easing: "quadOut" })
+        .start();
+}

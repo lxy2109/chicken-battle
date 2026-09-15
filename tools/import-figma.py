@@ -32,6 +32,9 @@ def save(name, image, source, box):
             (125, y, 132, 36, 115) for y in [256, 341, 427, 515, 600, 686]
         ] + [(883, y, 105, 34, 975) for y in [274, 353, 435, 516, 595, 674]]:
             image.paste(image.crop((sample, y, sample+1, y+h)).resize((w, h)), (x, y))
+    if name == 'bg/result_figma':
+        # 战斗结算 SVG 底层是白底，画面从 x=4 才开始，缩放后左边会剩一条白边。
+        image = cover_left_margin(image)
     target = TEX / (name + '.png')
     target.parent.mkdir(parents=True, exist_ok=True)
     encoded = io.BytesIO()
@@ -59,6 +62,26 @@ def save(name, image, source, box):
     manifest[name] = dict(uuid=ident, source=source, box=box)
 
 
+def cover_left_margin(image):
+    """Extend the first real scene column over the leftover white canvas strip."""
+    out = image.copy()
+    pixels = out.load()
+    width, height = out.size
+    source_x = 0
+    mid = height // 2
+    for x in range(min(16, width)):
+        r, g, b = pixels[x, mid][:3]
+        if r < 200:
+            source_x = min(x + 2, width - 1)
+            break
+    if source_x <= 0:
+        return out
+    for x in range(source_x):
+        for y in range(height):
+            pixels[x, y] = pixels[source_x, y]
+    return out
+
+
 def composition(name, source, indices, box=(0, 0, 1080, 1920), transform=None):
     original = ET.parse(SOURCE / 'svg' / (source + '.svg')).getroot()
     group = original.find(NS + 'g')
@@ -80,7 +103,6 @@ def composition(name, source, indices, box=(0, 0, 1080, 1920), transform=None):
     output = SOURCE / 'composition.png'
     subprocess.run(['node', '-e', "const fs=require('fs');const {Resvg}=require(process.argv[1]);fs.writeFileSync(process.argv[3],new Resvg(fs.readFileSync(process.argv[2])).render().asPng())", str(RENDERER), str(scratch), str(output)], check=True)
     save(name, Image.open(output).copy(), source, list(box))
-
 
 
 composition('ui/figma_customize_base', '角色界面-1', [7], (0,1100,1080,820))
@@ -117,9 +139,8 @@ for name, number in [('shop_figma', 76), ('shop_weapon_figma', 75)]:
     im = Image.open(SOURCE / 'png' / (source + '.png')).convert('RGBA')
     save('bg/' + name, im.crop((0,235,1080,2155)), source, [0,235,1080,1920])
 composition('bg/result_figma', '战斗结算', [0, 1, 2, 3])
-result = Image.open(TEX / 'bg/result_figma.png').convert('RGBA')
-result.paste((23, 20, 21, 255), (0, 0, 1080, 490))
-save('bg/result_lose_figma', result, '战斗结算 (podium, without victory heading)', [0, 0, 1080, 1920])
+# result_lose_figma is a dedicated rainy defeat painting (rain + 失败 / 变强继续挑战！),
+# not a stripped WINNER frame. Do not overwrite it on Figma reimport.
 composition('bg/prebattle_figma', '战前准备', range(533))
 composition('bg/reward_figma', '战利品强化', [0, 1, 2])
 composition('ui/figma_button_red', '开始界面', range(2, 5), (292, 1392, 496, 231))
