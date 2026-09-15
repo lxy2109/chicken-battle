@@ -1,7 +1,10 @@
+import { dodgeChance, inferFightStyle, styleDamageMul, stylePierce, styleStagger } from "./BattleStyle";
 import { gameNumber, gameText } from "./GameConfig";
 import { AiFighter, BattleDecision, decide } from "./BattleAI";
 import { Rng } from "./Rng";
-import { BattleEvent, BattleSide, FighterSnapshot, Stats, StrikeStyle, cloneStats } from "./Types";
+import {
+    BattleEvent, BattleSide, FightStyle, FighterSnapshot, SignatureId, Stats, StrikeStyle, cloneStats
+} from "./Types";
 
 /** 战斗规则来自 GameRule，单怪目标时长由 Enemy 快照传入。 */
 
@@ -25,11 +28,19 @@ interface LiveFighter {
     /** 已经出了几次手，交给决策去轮换招式动作 */
     beats: number;
     streak: number;
+    fightStyle: FightStyle;
+    signature: SignatureId;
+    raged: boolean;
+    enraged: boolean;
+    counterReady: boolean;
+    nextWhiff: boolean;
+    guard: boolean;
 }
 
 interface PendingStrike {
     to: BattleSide;
     skill: boolean;
+    style: StrikeStyle;
 }
 
 function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
@@ -43,7 +54,14 @@ function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
         lockUsed: false,
         busy: false,
         beats: 0,
-        streak: 0
+        streak: 0,
+        fightStyle: snap.fightStyle || inferFightStyle(stats),
+        signature: snap.signature || "none",
+        raged: false,
+        enraged: false,
+        counterReady: false,
+        nextWhiff: false,
+        guard: false
     };
 }
 
@@ -52,13 +70,17 @@ function intervalOf(spd: number): number {
     return Math.max(gameNumber("battle_minInterval"), gameNumber("battle_baseInterval") / (1 + Math.max(0, spd) / gameNumber("battle_speedReference")));
 }
 
+function hpRatio(f: LiveFighter) {
+    return f.stats.maxHp <= 0 ? 0 : f.stats.hp / f.stats.maxHp;
+}
+
 /**
  * 缩放后的伤害往往带小数，直接四舍五入会系统性地坑弱势方：
  * 打得动的一方 7.8 进位成 8 几乎无损，打不动的一方 1.2 恒定截成 1，白丢两成输出。
  * 这里按小数部分的概率进位，长期期望值和配表算出来的一致。
  */
-function dmgOf(atk: number, def: number, skill: boolean, crit: boolean, scale: number, rng: Rng): number {
-    const raw = Math.max(1, atk - def);
+function dmgOf(atk: number, def: number, skill: boolean, crit: boolean, scale: number, rng: Rng, pierce = 0): number {
+    const raw = Math.max(1, atk - def * (1 - Math.max(0, Math.min(0.8, pierce))));
     const exact = raw * (skill ? gameNumber("battle_skillMultiplier") : 1) * (crit ? gameNumber("battle_critMultiplier") : 1) * scale;
     const base = Math.floor(exact);
     return Math.max(1, base + (rng.chance(exact - base) ? 1 : 0));
@@ -97,6 +119,7 @@ export class BattleSession {
     private dmgScale: number;
     private durationScale: number;
     private decider: Decider;
+    private boss: boolean;
 
     /**
      * decider 留成口子是为了让 battle 层的行为树接管出招决策：
@@ -105,6 +128,7 @@ export class BattleSession {
      */
     constructor(player: FighterSnapshot, enemy: FighterSnapshot, seed: number, boss: boolean, decider?: Decider) {
         this.decider = decider || decide;
+        this.boss = boss;
         const reference = gameNumber("battle_referenceSeconds");
         this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
@@ -174,7 +198,10 @@ export class BattleSession {
             if (actor.atkCd > 0) continue;
 
             const foe: BattleSide = side === "player" ? "enemy" : "player";
-            const d = this.decider(this.toAi(actor), this.toAi(this.live(foe)));
+            const d = actor.counterReady
+                ? { kind: "skill" as const, style: pickCounterStyle(actor) }
+                : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
+            actor.counterReady = false;
             const style: StrikeStyle = d.style;
             actor.beats += 1;
             out.push({ type: "action", side, kind: d.kind, style });
@@ -188,9 +215,12 @@ export class BattleSession {
                 out.push({ type: "heal", side, amount, remain: actor.stats.hp });
             }
             else {
-                if (d.kind === "skill") actor.skillCd = gameNumber("battle_skillCooldown");
+                if (d.kind === "skill") {
+                    actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
+                    if (actor.fightStyle === "tank") actor.guard = true;
+                }
                 actor.busy = true;
-                this.pending[side] = { to: foe, skill: d.kind === "skill" };
+                this.pending[side] = { to: foe, skill: d.kind === "skill", style };
             }
         }
 
@@ -211,6 +241,12 @@ export class BattleSession {
         actor.atkCd = this.interval(actor);
         if (this.phase === "over") return [];
 
+        if (hit && actor.signature === "clumsy" && this.rng.chance(0.1)) hit = false;
+        if (hit && actor.nextWhiff) {
+            actor.nextWhiff = false;
+            if (this.rng.chance(0.55)) hit = false;
+        }
+
         if (!hit) {
             actor.streak = 0;
             const miss: BattleEvent[] = [{ type: "miss", side }];
@@ -218,31 +254,18 @@ export class BattleSession {
             return miss;
         }
 
-        const victim = this.live(p.to);
-        const crit = this.rng.chance(actor.stats.crit);
-        const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit,
-            this.dmgScale * (1 + Math.min(gameNumber("battle_streakCap"), actor.streak) * (actor.stats.streakBonus || 0)), this.rng);
-        actor.streak += 1;
-        const result = applyDamage(victim, dmg);
-        victim.atkCd += gameNumber("battle_hitStagger") * this.pace;
+        const foe = p.to;
+        if (this.pending[foe]) return this.resolveClash(side, p);
 
-        const batch: BattleEvent[] = [];
-        if (result.locked) batch.push({ type: "lock", side: p.to });
-        batch.push({
-            type: "hit",
-            from: side,
-            to: p.to,
-            dmg: result.locked ? 0 : result.dmg,
-            crit,
-            remain: victim.stats.hp
-        });
-        if (result.revived) batch.push({ type: "revive", side: p.to, remain: victim.stats.hp });
-        if (this.player.stats.hp <= 0 || this.enemy.stats.hp <= 0) {
-            this.phase = "over";
-            batch.push({ type: "end", win: this.player.stats.hp > 0 });
+        const victim = this.live(foe);
+        if (this.rng.chance(dodgeChance(actor.stats.spd, victim.stats.spd, victim.fightStyle, victim.signature, p.style))) {
+            actor.streak = 0;
+            const dodge: BattleEvent[] = [{ type: "dodge", side: foe }];
+            this.events.push(...dodge);
+            return dodge;
         }
-        this.events.push(...batch);
-        return batch;
+
+        return this.landHit(side, p, 1);
     }
 
     /** 无界面验证用：按固定步长快进，视为每一刀都撞上。 */
@@ -260,8 +283,100 @@ export class BattleSession {
         return this.win;
     }
 
+    private resolveClash(side: BattleSide, first: PendingStrike): BattleEvent[] {
+        const other: BattleSide = side === "player" ? "enemy" : "player";
+        const second = this.pending[other];
+        const a = this.live(side);
+        const b = this.live(other);
+        if (second) {
+            this.pending[other] = null;
+            b.busy = false;
+            b.atkCd = this.interval(b);
+        }
+        const winner: BattleSide = a.stats.atk + a.stats.spd * 0.5 >= b.stats.atk + b.stats.spd * 0.5 ? side : other;
+        const batch: BattleEvent[] = [{ type: "clash", winner }];
+        this.events.push(batch[0]);
+        batch.push(...this.landHit(side, first, 0.8, winner !== side));
+        if (this.phase !== "over" && second) batch.push(...this.landHit(other, second, 0.8, winner !== other));
+        return batch;
+    }
+
+    /**
+     * 结算一次命中。clashMul < 1 表示对撞折伤。
+     */
+    private landHit(side: BattleSide, p: PendingStrike, clashMul: number, clashLose = false): BattleEvent[] {
+        const actor = this.live(side);
+        const victim = this.live(p.to);
+        const crit = this.rng.chance(actor.stats.crit + (p.style === "feint" ? 0.06 : 0));
+        let scale = this.dmgScale
+            * (1 + Math.min(gameNumber("battle_streakCap"), actor.streak) * (actor.stats.streakBonus || 0))
+            * clashMul
+            * styleDamageMul(p.style, p.skill, actor.signature);
+        if (actor.raged) scale *= actor.fightStyle === "berserker" ? 1.22 : 1.12;
+        if (actor.enraged) scale *= 1.18;
+        if (p.style === "tail" && this.pending[p.to]) scale *= 1.16;
+        if (victim.fightStyle === "tank") scale *= 0.96;
+        if (victim.guard) {
+            scale *= 0.8;
+            victim.guard = false;
+        }
+        const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit, scale, this.rng, stylePierce(p.style));
+        actor.streak += 1;
+        const result = applyDamage(victim, dmg);
+        const stagger = gameNumber("battle_hitStagger") * this.pace
+            * styleStagger(p.style, p.skill)
+            * (clashLose ? 1.8 : 1);
+        victim.atkCd += stagger;
+        if (p.style === "feint") victim.nextWhiff = true;
+        if (victim.signature === "counter") victim.counterReady = true;
+
+        const batch: BattleEvent[] = [];
+        if (result.locked) batch.push({ type: "lock", side: p.to });
+        batch.push({
+            type: "hit",
+            from: side,
+            to: p.to,
+            dmg: result.locked ? 0 : result.dmg,
+            crit,
+            remain: victim.stats.hp
+        });
+        if (!result.locked && result.dmg > 0 && actor.signature === "stitch") {
+            const sip = Math.max(1, Math.round(result.dmg * 0.22));
+            actor.stats.hp = Math.min(actor.stats.maxHp, actor.stats.hp + sip);
+            batch.push({ type: "heal", side, amount: sip, remain: actor.stats.hp });
+        }
+        if (result.revived) batch.push({ type: "revive", side: p.to, remain: victim.stats.hp });
+        this.pushStatus(actor, side, batch);
+        this.pushStatus(victim, p.to, batch);
+        if (this.player.stats.hp <= 0 || this.enemy.stats.hp <= 0) {
+            this.phase = "over";
+            batch.push({ type: "end", win: this.player.stats.hp > 0 });
+        }
+        this.events.push(...batch);
+        return batch;
+    }
+
+    private pushStatus(f: LiveFighter, side: BattleSide, batch: BattleEvent[]) {
+        if (!f.raged && hpRatio(f) <= 0.32 && f.stats.hp > 0) {
+            f.raged = true;
+            batch.push({ type: "rage", side });
+        }
+        if (this.boss && side === "enemy" && !f.enraged && hpRatio(f) <= 0.5 && f.stats.hp > 0) {
+            f.enraged = true;
+            batch.push({ type: "enrage", side });
+            if (f.signature === "idol") {
+                const amount = Math.max(1, Math.round(f.stats.maxHp * 0.15));
+                f.stats.hp = Math.min(f.stats.maxHp, f.stats.hp + amount);
+                batch.push({ type: "heal", side, amount, remain: f.stats.hp });
+            }
+        }
+    }
+
     private interval(f: LiveFighter): number {
-        return intervalOf(f.stats.spd) * this.pace;
+        let t = intervalOf(f.stats.spd) * this.pace;
+        if (f.raged) t *= f.fightStyle === "berserker" ? 0.72 : 0.84;
+        if (f.enraged) t *= 0.8;
+        return Math.max(gameNumber("battle_minInterval") * 0.85, t);
     }
 
     private toAi(f: LiveFighter) {
@@ -275,11 +390,19 @@ export class BattleSession {
             healPerTurn: f.stats.healPerTurn,
             healCd: f.healCd,
             skillCd: f.skillCd,
-            beat: f.beats
+            beat: f.beats,
+            style: f.fightStyle,
+            signature: f.signature
         };
     }
 
     private live(side: BattleSide): LiveFighter {
         return side === "player" ? this.player : this.enemy;
     }
+}
+
+function pickCounterStyle(actor: LiveFighter): StrikeStyle {
+    const pool = actor.fightStyle === "tank" ? ["tail", "charge", "leap"] as StrikeStyle[]
+        : ["charge", "combo", "leap"] as StrikeStyle[];
+    return pool[actor.beats % pool.length];
 }

@@ -1,3 +1,4 @@
+import { enemyCombatProfile } from "./BattleStyle";
 import { tableRow, tableRows } from "./Config";
 import { Appearance, EquipItem, FaceId, PartId, RouteNode, SetDef, Stats, UpgradeDef } from "./Types";
 
@@ -154,7 +155,12 @@ export function enemyToFighter(id: string) {
         lockHp: !!e.lockHp,
         healPerTurn: e.healPerTurn
     };
-    return { name: e.name, appearance, stats, taunts: enemyTaunts(id), targetBattleSeconds: e.targetBattleSeconds, danmakuGroup: e.danmakuGroup };
+    const profile = enemyCombatProfile(id, e.name);
+    return {
+        name: e.name, appearance, stats, taunts: enemyTaunts(id),
+        targetBattleSeconds: e.targetBattleSeconds, danmakuGroup: e.danmakuGroup,
+        fightStyle: profile.style, signature: profile.signature
+    };
 }
 
 export function getBaseStats(): Stats {

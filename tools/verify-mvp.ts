@@ -824,18 +824,84 @@ function run() {
         assert(migrated.routeNode === kunId() && migrated.screen === "map", "旧结局开放新增坤坤挑战");
     });
 
+    ok("不同派系同一局势出招不同", () => {
+        const foe: AiFighter = {
+            hp: 80, maxHp: 100, atk: 12, def: 8, spd: 8, healPerTurn: 0, healCd: 1, skillCd: 1
+        };
+        const base = {
+            hp: 80, maxHp: 100, atk: 12, def: 8, spd: 20,
+            healPerTurn: 0, healCd: 1, skillCd: 1, beat: 0
+        };
+        const generic = decide(base, foe);
+        const swift = decide({ ...base, style: "swift" }, foe);
+        const tank = decide({ ...base, style: "tank" }, foe);
+        assert(generic.style === "jump", "无派系的速度优势仍是跳踢");
+        assert(swift.style === "jump", "疾步型速度池仍以跳踢起手");
+        assert(tank.style === "tail", "铁壁型速度池改扫尾");
+        assert(swift.style !== tank.style, "疾步和铁壁不该打出同一招");
+    });
+
+    ok("对撞折伤、闪避与红眼", () => {
+        const run = new RunState(91);
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 40, def: 0, spd: 8, crit: 0, hp: 400, maxHp: 400 };
+        e.stats = { ...e.stats, atk: 40, def: 0, spd: 8, crit: 0, hp: 400, maxHp: 400 };
+        p.fightStyle = "brawler";
+        e.fightStyle = "brawler";
+        const clash = new BattleSession(p, e, 91, false, () => ({ kind: "attack", style: "peck" }));
+        clash.beginCombat();
+        clash.tick(2);
+        assert(clash.striking("player") && clash.striking("enemy"), "双方同时出手才能对撞");
+        const evs = clash.resolveStrike("player", true);
+        assert(evs.some(ev => ev.type === "clash"), "同时接触应打出对撞");
+        const hits = evs.filter(ev => ev.type === "hit");
+        assert(hits.length === 2, "对撞双方都挨一下");
+        assert(!clash.striking("enemy"), "对撞清掉对方待结算");
+
+        const agile = run.playerFighter(), dummy = run.enemyFighter();
+        agile.stats = { ...agile.stats, atk: 30, def: 0, spd: 8, crit: 0, hp: 500, maxHp: 500 };
+        dummy.stats = { ...dummy.stats, atk: 8, def: 0, spd: 24, crit: 0, hp: 500, maxHp: 500 };
+        dummy.fightStyle = "swift";
+        dummy.signature = "slip";
+        const duck = new BattleSession(agile, dummy, 7, false, () => ({ kind: "attack", style: "peck" }));
+        duck.beginCombat();
+        let dodged = 0;
+        for (let i = 0; i < 40 && !duck.done; i++) {
+            if (duck.striking("enemy")) duck.resolveStrike("enemy", false);
+            if (!duck.striking("player")) duck.tick(2);
+            if (duck.striking("enemy")) duck.resolveStrike("enemy", false);
+            const batch = duck.resolveStrike("player", true);
+            if (batch.some(ev => ev.type === "dodge")) dodged += 1;
+        }
+        assert(dodged >= 3, `疾步型应能躲开几下，实际 ${dodged}`);
+
+        const low = run.playerFighter(), fodder = run.enemyFighter();
+        low.stats = { ...low.stats, atk: 80, def: 0, spd: 10, crit: 0, hp: 30, maxHp: 100, firstStrike: 1 };
+        fodder.stats = { ...fodder.stats, atk: 1, def: 0, spd: 4, crit: 0, hp: 500, maxHp: 500 };
+        low.fightStyle = "berserker";
+        const fury = new BattleSession(low, fodder, 12, false, () => ({ kind: "attack", style: "peck" }));
+        fury.beginCombat();
+        fury.tick(0.01);
+        const rageHit = fury.resolveStrike("player", true);
+        assert(rageHit.some(ev => ev.type === "rage"), "残血出手应红眼");
+    });
+
     ok("先手、连续命中增伤及落空重置", () => {
         const run = new RunState(83);
         const p = run.playerFighter(), e = run.enemyFighter();
         p.stats = { ...p.stats, atk: 100, crit: 0, firstStrike: 1, streakBonus: 0.08 };
         e.stats = { ...e.stats, hp: 10000, maxHp: 10000, def: 0 };
+        p.fightStyle = "brawler";
+        e.fightStyle = "brawler";
         const battle = new BattleSession(p, e, 83, false, () => ({ kind: "attack", style: "peck" }));
         battle.beginCombat();
         const first = battle.tick(0.01).filter(ev => ev.type === "action");
         assert(first.length === 1 && first[0].type === "action" && first[0].side === "player", "先手立即行动且敌方尚未行动");
         const damages: number[] = [];
         for (const hit of [true, true, true, false, true]) {
+            if (battle.striking("enemy")) battle.resolveStrike("enemy", false);
             if (!battle.striking("player")) battle.tick(2);
+            if (battle.striking("enemy")) battle.resolveStrike("enemy", false);
             const event = battle.resolveStrike("player", hit).find(ev => ev.type === "hit");
             if (event?.type === "hit") damages.push(event.dmg);
         }

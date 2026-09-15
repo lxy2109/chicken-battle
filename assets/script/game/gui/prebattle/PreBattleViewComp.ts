@@ -1,4 +1,5 @@
-import { gameText } from "../../core/GameConfig";
+import { STYLE_LABEL, inferFightStyle } from "../../core/BattleStyle";
+import { gameText, gameTextOr } from "../../core/GameConfig";
 import { Color, Tween, Label, Mask, Graphics, UIOpacity, UITransform, tween, v3, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -7,7 +8,7 @@ import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { combatPower } from "../../core/EquipMath";
 import { getStory } from "../../core/Catalog";
-import { Stats } from "../../core/Types";
+import { FightStyle, Stats } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { playGameEffect } from "../GameAudio";
 import { goScreen, registerScreen } from "../Nav";
@@ -23,9 +24,13 @@ const ROWS: Array<{ name: string; suffix: string; value: (stats: Stats) => numbe
     { get name() { return gameText("PreBattleViewComp_005"); }, suffix: "Crit", value: stats => Math.round(stats.crit * 100) }
 ];
 
-/** 特殊能力摘要，没有的项不占位。 */
-function extraText(s: Stats): string {
-    const parts = [gameText("PreBattleViewComp_006", Math.round(s.crit * 100))];
+/** 特殊能力摘要，没有的项不占位。路数放在最前，让玩家开战前就知道这只鸡怎么打。 */
+function extraText(s: Stats, style?: FightStyle): string {
+    const label = STYLE_LABEL[style || inferFightStyle(s)];
+    const parts = [
+        gameTextOr("PreBattleViewComp_018", "路数 {0}", label),
+        gameText("PreBattleViewComp_006", Math.round(s.crit * 100))
+    ];
     if (s.healPerTurn > 0) parts.push(gameText("PreBattleViewComp_007", s.healPerTurn));
     if (s.revive > 0) parts.push(gameText("PreBattleViewComp_008", s.revive));
     if (s.lockHp) parts.push(gameText("PreBattleViewComp_009"));
@@ -50,8 +55,8 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
         setLabel(this, "LabEnemyName", foe.name);
         setLabel(this, "LabPlayerPower", `${combatPower(me.stats)}`);
         setLabel(this, "LabEnemyPower", `${combatPower(foe.stats)}`);
-        setLabel(this, "LabExtra", extraText(me.stats));
-        setLabel(this, "LabEnemyExtra", extraText(foe.stats));
+        setLabel(this, "LabExtra", extraText(me.stats, me.fightStyle));
+        setLabel(this, "LabEnemyExtra", extraText(foe.stats, foe.fightStyle));
         setLabel(this, "LabDiff", "VS");
         this.fillDiff(me.stats, foe.stats);
 

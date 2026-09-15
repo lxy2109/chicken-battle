@@ -1,5 +1,6 @@
+import { ARCHETYPE_POOLS } from "./BattleStyle";
 import { gameNumber } from "./GameConfig";
-import { BattleActionKind, StrikeStyle } from "./Types";
+import { BattleActionKind, FightStyle, SignatureId, StrikeStyle, StylePool } from "./Types";
 
 export interface AiFighter {
     hp: number;
@@ -13,7 +14,12 @@ export interface AiFighter {
     skillCd: number;
     /** 这是本方第几次出手，只用来轮换招式动作，不参与任何数值判断。 */
     beat?: number;
+    /** 格斗派系。缺省走原来的通用动作池，验证用例才能保持确定结论。 */
+    style?: FightStyle;
+    signature?: SignatureId;
 }
+
+export type { StylePool };
 
 export interface BattleDecision {
     kind: BattleActionKind;
@@ -39,8 +45,9 @@ export type AiRule = (self: AiFighter, foe: AiFighter) => boolean;
  * 签名统一成 (self, foe)，行为树才能拿它当通用条件节点使。
  */
 export const AI_RULE = {
-    /** 血过三成半且回血技能好了 */
-    needHeal: (s, _f) => ratio(s.hp, s.maxHp) <= gameNumber("ai_healRatio") && s.healPerTurn > 0 && s.healCd <= 0,
+    /** 血过三成半且回血技能好了；回春型更早低头理毛 */
+    needHeal: (s, _f) => ratio(s.hp, s.maxHp) <= (s.style === "medic" ? Math.max(0.5, gameNumber("ai_healRatio")) : gameNumber("ai_healRatio"))
+        && s.healPerTurn > 0 && s.healCd <= 0,
     skillReady: (s, _f) => s.skillCd <= 0,
     /** 对面残了，该收割 */
     foeDying: (_s, f) => ratio(f.hp, f.maxHp) <= gameNumber("ai_finishRatio"),
@@ -51,7 +58,11 @@ export const AI_RULE = {
     faster: (s, f) => n(s.spd) > n(f.spd) + gameNumber("ai_speedAdvantage"),
     /** 血比对面少又打不过，只能搏命 */
     losing: (s, f) => ratio(s.hp, s.maxHp) < ratio(f.hp, f.maxHp) && n(s.atk) <= n(f.atk),
-    canPierce: (s, f) => n(s.atk) > n(f.def)
+    canPierce: (s, f) => n(s.atk) > n(f.def),
+    /** 诡道型技能不讲究血量优势，冷却好了就甩假动作 */
+    tricksterCast: (s, _f) => s.style === "trickster",
+    /** 狂战型残血反而更想放技能 */
+    berserkCast: (s, _f) => s.style === "berserker" && ratio(s.hp, s.maxHp) <= 0.55
 } satisfies Record<string, AiRule>;
 
 /**
@@ -77,17 +88,15 @@ const STYLE_POOL = {
     hold: ["dive", "jump", "tail", "feint"]
 } satisfies Record<string, StrikeStyle[]>;
 
-export type StylePool = keyof typeof STYLE_POOL;
-
 /** 在局势对应的动作池里按出手序号取一个，同一局势连着触发也不会重样。 */
-export function pickStyle(pool: StylePool, beat: number): StrikeStyle {
-    const list = STYLE_POOL[pool];
+export function pickStyle(pool: StylePool, beat: number, style?: FightStyle): StrikeStyle {
+    const list = (style && ARCHETYPE_POOLS[style][pool]) || STYLE_POOL[pool];
     return list[Math.abs(Math.floor(beat)) % list.length];
 }
 
 /** 定下这一支的结论：出什么招由 kind 决定，摆什么动作由局势和出手序号决定。 */
 export function act(kind: BattleActionKind, pool: StylePool, self: AiFighter): BattleDecision {
-    return { kind, style: pickStyle(pool, n(self.beat)) };
+    return { kind, style: pickStyle(pool, n(self.beat), self.style) };
 }
 
 /**
@@ -100,7 +109,8 @@ export function act(kind: BattleActionKind, pool: StylePool, self: AiFighter): B
 export function decide(self: AiFighter, foe: AiFighter): BattleDecision {
     if (AI_RULE.needHeal(self, foe)) return act("heal", "heal", self);
     if (AI_RULE.skillReady(self, foe)
-        && (AI_RULE.foeDying(self, foe) || AI_RULE.healthy(self, foe) || AI_RULE.outgun(self, foe))) {
+        && (AI_RULE.foeDying(self, foe) || AI_RULE.healthy(self, foe) || AI_RULE.outgun(self, foe)
+            || AI_RULE.tricksterCast(self, foe) || AI_RULE.berserkCast(self, foe))) {
         return act("skill", "skill", self);
     }
     if (AI_RULE.faster(self, foe)) return act("attack", "fast", self);

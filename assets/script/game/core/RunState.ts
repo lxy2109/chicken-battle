@@ -1,5 +1,6 @@
 import { gameNumber, gameText } from "./GameConfig";
 import { hasTables } from "./Config";
+import { inferFightStyle } from "./BattleStyle";
 import { getMaps, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
 import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
 import { PartLevels, canUpgrade, partScale, upgradeBonus } from "./PartUpgrade";
@@ -59,11 +60,13 @@ export class RunState {
     playerFighter(): FighterSnapshot {
         const look = applySkinAppearance(this.appearance, this.hideEquippedAppearance ? [] : this.equippedIds);
         look.partScale = partScale(this.partLevels);
+        const stats = healFull(buildStats(this.equippedIds, addPartial(this.bonus, upgradeBonus(this.partLevels))));
         return {
             name: this.playerName || getPlayer().name,
             appearance: look,
-            stats: healFull(buildStats(this.equippedIds, addPartial(this.bonus, upgradeBonus(this.partLevels)))),
-            taunts: this.taunts()
+            stats,
+            taunts: this.taunts(),
+            fightStyle: inferFightStyle(stats)
         };
     }
 

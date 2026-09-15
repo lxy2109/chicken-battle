@@ -1,4 +1,4 @@
-import { gameText } from "../../core/GameConfig";
+import { gameText, gameTextOr } from "../../core/GameConfig";
 import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
@@ -248,6 +248,34 @@ export class BattleViewComp extends CCView<ChickenRun> {
         else if (ev.type === "miss") {
             void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameText("BattleViewComp_016"), 0.4);
         }
+        else if (ev.type === "dodge") {
+            playGameEffect("wing");
+            this.actor(ev.side)?.hop();
+            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameTextOr("BattleViewComp_025", "躲开了"), 0.45, 1.2);
+            this.log(ev.side, gameTextOr("BattleViewComp_025", "躲开了"));
+        }
+        else if (ev.type === "clash") {
+            playGameEffect("skill");
+            this.playerActor?.bounce();
+            this.enemyActor?.bounce();
+            const a = this.playerNode?.worldPosition;
+            const b = this.enemyNode?.worldPosition;
+            if (a && b) this.impact?.playClash((a.x + b.x) / 2, (a.y + b.y) / 2);
+            this.screenEffects?.play(22, true, true, ev.winner === "player" ? 1 : -1);
+            this.log(ev.winner, gameTextOr("BattleViewComp_024", "对撞！"));
+        }
+        else if (ev.type === "rage") {
+            playGameEffect("critical");
+            this.actor(ev.side)?.pulse();
+            this.screenEffects?.play(12, true, false, ev.side === "player" ? 1 : -1);
+            this.log(ev.side, gameTextOr("BattleViewComp_026", "红眼了！"));
+        }
+        else if (ev.type === "enrage") {
+            playGameEffect("skill");
+            this.actor(ev.side)?.pulse();
+            this.screenEffects?.play(18, true, true, -1);
+            this.log(ev.side, gameTextOr("BattleViewComp_027", "暴走！"));
+        }
         else if (ev.type === "end") {
             void this.finish(ev.win);
         }
@@ -265,6 +293,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.styleOf[side] = style;
         this.skillOf[side] = skill;
         this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : STYLE_TEXT[style]);
+        if (skill) void this.spawnFx(PREFAB_PATH.fxSkill, side, gameText("BattleViewComp_017", STYLE_TEXT[style]), 0.45, 1.15);
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         });

@@ -15,6 +15,42 @@ export class BattleImpact {
         this.floor.addComponent(UITransform).setContentSize(arena.getComponent(UITransform)!.contentSize);
     }
 
+    /** 对撞爆点画在两只鸡中间，比普通命中更亮、更散。 */
+    playClash(worldX: number, worldY: number) {
+        if (!this.layer.isValid || this.active.size >= 6) return;
+        const root = new Node("ClashBurst");
+        root.layer = this.layer.layer;
+        root.parent = this.layer;
+        root.addComponent(UITransform);
+        const p = this.layer.getComponent(UITransform)!.convertToNodeSpaceAR(v3(worldX, worldY, 0));
+        root.setPosition(p.x, p.y + 24, 0);
+        this.active.add(root);
+        const burst = new Node("ClashStar");
+        burst.layer = root.layer;
+        burst.parent = root;
+        burst.addComponent(UITransform);
+        const g = burst.addComponent(Graphics);
+        g.fillColor = new Color(255, 236, 120);
+        const radius = 92;
+        for (let i = 0; i < 20; i++) {
+            const angle = i * Math.PI / 10;
+            const r = i % 2 === 0 ? radius : radius * 0.32;
+            const x = Math.cos(angle) * r, y = Math.sin(angle) * r;
+            if (i === 0) g.moveTo(x, y);
+            else g.lineTo(x, y);
+        }
+        g.close();
+        g.fill();
+        g.fillColor = new Color(255, 255, 245);
+        g.circle(0, 0, radius * 0.2);
+        g.fill();
+        burst.setScale(0.35, 0.35, 1);
+        tween(burst).to(0.05, { scale: v3(1.15, 1.15, 1) }, { easing: "quadOut" })
+            .to(0.16, { scale: v3(1.45, 1.45, 1) }).start();
+        tween(burst.addComponent(UIOpacity)).delay(0.05).to(0.16, { opacity: 0 }).start();
+        tween(root).delay(0.4).call(() => { this.active.delete(root); root.destroy(); }).start();
+    }
+
     play(target: Node, direction: number, heavy: boolean, critical: boolean, featherColor: string, groundY = this.floorY) {
         if (!this.layer.isValid || !target.isValid || this.active.size >= 6) return;
         const root = new Node("BloodAndFeathers");

@@ -23,7 +23,7 @@ export class ChickenActor {
     private tints: Array<{ sp: Sprite; base: Color }> = [];
     /**
      * 各部位在预制体里的摆放位置。
-     * 头在 (16,158)、身子在 (0,-32)、脖子在 (8,78)，各有各的位置，
+     * 头在 (27,193)、身子在 (0,-52)、脖子在 (2,82)，各有各的位置，
      * 所以动完必须还原到这里，拿 (0,0,0) 当原点会把整只鸡拼到中心去。
      */
     private nests = new Map<Node, Vec3>();
@@ -251,6 +251,32 @@ export class ChickenActor {
     }
 
     /**
+     * 对撞或被打断：掐掉当前出招，整只弹开。
+     * 令牌递增后旧 strike 的 contact 兜底会发现已经告诉过结算层，不会重复扣血。
+     */
+    bounce(force = 1) {
+        const tk = this.begin();
+        this.resetPose();
+        this.flinch(1.25 * force, -this.sign());
+        return this.knockBack(tk, 56 * force).then(() => {
+            if (!this.alive(tk)) return;
+            this.roaming = true;
+            this.roamStep(tk);
+        });
+    }
+
+    /** 残血红眼或 Boss 暴走时的一抖，让观众看见节奏变了。 */
+    pulse() {
+        const body = this.child("Body") || this.child("Illustration");
+        if (!body) return;
+        Tween.stopAllByTarget(body);
+        tween(body)
+            .to(0.08, { scale: v3(1.18, 1.18, 1) })
+            .to(0.18, { scale: v3(1, 1, 1) }, { easing: "backOut" })
+            .start();
+    }
+
+    /**
      * 受击反馈。挨打很频繁，这里刻意不抢占正在进行的位移，
      * 只让躯干抖一下并闪红，免得把自己的冲刺打断成一团乱麻。
      */
@@ -414,7 +440,7 @@ export class ChickenActor {
         this.node.setScale(this.sx, this.sy, 1);
         this.node.angle = 0;
         // Beak 也要收：啄击是甩喙的，动画被抢占时它会歪着回不来。
-        for (const name of ["Wing", "LegL", "LegR", "Neck", "Head", "Body", "Tail", "Beak", "Illustration"]) {
+        for (const name of ["Wing", "WingBack", "LegL", "LegR", "Neck", "Head", "Body", "Tail", "Beak", "Illustration"]) {
             const n = this.child(name);
             if (!n) continue;
             n.angle = 0;
@@ -550,13 +576,17 @@ export class ChickenActor {
     }
 
     private flap(times: number) {
-        const w = this.child("Wing");
-        if (!w) return;
-        tween(w).stop();
-        tween(w)
-            .repeat(times, tween().to(0.07, { angle: 48 }).to(0.07, { angle: -28 }))
-            .call(() => { w.angle = 0; })
-            .start();
+        const flapOne = (name: string, sign: number) => {
+            const w = this.child(name);
+            if (!w) return;
+            tween(w).stop();
+            tween(w)
+                .repeat(times, tween().to(0.07, { angle: 48 * sign }).to(0.07, { angle: -28 * sign }))
+                .call(() => { w.angle = 0; })
+                .start();
+        };
+        flapOne("Wing", 1);
+        flapOne("WingBack", -1);
     }
 
     /** 啄一口。dur 收得更短是给连啄用的，三下得比一下快才叫连。 */

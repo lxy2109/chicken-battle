@@ -60,7 +60,9 @@ export class BattleBrain {
                 new Selector([
                     new Cond(AI_RULE.foeDying),
                     new Cond(AI_RULE.healthy),
-                    new Cond(AI_RULE.outgun)
+                    new Cond(AI_RULE.outgun),
+                    new Cond(AI_RULE.tricksterCast),
+                    new Cond(AI_RULE.berserkCast)
                 ]),
                 new Act("skill", "skill")
             ]),

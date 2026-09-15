@@ -102,6 +102,10 @@ export interface FighterSnapshot {
     appearance: Appearance;
     stats: Stats;
     taunts: string[];
+    /** 出招路数。缺省时由数值推断。 */
+    fightStyle?: FightStyle;
+    /** 正式赛签名能力。 */
+    signature?: SignatureId;
 }
 
 export type BattleSide = "player" | "enemy";
@@ -116,6 +120,18 @@ export type BattleActionKind = "heal" | "skill" | "attack";
  */
 export type StrikeStyle = "peck" | "jump" | "dive" | "leap" | "charge" | "tail" | "combo" | "feint";
 
+/** 招式动作池的局势名，行为树和默认决策共用。 */
+export type StylePool = "heal" | "skill" | "fast" | "losing" | "pierce" | "hold";
+
+/**
+ * 格斗派系。决定出招池、闪避、减伤和残血爆发，不改配表攻防。
+ * 敌人按身份指定，玩家按当前数值推断，所以换装换强化会改路数。
+ */
+export type FightStyle = "brawler" | "swift" | "tank" | "aerial" | "trickster" | "berserker" | "medic";
+
+/** 正式赛/鸡王的签名能力，热身默认 none。 */
+export type SignatureId = "none" | "clumsy" | "counter" | "slip" | "focus" | "stitch" | "idol";
+
 export type BattleEvent =
     | { type: "taunt"; side: BattleSide; text: string }
     | { type: "start" }
@@ -125,6 +141,10 @@ export type BattleEvent =
     | { type: "heal"; side: BattleSide; amount: number; remain: number }
     | { type: "revive"; side: BattleSide; remain: number }
     | { type: "lock"; side: BattleSide }
+    | { type: "clash"; winner: BattleSide }
+    | { type: "dodge"; side: BattleSide }
+    | { type: "rage"; side: BattleSide }
+    | { type: "enrage"; side: BattleSide }
     | { type: "end"; win: boolean };
 
 /**
