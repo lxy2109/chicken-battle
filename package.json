@@ -6,7 +6,7 @@
   "dependencies": {
     "crypto-es": "^1.2.7"
   },
-  "description": "2D斗鸡肉鸽 MVP",
+  "description": "鸡王争霸赛",
   "name": "chicken-battle",
   "uuid": "00d7d957-a3e8-4ad6-80f4-2fcfb235bca4",
   "version": "3.6.3"
