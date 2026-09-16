@@ -13,6 +13,7 @@
   "overwriteProjectSettings": {
     "includeModules": {
       "gfx-webgl2": "on",
+      "particle": "on",
       "physics": "inherit-project-setting",
       "physics-2d": "inherit-project-setting"
     },
