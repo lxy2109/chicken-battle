@@ -39,6 +39,8 @@ export class ChickenActor {
     private sheets: StrikeSheetPlayer | null = null;
     /** 绝招演出放大系数：压扁、后仰、接触反馈都乘它，普攻保持 1。 */
     private skillAmp = 1;
+    /** 立绘盖屏前已经演过蓄力，出手时跳过 skillPose，避免挡在特效后面白演。 */
+    private skillPrimed = false;
 
     constructor(readonly node: Node, home: Vec3, style: FightStyle = "brawler", private mood?: ArenaMood) {
         this.style = style;
@@ -74,6 +76,22 @@ export class ChickenActor {
     }
 
     /**
+     * 绝招立绘出现前的可见蓄力。全屏特效会挡住场地，这段必须提前演完。
+     * 演完停在蓄力姿，等立绘播完再 strike；skillPrimed 让出手不再重演一遍 pose。
+     */
+    async prepareSkill(style: StrikeStyle) {
+        this.roaming = false;
+        const tk = this.begin();
+        this.resetPose();
+        this.skillAmp = 1.28;
+        this.skillPrimed = true;
+        this.windup(style, true);
+        await this.skillPose(style, tk);
+        // 盖屏期间保持蹲蓄，不回漫步；被抢占则 skillPrimed 仍在，出手侧会清掉。
+        if (!this.alive(tk)) this.skillPrimed = false;
+    }
+
+    /**
      * 冲向目标出一招，返回是否够着了。
      * 目标同时也在移动，所以每一步都重新朝它当前位置修正。
      *
@@ -81,9 +99,11 @@ export class ChickenActor {
      * 收招和回位是之后的事，不该让对手多挨那半秒。所以它由各招式在接触瞬间自己叫，
      * 这里只负责兜底：一整套演完都没碰到，才补一个没打中。
      *
-     * skill=true 时先演一段蓄力定格，再带着更大的压扁/残影冲出去，和普攻区分开。
+     * skill=true 时动作更夸张；若已 prepareSkill，不再在盖屏后重演蓄力。
      */
     async strike(target: Node, style: StrikeStyle, onContact?: (hit: boolean) => void, skill = false): Promise<boolean> {
+        const primed = skill && this.skillPrimed;
+        this.skillPrimed = false;
         this.roaming = false;
         const tk = this.begin();
         // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
@@ -92,7 +112,8 @@ export class ChickenActor {
         this.skillAmp = skill ? 1.28 : 1;
         this.sheets?.play(style);
         this.windup(style, skill);
-        if (skill) await this.skillPose(style, tk);
+        // 没预先蓄力时才现场 pose（例如测试直接 strike）；正常绝招已在立绘前演过。
+        if (skill && !primed) await this.skillPose(style, tk);
         let told = false;
         const contact = (hit: boolean) => {
             if (told) return;

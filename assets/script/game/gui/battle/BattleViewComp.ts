@@ -369,7 +369,14 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         }
     }
 
-    /** 一次出招的完整演出。命中判定交给碰撞，结果回给逻辑层结算。 */
+    /**
+     * 一次出招的完整演出。命中判定交给碰撞，结果回给逻辑层结算。
+     *
+     * 绝招时序必须错开全屏立绘：
+     * 1) 场地仍可见 → 蓄力圈、镜头推近、鸡蹲蓄
+     * 2) 立绘盖屏 → 只播喊招，不再叠场地动作
+     * 3) 立绘开始让开 → 再冲刺出手，命中顿帧/震屏才看得见
+     */
     private async runStrike(side: BattleSide, style: StrikeStyle, skill: boolean) {
         const self = this.actor(side);
         const foe = this.chicken(side === "player" ? "enemy" : "player");
@@ -386,14 +393,23 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const mode = side === "enemy" ? "half" : "full";
             const full = mode === "full";
             playGameEffect("skill");
-            this.fx?.skillWindup(self, style, title, side === "enemy", mode);
+            // —— 盖屏前：观众看得到的蓄力 ——
+            this.fx?.skillCharge(self);
             this.screenEffects?.skillCast(side === "player" ? 1 : -1, full);
             self.pulse();
             void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.55, full ? 1.35 : 1.2);
+            await self.prepareSkill(style);
+            if (this.closed) return;
+            // —— 盖屏中：只喊招 ——
+            this.fx?.skillAnnounce(style, title, side === "enemy", mode);
+            const cover = this.fx?.skillCoverSec(style, mode) ?? (full ? 0.7 : 0.45);
+            await this.wait(cover);
+            if (this.closed) return;
         }
         else {
             this.fx?.basicWindup(self, style, side === "enemy");
         }
+        // —— 立绘淡出后：冲刺与命中反馈露在场地上 ——
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         }, skill);

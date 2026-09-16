@@ -44,8 +44,8 @@ export class BattleScreenEffects {
     }
 
     /**
-     * 绝招喊招瞬间：先推近定格，再轻轻回弹。
-     * 震幅压得比命中小，重点是“镜头贴上去看这一招”，不是把画面抖糊。
+     * 绝招盖屏前的镜头：贴着鸡推近再回弹。
+     * 时长卡在蓄力姿态窗口里，立绘一出来镜头已经还完，避免推镜发生在全黑/全立绘后面。
      */
     skillCast(direction = 1, full = true) {
         if (!this.root.isValid || !this.camera?.isValid) return;
@@ -62,7 +62,7 @@ export class BattleScreenEffects {
             if (!this.camera.isValid || !this.home) return;
             const p = this.phase.progress;
             // 前半段推近，后半段带着微震退回，读招窗口更清楚。
-            const pull = p < 0.35 ? p / 0.35 : 1 - (p - 0.35) / 0.65;
+            const pull = p < 0.4 ? p / 0.4 : 1 - (p - 0.4) / 0.6;
             const decay = pull * pull;
             this.camera.node.setPosition(
                 this.home.x + Math.cos(p * Math.PI * 3) * strength * 0.35 * decay * direction,
@@ -72,7 +72,7 @@ export class BattleScreenEffects {
         };
         apply();
         this.motion = tween(this.phase)
-            .to(full ? 0.48 : 0.32, { progress: 1 }, { onUpdate: apply })
+            .to(full ? 0.34 : 0.26, { progress: 1 }, { onUpdate: apply })
             .call(() => this.restoreCamera()).start();
     }
 

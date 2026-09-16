@@ -142,6 +142,9 @@ export class BattleFx {
         this.veilFade.opacity = this.liveSplash.full ? 0 : this.veilHold;
     }
 
+    /**
+     * 立绘盖屏前的场地蓄力圈。必须在 skillAnnounce 之前播，否则全屏立绘一盖就看不见。
+     */
     skillCharge(actor: ChickenActor | null) {
         actor?.ghost(new Color(255, 230, 180));
         actor?.ghost(new Color(255, 190, 90));
@@ -158,14 +161,22 @@ export class BattleFx {
     }
 
     /**
-     * 绝招起手：蓄力圈 + 立绘 + 局内时缓。
-     * 全屏玩家招把世界压得更慢，半屏敌人招短一点，避免对面喊招把整场拖死。
+     * 立绘挡视野的等待时长，与 skillSplash 的淡出曲线对齐。
+     * 全屏要等淡出过半再出手，砸中/震屏才露得出；半屏挡得少，hold 过半就可冲。
      */
-    skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
-        this.skillCharge(actor);
-        // 立绘刚闪出时压时间轴，普攻继续在慢动作里挪，读招才有重量。
-        this.punch(mode === "full" ? 0.18 : 0.32, mode === "full" ? 0.42 : 0.24);
-        // 半屏喊招时补一记边框闪，全屏立绘自己够亮，不必再盖一层。
+    skillCoverSec(style: StrikeStyle, mode: SplashMode = "full") {
+        const look = SKILL_LOOK[style];
+        if (mode === "half") return look.inTime + look.hold * 0.5;
+        // skillSplash：delay(in+hold+extra) 后 outTime 淡出；extra 全屏 0.12
+        const fadeDelay = 0.12;
+        return look.inTime + look.hold + fadeDelay + look.outTime * 0.65;
+    }
+
+    /**
+     * 只播喊招立绘。蓄力圈/镜头/动作要在场地仍可见时先做完，不要和这一段叠在盖屏里。
+     * 盖屏期间不再压时间轴：观众看的是立绘本身，慢动作浪费在看不见的场地上。
+     */
+    skillAnnounce(style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         if (mode === "half") this.vignette(70);
         try {
             this.skillSplash(style, title, fromRight, mode);
@@ -173,6 +184,14 @@ export class BattleFx {
         catch {
             /* 预制体没进包时不能把绝招整段吃掉 */
         }
+    }
+
+    /**
+     * @deprecated 拆成 skillCharge → 动作蓄力 → skillAnnounce → 再出手；保留给旧调用。
+     */
+    skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
+        this.skillCharge(actor);
+        this.skillAnnounce(style, title, fromRight, mode);
     }
 
     hit(worldX: number, worldY: number, direction: number, style: StrikeStyle, heavy: boolean, crit: boolean, skill = false) {
