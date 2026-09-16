@@ -1,4 +1,4 @@
-import { Node, Sprite, UITransform, Widget } from "cc";
+import { Node, Sprite, UITransform, Widget, isValid } from "cc";
 import { UIBgAdaptation } from "./UIBgAdaptation";
 
 const ADAPTED = "__screenAdapted";
@@ -60,6 +60,27 @@ function coverBgName(host: Node): string {
 
 function findCoverBg(host: Node): Node | null {
     return host.getChildByName(coverBgName(host)) || host.getChildByName("bg");
+}
+
+/** Cover 适配后真正显示的背景节点；没有独立底图时退回根节点。 */
+export function coverBackgroundOf(host: Node): Node {
+    const named = findCoverBg(host);
+    if (named) return named;
+    // 根节点可能被 GUI 层改名，适配底图仍叫当时的 `${oldName}_adaptBg`。
+    return host.children.find(child => child.name.endsWith("_adaptBg") || child.name === "bg") || host;
+}
+
+/** 全屏底图 Sprite（含 Cover 子节点）。根节点 Sprite 被 destroy 后不会再返回。 */
+export function backgroundSpritesOf(root: Node): Sprite[] {
+    const found: Sprite[] = [];
+    const walk = (node: Node) => {
+        const sp = node.getComponent(Sprite);
+        const ut = node.getComponent(UITransform);
+        if (sp && isValid(sp) && ut && ut.width >= 600 && ut.height >= 1000) found.push(sp);
+        for (const child of node.children) walk(child);
+    };
+    walk(root);
+    return found;
 }
 
 function ensureCoverBackground(host: Node): Node | null {

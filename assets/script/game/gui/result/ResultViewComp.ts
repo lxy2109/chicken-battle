@@ -8,9 +8,10 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { getMaps, TEX, routeNode } from "../../core/Catalog";
 import { Appearance } from "../../core/Types";
 import { celebrateChicken, mournChicken, spawnChicken } from "../ChickenBinder";
+import { adaptView } from "../adaptView";
 import { goScreen, registerScreen } from "../Nav";
 import { playResultSuitVideo, stopSlotVideo } from "../SlotVideo";
-import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
+import { bindClick, setCoverSprite, setLabel, setNodeActive } from "../UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
 
@@ -20,9 +21,11 @@ const { ccclass, executionOrder } = _decorator;
 @gui.register("ResultView", { layer: LayerType.UI, prefab: "gui/result/result" })
 export class ResultViewComp extends GameUIBase<ChickenRun> {
     async start() {
+        adaptView(this.node);
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const win = run.lastWin;
+        await setCoverSprite(this, TEX.background(win ? "result_figma" : "result_lose_figma"));
         const battleNode = routeNode(run.lastBattleNode);
         const boss = battleNode.kind === "boss";
         setLabel(this, "LabHeader", run.playerFighter().name);
@@ -45,7 +48,6 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
         const look: Appearance = win ? appearance : { ...appearance, face: "sad" };
         bindClick(this, "BtnNext", this.onNext.bind(this));
         const gifTask = win ? playResultSuitVideo(this, "ChickenSlot", look) : Promise.resolve(false);
-        await setNodeSprite(this, "result", TEX.background(win ? "result_figma" : "result_lose_figma"));
         // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
         if (!(await gifTask)) {
             const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);

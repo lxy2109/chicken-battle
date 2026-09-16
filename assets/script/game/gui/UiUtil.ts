@@ -1,7 +1,8 @@
-import { Button, Color, EditBox, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, tween, v3 } from "cc";
+import { Button, Color, EditBox, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, isValid, tween, v3 } from "cc";
 import { tableOf } from "../core/Config";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { oops } from "db://oops-framework/core/Oops";
+import { backgroundSpritesOf, coverBackgroundOf } from "./adaptView";
 import { playGameEffect } from "./GameAudio";
 
 export function hexColor(hex: string): Color {
@@ -41,8 +42,17 @@ export function setSpriteColor(node: Node | undefined, hex: string) {
 
 /** 换贴图。走框架的 setSprite 是为了让它接管引用计数，界面销毁时能正常释放。 */
 export async function setNodeSprite(view: GameComponent, name: string, path: string) {
-    const sp = view.getNode(name)?.getComponent(Sprite);
-    if (sp) await view.setSprite(sp, path);
+    const node = view.getNode(name)
+        ?? (view.node.name === name ? coverBackgroundOf(view.node) : undefined);
+    const sp = node?.getComponent(Sprite);
+    if (sp) await view.setSprite(sp, path, "bundle");
+}
+
+/** 给当前界面真正在画的全屏底图换贴图（Cover 适配后的 *_adaptBg）。 */
+export async function setCoverSprite(view: GameComponent, path: string) {
+    const sprites = backgroundSpritesOf(view.node).filter(sp => isValid(sp));
+    if (sprites.length === 0) return;
+    await Promise.all(sprites.map(sp => view.setSprite(sp, path, "bundle")));
 }
 
 export function setNodeActive(view: GameComponent, name: string, active: boolean) {
