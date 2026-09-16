@@ -3,7 +3,7 @@ import { _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { getMaps, TEX, routeNode } from "../../core/Catalog";
 import { Appearance } from "../../core/Types";
@@ -12,12 +12,13 @@ import { goScreen, registerScreen } from "../Nav";
 import { playResultSuitVideo, stopSlotVideo } from "../SlotVideo";
 import { bindClick, setLabel, setNodeActive, setNodeSprite } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 @ccclass("ResultViewComp")
+@executionOrder(-100)
 @ecs.register("ResultView", false)
 @gui.register("ResultView", { layer: LayerType.UI, prefab: "gui/result/result" })
-export class ResultViewComp extends CCView<ChickenRun> {
+export class ResultViewComp extends GameUIBase<ChickenRun> {
     async start() {
         this.nodeTreeInfoLite();
         const run = this.ent.run;

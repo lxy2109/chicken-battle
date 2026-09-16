@@ -8,7 +8,7 @@
             "frameRate": 60,
             "loadingTimeoutGui": 1000,
             "mobileSafeArea": false,
-            "stats": true,
+            "stats": false,
             "httpServer": "http://192.168.0.1/",
             "httpTimeout": 10000,
             "webSocketServer": "ws://127.0.0.1:8080",

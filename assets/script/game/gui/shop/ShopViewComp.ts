@@ -3,14 +3,14 @@ import { Label, Node, Sprite, UITransform, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX, compareSets, getSets } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
 import { goScreen, registerScreen } from "../Nav";
 import { revealUI, bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 interface ItemView {
     title: string;
@@ -23,9 +23,10 @@ interface ItemView {
 }
 
 @ccclass("ShopViewComp")
+@executionOrder(-100)
 @ecs.register("ShopView", false)
 @gui.register("ShopView", { layer: LayerType.UI, prefab: "gui/shop/shop" })
-export class ShopViewComp extends CCView<ChickenRun> {
+export class ShopViewComp extends GameUIBase<ChickenRun> {
     private selected: ItemView | null = null;
 
     async start() {

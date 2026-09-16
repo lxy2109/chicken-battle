@@ -120,16 +120,18 @@ class Builder {
         });
     }
 
-    widget(nodeId) {
+    widget(nodeId, flags = 45, inset = {}) {
         this.addComp(nodeId, null, {
             type: "cc.Widget",
             fields: {
-                _alignFlags: 18, _target: null,
-                _left: 0, _right: 0, _top: 0, _bottom: 0,
+                _alignFlags: flags, _target: null,
+                _left: inset.left || 0, _right: inset.right || 0,
+                _top: inset.top || 0, _bottom: inset.bottom || 0,
                 _horizontalCenter: 0, _verticalCenter: 0,
                 _isAbsLeft: true, _isAbsRight: true, _isAbsTop: true, _isAbsBottom: true,
                 _isAbsHorizontalCenter: true, _isAbsVerticalCenter: true,
-                _originalWidth: 100, _originalHeight: 100, _alignMode: 2, _lockFlags: 0
+                _originalWidth: inset.w || 720, _originalHeight: inset.h || 1280,
+                _alignMode: 2, _lockFlags: 0
             }
         });
     }
@@ -415,7 +417,7 @@ function makeCustomize() {
     b.sprite(start, [255, 255, 255, 255], 0, SF.bg_start_figma);
     placeButton(b, start, "BtnStart", "开始", 292, 1392, 496, 231, "red");
     placeButton(b, start, "BtnClearSave", "清除本地存档", 330, 1680, 420, 105, "yellow");
-    placeText(b, start, "LabSaveHint", "进度与养成自动保存到本机", 120, 1820, 840, 75, { font: 18, color: INK.cream, outline: true });
+    placeText(b, start, "LabSaveHint", "进度与养成自动保存到本机", 80, 1810, 920, 90, { font: 18, color: INK.cream, outline: true });
     const clear = b.node({ name: "ClearSaveModal", parent: root, w: 720, h: 1280, active: false });
     b.sprite(clear, [0, 0, 0, 185]);
     b.addComp(clear, null, { type: "cc.BlockInputEvents" });
@@ -454,7 +456,7 @@ function makeMap() {
     placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
     placeText(b, root, "LabRouteTitle", "", 250, 210, 580, 60, { font: 26, color: INK.cream, outline: true });
     placeText(b, root, "LabPower", "", 250, 275, 580, 50, { font: 24, color: INK.cream, outline: true });
-    placeText(b, root, "LabHint", "", 110, 1750, 860, 32, { font: 22, color: INK.cream, outline: true });
+    placeText(b, root, "LabHint", "", 80, 1720, 920, 80, { font: 22, color: INK.cream, outline: true });
     MAP_NODES.forEach(([x, y], i) => {
         const n = i + 1;
         const id = b.node({ name: "BtnStage" + n, parent: root, x, y, w: 76.667, h: 64 });

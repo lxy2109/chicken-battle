@@ -11,6 +11,7 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { oops } from "db://oops-framework/core/Oops";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { CCViewVM } from "db://oops-framework/module/common/CCViewVM";
+import { adaptView } from "../../gui/adaptView";
 import { CustomizeViewComp } from "../../gui/customize/CustomizeViewComp";
 import { openRunView } from "../../gui/RunGui";
 import "../../gui/Views";
@@ -18,10 +19,11 @@ import { smc } from "../../common/SingletonModuleComp";
 import { loadGameTables } from "../../core/LoadTables";
 import { Initialize } from "../Initialize";
 
-const { ccclass, property } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 /** 游戏资源加载 */
 @ccclass('LoadingViewComp')
+@executionOrder(-100)
 @ecs.register('LoadingView', false)
 @gui.register('LoadingView', { layer: LayerType.UI, prefab: "gui/loading/loading" })
 export class LoadingViewComp extends CCViewVM<Initialize> {
@@ -38,6 +40,11 @@ export class LoadingViewComp extends CCViewVM<Initialize> {
     };
 
     private progress: number = 0;
+
+    onLoad() {
+        adaptView(this.node);
+        super.onLoad();
+    }
 
     start() {
         this.enter();

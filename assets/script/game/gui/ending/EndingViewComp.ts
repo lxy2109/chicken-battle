@@ -3,19 +3,20 @@ import { _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { getStory } from "../../core/Catalog";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel, playSparkles } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 @ccclass("EndingViewComp")
+@executionOrder(-100)
 @ecs.register("EndingView", false)
 @gui.register("EndingView", { layer: LayerType.UI, prefab: "gui/ending/ending" })
-export class EndingViewComp extends CCView<ChickenRun> {
+export class EndingViewComp extends GameUIBase<ChickenRun> {
     async start() {
         this.nodeTreeInfoLite();
         setLabel(this, "LabTitle", this.ent.run.playerFighter().name);

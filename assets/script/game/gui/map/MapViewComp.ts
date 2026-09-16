@@ -3,7 +3,7 @@ import { BlockInputEvents, Color, Graphics, Label, Node, UIOpacity, UITransform,
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { TEX, enemyToFighter } from "../../core/Catalog";
 import { combatPower } from "../../core/EquipMath";
@@ -13,7 +13,7 @@ import { playScreenMusic } from "../GameAudio";
 import { spawnChicken } from "../ChickenBinder";
 import { bindClick, setLabel, setNodeSprite, setSpriteColor } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 /** 原图中脚底区域的中点（归一化坐标），排除透明边距和偏向一侧的尾巴。 */
 const MAP_FEET: Record<string, [number, number]> = {
@@ -29,9 +29,10 @@ const MAP_FEET: Record<string, [number, number]> = {
 };
 
 @ccclass("MapViewComp")
+@executionOrder(-100)
 @ecs.register("MapView", false)
 @gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map_1" })
-export class MapViewComp extends CCView<ChickenRun> {
+export class MapViewComp extends GameUIBase<ChickenRun> {
     private switchingMap = false;
 
     async start() {
@@ -50,9 +51,10 @@ export class MapViewComp extends CCView<ChickenRun> {
             label.isBold = true;
             label.color = new Color(255, 228, 145);
             sign.getComponent(UITransform)!.setContentSize(136, 40);
-            const plaque = this.node.getChildByName("ShopSignBackdrop") || new Node("ShopSignBackdrop");
+            const host = sign.parent || this.node;
+            const plaque = host.getChildByName("ShopSignBackdrop") || new Node("ShopSignBackdrop");
             plaque.layer = this.node.layer;
-            plaque.parent = this.node;
+            plaque.parent = host;
             plaque.setPosition(sign.position);
             (plaque.getComponent(UITransform) || plaque.addComponent(UITransform)).setContentSize(136, 40);
             const graphic = plaque.getComponent(Graphics) || plaque.addComponent(Graphics);
@@ -63,7 +65,7 @@ export class MapViewComp extends CCView<ChickenRun> {
             graphic.roundRect(-68, -20, 136, 40, 9);
             graphic.fill();
             graphic.stroke();
-            sign.setSiblingIndex(this.node.children.length - 1);
+            sign.setSiblingIndex(host.children.length - 1);
         }
         setLabel(this, "LabGold", `${run.gold}`);
         setLabel(this, "LabPower", gameText("MapViewComp_001", combatPower(run.playerFighter().stats)));

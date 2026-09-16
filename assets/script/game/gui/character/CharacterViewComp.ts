@@ -3,7 +3,7 @@ import { Button, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { TEX, compareSets, getSets } from "../../core/Catalog";
 import { combatPower, ownedSetCount } from "../../core/EquipMath";
@@ -11,12 +11,13 @@ import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 @ccclass("CharacterViewComp")
+@executionOrder(-100)
 @ecs.register("CharacterView", false)
 @gui.register("CharacterView", { layer: LayerType.UI, prefab: "gui/character/character" })
-export class CharacterViewComp extends CCView<ChickenRun> {
+export class CharacterViewComp extends GameUIBase<ChickenRun> {
     private page = 0;
     private refreshId = 0;
     private equipping = false;

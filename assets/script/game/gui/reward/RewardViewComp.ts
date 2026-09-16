@@ -3,14 +3,14 @@ import { Button, Label, Sprite, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX } from "../../core/Catalog";
 import { PART_TEXT, RewardOption } from "../../core/Types";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 /** 按加成主项挑图标，纯金币奖励落到星星。 */
 function rewardIcon(opt: RewardOption): string {
@@ -30,9 +30,10 @@ function cardTitle(opt: RewardOption): string {
 }
 
 @ccclass("RewardViewComp")
+@executionOrder(-100)
 @ecs.register("RewardView", false)
 @gui.register("RewardView", { layer: LayerType.UI, prefab: "gui/reward/reward" })
-export class RewardViewComp extends CCView<ChickenRun> {
+export class RewardViewComp extends GameUIBase<ChickenRun> {
     private selectedId: string | null = null;
     private confirming = false;
     private ready = false;

@@ -4,7 +4,7 @@ import { Color, Tween, Label, Mask, Graphics, UIOpacity, UITransform, tween, v3,
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { combatPower } from "../../core/EquipMath";
 import { getStory } from "../../core/Catalog";
@@ -14,7 +14,7 @@ import { playGameEffect } from "../GameAudio";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, setLabel } from "../UiUtil";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 const ROWS: Array<{ name: string; suffix: string; value: (stats: Stats) => number }> = [
     { get name() { return gameText("PreBattleViewComp_001"); }, suffix: "Hp", value: stats => stats.maxHp },
@@ -38,12 +38,14 @@ function extraText(s: Stats, style?: FightStyle): string {
 }
 
 @ccclass("PreBattleViewComp")
+@executionOrder(-100)
 @ecs.register("PreBattleView", false)
 @gui.register("PreBattleView", { layer: LayerType.UI, prefab: "gui/prebattle/prebattle" })
-export class PreBattleViewComp extends CCView<ChickenRun> {
+export class PreBattleViewComp extends GameUIBase<ChickenRun> {
     private exiting = false;
     async start() {
         this.nodeTreeInfoLite();
+        this.fitMatchBoard();
         this.preparePanels();
         const run = this.ent.run;
         const me = run.playerFighter();
@@ -85,6 +87,19 @@ export class PreBattleViewComp extends CCView<ChickenRun> {
         label.color = stronger ? new Color(255, 224, 82) : new Color(255, 249, 225);
         label.fontSize = stronger ? 32 : 25;
         label.isBold = stronger;
+    }
+
+    /** 对比卡设计宽接近 720，窄屏按父节点宽度等比缩小，避免数值被裁切。 */
+    private fitMatchBoard() {
+        const board = this.getNode("MatchBoard");
+        if (!board?.parent) return;
+        const parentUt = board.parent.getComponent(UITransform);
+        const boardUt = board.getComponent(UITransform);
+        if (!parentUt || !boardUt || boardUt.width <= 0) return;
+        const pad = 20;
+        const maxW = Math.max(120, parentUt.width - pad * 2);
+        const scale = Math.min(1, maxW / boardUt.width);
+        board.setScale(scale, scale, 1);
     }
 
     private preparePanels() {
