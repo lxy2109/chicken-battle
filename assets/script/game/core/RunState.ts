@@ -20,7 +20,7 @@ import {
  */
 export class RunState {
     gold = hasTables() ? getPlayer().initialGold : 0;
-    /** 首通领取记录和大关通关记录不参与正式赛战败回退。 */
+    /** 强化养成、金币、装备、首通领取和大关通关记录都不参与正式赛战败回退。 */
     claimedGoldNodes: number[] = [];
     completedMaps: number[] = [];
     lastBattleNode = 1;
@@ -148,12 +148,6 @@ export class RunState {
         this.shopPending = false;
         // 结算只显示金币；强化牌在点击“获得强化”后才进入下一屏。
         this.rewards = [];
-        if (!win && node.kind === "boss") {
-            const grown = Object.keys(this.partLevels) as PartId[];
-            const keep = equippedStats.retainGrowth && grown.length ? this.rng().pick(grown) : undefined;
-            this.partLevels = keep ? { [keep]: this.partLevels[keep] } : {};
-            this.bonus = {};
-        }
         if (!(this.phase === "boss" && win)) {
             this.upgrades = rollUpgrades(this.routeNode, this.seed + this.rewardRolls * 131, this.partLevels);
             this.rewardRolls += 1;

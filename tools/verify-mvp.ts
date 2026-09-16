@@ -398,11 +398,12 @@ function run() {
         assert(restored.partLevels[selected.part!] === 1, "仅选中的部位加一级");
     });
 
-    ok("正式赛失败重置成长，但装备金币和首通记录不变", () => {
+    ok("正式赛失败回退关卡，但强化养成装备金币和首通记录不变", () => {
         const run = new RunState(33);
         run.gold = 1000;
         run.ownedIds.push(...getSets().find(s => s.id === "iron_beak")!.pieceIds);
         run.levelUp("head");
+        run.bonus = { atk: 3 };
         run.completedMaps = [1];
         run.claimedGoldNodes = [1, 2, 3, 4, 5];
         run.routeNode = mapBoss(2);
@@ -416,9 +417,8 @@ function run() {
         assert(restored.routeNode === mapStart(2) && restored.stage === mapStart(2) && restored.phase === "battle", "结算时已回退第二图起点");
         const prior = JSON.parse(before);
         const after = JSON.parse(saved).permanent;
-        assert(Object.keys(after.partLevels).length === 0, "正式赛失败清除部位成长");
-        prior.partLevels = {};
-        assert(JSON.stringify(after) === JSON.stringify(prior), "金币装备与首通账本保留");
+        assert(after.partLevels.head === 1 && after.bonus.atk === 3, "正式赛失败保留部位强化与额外养成");
+        assert(JSON.stringify(after) === JSON.stringify(prior), "金币装备强化养成与首通账本保留");
         restored.afterResult();
         if (restored.upgrades.length) restored.pickReward(restored.upgrades[0].id);
         restored.enterFight();
@@ -826,18 +826,18 @@ function run() {
         assert(run.gold === once, "金币加成仍幂等");
     });
 
-    ok("小学鸡四件只保留随机一项成长，热身失败保留全部", () => {
+    ok("热身与正式赛失败都保留强化养成，正式赛只回退本图起点", () => {
         const run = new RunState(81);
         run.ownedIds = getSets().find(s => s.id === "rookie")!.pieceIds.slice();
         run.equipSet("rookie");
         run.partLevels = { head: 2, leg: 3 };
+        run.bonus = { def: 2 };
         run.screen = "battle";
         run.settle(false);
-        assert(run.partLevels.head === 2 && run.partLevels.leg === 3, "热身失败不清成长");
+        assert(run.partLevels.head === 2 && run.partLevels.leg === 3 && run.bonus.def === 2, "热身失败不清成长");
         run.routeNode = mapBoss(1); run.phase = "boss"; run.screen = "battle";
         run.settle(false);
-        assert(Object.keys(run.partLevels).length === 1, "只保留一个部位");
-        assert(run.partLevels.head === 2 || run.partLevels.leg === 3, "保留该部位全部等级");
+        assert(run.partLevels.head === 2 && run.partLevels.leg === 3 && run.bonus.def === 2, "正式赛失败也不清强化养成");
         assert(decodeRun(encodeRun(run)).routeNode === mapStart(1), "正式赛失败回到本图起点");
     });
 

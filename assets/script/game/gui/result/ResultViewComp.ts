@@ -37,7 +37,7 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
         // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
         let hint: string;
         if (boss) hint = win ? battleNode.encounter === "final" ? gameText("ResultViewComp_010") : gameText("ResultViewComp_011", getMaps().find(map => map.id === (battleNode.mapId || 1))!.name)
-            : gameText("ResultViewComp_015", battleNode.encounter === "final" ? gameText("ResultViewComp_012") : gameText("ResultViewComp_013"), run.playerFighter().stats.retainGrowth ? gameText("ResultViewComp_014") : "");
+            : battleNode.encounter === "final" ? gameText("ResultViewComp_012") : gameText("ResultViewComp_013");
         else hint = win ? gameText("ResultViewComp_016") : gameText("ResultViewComp_017");
         if (run.upgrades.length > 0) hint += gameText("ResultViewComp_018");
         // 失败底图已经写了「失败 / 变强继续挑战！」，不再叠爆炸框和底部说明。
