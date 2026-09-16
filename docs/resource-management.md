@@ -6,11 +6,12 @@
 
 ## 图片
 
-导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图，再进行 PNG 无损编码优化；不会改动预制体的显示尺寸。
+导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图；不会改动预制体的显示尺寸。全屏不透明背景（`texture/bg` 与 `fx/skill_bg_*`）保存为 JPEG 质量 85，其余贴图做 PNG 无损编码优化。
 
 | 目录 | 图片尺寸上限 | 静态图集单页上限 |
 | --- | --- | --- |
-| bg | 720×1280 | 不合图 |
+| bg | 720×1280 | 不合图；JPEG |
+| fx 中 skill_bg_* | 720×1280 | 不合图；JPEG |
 | chicken | 384×576 | 1024×1024 |
 | icon | 160×160 | 512×512 |
 | map | 256×256 | 1024×1024 |

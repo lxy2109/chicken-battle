@@ -4,6 +4,7 @@
  * 用法: node tools/import-art.cjs <生图输出目录>
  * 生图输出目录即 Cursor 会话资源目录（GenerateImage 产出）。
  */
+const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const png = require("./png.cjs");
@@ -15,10 +16,10 @@ const TEX = "assets/bundle/game/texture/";
 const g = uuids.groups;
 
 /** [源文件名, bundle 相对路径, uuid, 是否九宫格]，源文件统一取 <名字>.png。 */
-function rows(names, dir, sliced, strip) {
+function rows(names, dir, sliced, strip, ext = ".png") {
     return names.map((name) => {
         const short = strip ? name.slice(strip.length) : name;
-        return [name + ".png", TEX + dir + "/" + short + ".png", uuids[name], sliced];
+        return [name + ".png", TEX + dir + "/" + short + ext, uuids[name], sliced];
     });
 }
 
@@ -28,7 +29,7 @@ const FILES = [].concat(
     rows(g.ICONS, "icon", false, "icon_"),
     rows(g.NODES, "map", false, "node_"),
     rows(g.EQUIPS, "equip", false, "eq_"),
-    rows(g.BGS, "bg", false, "bg_")
+    rows(g.BGS, "bg", false, "bg_", ".jpg")
 );
 
 function pngSize(file) {
@@ -36,17 +37,30 @@ function pngSize(file) {
     return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
 }
 
-function spriteMeta(uuid, name, w, h, sliced) {
+function writeJpeg(srcPng, destJpg) {
+    const result = spawnSync("python", [
+        "-c",
+        "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=85, optimize=True)",
+        srcPng,
+        destJpg
+    ], { encoding: "utf8" });
+    if (result.status !== 0) {
+        throw new Error(result.stderr || result.stdout || "jpeg convert failed");
+    }
+}
+
+function spriteMeta(uuid, name, w, h, sliced, ext = ".png") {
     const hw = w / 2;
     const hh = h / 2;
     const bl = sliced ? Math.min(120, Math.floor(w * 0.18)) : 0;
     const bt = sliced ? Math.min(120, Math.floor(h * 0.22)) : 0;
+    const jpeg = ext === ".jpg";
     return {
         ver: "1.0.27",
         importer: "image",
         imported: true,
         uuid,
-        files: [".json", ".png"],
+        files: [".json", ext],
         subMetas: {
             "6c48a": {
                 importer: "texture",
@@ -119,7 +133,7 @@ function spriteMeta(uuid, name, w, h, sliced) {
         userData: {
             type: "sprite-frame",
             redirect: uuid + "@6c48a",
-            hasAlpha: true,
+            hasAlpha: !jpeg,
             fixAlphaTransparencyArtifacts: false
         }
     };
@@ -140,15 +154,17 @@ function main() {
         }
         const dest = path.join(ROOT, rel);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.copyFileSync(src, dest);
-        const { w, h } = pngSize(dest);
-        const name = path.basename(rel, ".png");
-        fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, name, w, h, sliced), null, 2) + "\n");
+        const ext = path.extname(rel);
+        if (ext === ".jpg") writeJpeg(src, dest);
+        else fs.copyFileSync(src, dest);
+        const { w, h } = pngSize(src);
+        const name = path.basename(rel, ext);
+        fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, name, w, h, sliced, ext), null, 2) + "\n");
         console.log(rel, w + "x" + h);
     }
 
     // 背景是整屏不透明图，抠底只会误伤天空，跳过。
-    for (const [, rel] of FILES.filter((row) => row[1].indexOf("/bg/") < 0)) {
+    for (const [, rel] of FILES.filter((row) => !row[1].endsWith(".jpg"))) {
         const file = path.join(ROOT, rel);
         const img = png.decode(file);
         const cleared = knock(img);

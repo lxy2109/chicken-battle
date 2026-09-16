@@ -4,6 +4,7 @@
  * 45–52 是敌人无底板小贴纸 skill_mini_*；
  * 9–12 是共用分层（光线 / 名条 / 光晕 / 火花）。
  */
+const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const uuids = require("./art-uuids.cjs");
@@ -49,15 +50,28 @@ function pngSize(file) {
     return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
 }
 
+function writeJpeg(srcPng, destJpg) {
+    const result = spawnSync("python", [
+        "-c",
+        "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=85, optimize=True)",
+        srcPng,
+        destJpg
+    ], { encoding: "utf8" });
+    if (result.status !== 0) {
+        throw new Error(result.stderr || result.stdout || "jpeg convert failed");
+    }
+}
+
 function spriteMeta(uuid, name, w, h, hasAlpha) {
     const hw = w / 2;
     const hh = h / 2;
+    const ext = hasAlpha ? ".png" : ".jpg";
     return {
         ver: "1.0.27",
         importer: "image",
         imported: true,
         uuid,
-        files: [".json", ".png"],
+        files: [".json", ext],
         subMetas: {
             "6c48a": {
                 importer: "texture",
@@ -170,12 +184,13 @@ function spriteFrameLib(uuid, name, w, h) {
 }
 
 /** 编辑器预览读 library/，只写 assets 不会出现在资源库里。 */
-function syncLibrary(destName, destPng, uuid, w, h) {
+function syncLibrary(destName, destFile, uuid, w, h) {
     const libRoot = path.join(ROOT, "library");
     if (!fs.existsSync(libRoot)) return false;
+    const ext = path.extname(destFile);
     const dir = path.join(libRoot, uuid.slice(0, 2));
     fs.mkdirSync(dir, { recursive: true });
-    fs.copyFileSync(destPng, path.join(dir, uuid + ".png"));
+    fs.copyFileSync(destFile, path.join(dir, uuid + ext));
     fs.writeFileSync(path.join(dir, uuid + ".json"), JSON.stringify({
         __type__: "cc.ImageAsset",
         content: { fmt: "0", w: 0, h: 0 }
@@ -186,7 +201,7 @@ function syncLibrary(destName, destPng, uuid, w, h) {
     }, null, 2) + "\n");
     fs.writeFileSync(path.join(dir, uuid + "@f9941.json"), JSON.stringify(spriteFrameLib(uuid, destName, w, h), null, 2) + "\n");
 
-    const rel = "bundle\\game\\texture\\fx\\" + destName + ".png";
+    const rel = "bundle\\game\\texture\\fx\\" + destName + ext;
     const now = Date.now();
     const infoPath = path.join(libRoot, ".assets-info.json");
     if (fs.existsSync(infoPath)) {
@@ -199,7 +214,7 @@ function syncLibrary(destName, destPng, uuid, w, h) {
     const dataPath = path.join(libRoot, ".assets-data.json");
     if (fs.existsSync(dataPath)) {
         const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
-        const url = "db://assets/bundle/game/texture/fx/" + destName + ".png";
+        const url = "db://assets/bundle/game/texture/fx/" + destName + ext;
         data[uuid] = { url, value: { depends: [] }, versionCode: 1 };
         data[uuid + "@6c48a"] = { url: url + "@6c48a", value: { depends: [uuid] }, versionCode: 1 };
         data[uuid + "@f9941"] = { url: url + "@f9941", value: { depends: [uuid + "@6c48a"] }, versionCode: 1 };
@@ -218,9 +233,11 @@ function syncLibrary(destName, destPng, uuid, w, h) {
 for (const [srcName, destName, hasAlpha] of MAP) {
     const src = path.join(SRC, srcName);
     if (!fs.existsSync(src)) throw new Error("missing " + src);
-    const dest = path.join(DEST, destName + ".png");
-    fs.copyFileSync(src, dest);
-    const { w, h } = pngSize(dest);
+    const ext = hasAlpha ? ".png" : ".jpg";
+    const dest = path.join(DEST, destName + ext);
+    if (hasAlpha) fs.copyFileSync(src, dest);
+    else writeJpeg(src, dest);
+    const { w, h } = pngSize(src);
     const uuid = uuids[destName];
     if (!uuid) throw new Error("no uuid for " + destName);
     fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, destName, w, h, hasAlpha), null, 2) + "\n");

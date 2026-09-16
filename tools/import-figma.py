@@ -20,7 +20,7 @@ TEX = ROOT / 'assets/bundle/game/texture'
 NS = '{http://www.w3.org/2000/svg}'
 ET.register_namespace('', NS[1:-1])
 ET.register_namespace('xlink', 'http://www.w3.org/1999/xlink')
-template = json.loads((TEX / 'bg/start_figma.png.meta').read_text('utf-8'))
+template = json.loads((TEX / 'bg/start_figma.jpg.meta').read_text('utf-8'))
 manifest = {}
 
 
@@ -35,12 +35,17 @@ def save(name, image, source, box):
     if name == 'bg/result_figma':
         # 战斗结算 SVG 底层是白底，画面从 x=4 才开始，缩放后左边会剩一条白边。
         image = cover_left_margin(image)
-    target = TEX / (name + '.png')
+    jpeg = name.startswith('bg/')
+    ext = '.jpg' if jpeg else '.png'
+    target = TEX / (name + ext)
     target.parent.mkdir(parents=True, exist_ok=True)
     encoded = io.BytesIO()
-    image.save(encoded, format='PNG')
+    if jpeg:
+        image.convert('RGB').save(encoded, format='JPEG', quality=85, optimize=True)
+    else:
+        image.save(encoded, format='PNG')
     if not target.exists() or target.read_bytes() != encoded.getvalue():
-        staging = SOURCE / 'asset-write.png'
+        staging = SOURCE / ('asset-write' + ext)
         staging.write_bytes(encoded.getvalue())
         staging.replace(target)
     meta_path = Path(str(target) + '.meta')
@@ -53,7 +58,8 @@ def save(name, image, source, box):
     data.update(trimType='none', width=w, height=h, rawWidth=w, rawHeight=h, packable=False)
     data['vertices'].update(rawPosition=[-w/2,-h/2,0,w/2,-h/2,0,-w/2,h/2,0,w/2,h/2,0],
                             uv=[0,h,w,h,0,0,w,0], minPos=[-w/2,-h/2,0], maxPos=[w/2,h/2,0])
-    meta['userData']['hasAlpha'] = image.mode == 'RGBA'
+    meta['files'] = ['.json', ext]
+    meta['userData']['hasAlpha'] = False if jpeg else image.mode == 'RGBA'
     serialized = json.dumps(meta, indent=2)
     if not meta_path.exists() or meta_path.read_text('utf-8') != serialized:
         staging = SOURCE / 'asset-write.meta'

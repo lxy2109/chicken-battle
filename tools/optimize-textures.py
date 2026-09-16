@@ -1,7 +1,8 @@
-"""Resize oversized PNGs without renaming assets or changing UUIDs. Requires Pillow.
+"""Resize oversized textures without renaming assets or changing UUIDs. Requires Pillow.
 
 Run after importing new art: python tools/optimize-textures.py
 Original files and a size report are kept in ignored outputs/texture-optimization/.
+Fullscreen backgrounds in texture/bg and skill_bg_* are JPEG (quality 85); other textures stay PNG.
 """
 import io
 import json
@@ -41,7 +42,8 @@ def update_meta(meta, image, old_size):
 
 def main():
     report = []
-    files = sorted((ROOT / "assets/bundle/game/texture").rglob("*.png"))
+    tex = ROOT / "assets/bundle/game/texture"
+    files = sorted(tex.rglob("*.png")) + sorted(tex.rglob("*.jpg"))
     files += sorted((ROOT / "assets/bundle/gui/loading/texture").glob("*.png"))
     for file in files:
         source = file.read_bytes()
@@ -51,9 +53,14 @@ def main():
         image.thumbnail(limit, Image.Resampling.LANCZOS)
         output = io.BytesIO()
         opaque = image.getchannel("A").getextrema() == (255, 255)
-        (image.convert("RGB") if opaque else image).save(output, "PNG", optimize=True, compress_level=9)
+        jpeg = file.parent.name == "bg" or file.stem.startswith("skill_bg_")
+        if jpeg:
+            image.convert("RGB").save(output, "JPEG", quality=85, optimize=True)
+        else:
+            (image.convert("RGB") if opaque else image).save(output, "PNG", optimize=True, compress_level=9)
         data = output.getvalue()
-        if image.size == old_size and len(data) >= len(source):
+        dest = file.with_suffix(".jpg") if jpeg else file
+        if image.size == old_size and len(data) >= len(source) and dest == file:
             continue
         rel = file.relative_to(ROOT)
         backup = BACKUP / rel
@@ -62,13 +69,20 @@ def main():
             shutil.copy2(file, backup)
             shutil.copy2(str(file) + ".meta", str(backup) + ".meta")
         meta_file = Path(str(file) + ".meta")
+        dest_meta = Path(str(dest) + ".meta")
         meta = json.loads(meta_file.read_text(encoding="utf8"))
         if image.size != old_size:
             update_meta(meta, image, old_size)
-        meta["userData"]["hasAlpha"] = not opaque
-        meta_file.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
-        file.write_bytes(data)
-        report.append(dict(path=rel.as_posix(), before=len(source), after=len(data),
+        meta["userData"]["hasAlpha"] = False if jpeg else not opaque
+        if jpeg:
+            meta["files"] = [".json", ".jpg"]
+        dest_meta.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
+        dest.write_bytes(data)
+        if dest != file:
+            file.unlink(missing_ok=True)
+            if meta_file != dest_meta:
+                meta_file.unlink(missing_ok=True)
+        report.append(dict(path=dest.relative_to(ROOT).as_posix(), before=len(source), after=len(data),
                            old_size=old_size, new_size=image.size))
     BACKUP.mkdir(parents=True, exist_ok=True)
     (BACKUP / "report.json").write_text(json.dumps(report, indent=2), encoding="utf8")

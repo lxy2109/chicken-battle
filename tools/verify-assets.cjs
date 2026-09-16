@@ -15,7 +15,7 @@ function textures(dir) {
     return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap(entry => {
         const file = dir + '/' + entry.name;
         if (entry.isDirectory()) return textures(file);
-        if (!file.endsWith('.png')) return [];
+        if (!file.endsWith('.png') && !file.endsWith('.jpg')) return [];
         return [[null, file, JSON.parse(fs.readFileSync(path.join(ROOT, file + '.meta'), 'utf8')).uuid]];
     });
 }

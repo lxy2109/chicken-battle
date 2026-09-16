@@ -50,8 +50,8 @@ const TARGETS = [
 function knownFrames() {
     const set = new Set([WHITE]);
     for (const [name, asset] of Object.entries(require('./figma-assets.json'))) {
-        const file = path.join(ROOT, 'assets/bundle/game/texture', name + '.png');
-        if (!fs.existsSync(file)) throw new Error('Missing Figma asset: ' + file);
+        const file = ['.jpg', '.png'].map(ext => path.join(ROOT, 'assets/bundle/game/texture', name + ext)).find(fs.existsSync);
+        if (!file) throw new Error('Missing Figma asset: ' + name);
         const meta = JSON.parse(fs.readFileSync(file + '.meta', 'utf8'));
         if (meta.uuid !== asset.uuid) throw new Error('Figma UUID mismatch: ' + name);
         set.add(meta.subMetas.f9941.uuid);
