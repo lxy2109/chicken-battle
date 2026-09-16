@@ -19,7 +19,7 @@
     },
     "battle_damageScale": {
         "id": "battle_damageScale",
-        "value": 0.3,
+        "value": 0.32,
         "desc": "即时战斗基础伤害系数",
         "min": 0.001
     },
@@ -31,7 +31,7 @@
     },
     "battle_skillCooldown": {
         "id": "battle_skillCooldown",
-        "value": 12,
+        "value": 8,
         "desc": "技能冷却（秒）",
         "min": 0.01
     },
