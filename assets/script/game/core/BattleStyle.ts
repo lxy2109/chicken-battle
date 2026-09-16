@@ -144,13 +144,50 @@ export const STYLE_RHYTHM: Record<FightStyle, StyleRhythm> = {
     medic: { tempo: 1, hop: 0.92, roam: 0.85, squash: 1, gap: 160, lane: 0, ghost: [72, 176, 118] }
 };
 
-export const ARENA_MOOD: Record<number, { tint: string; veil: [number, number, number] }> = {
-    1: { tint: "#fff1d2", veil: [196, 118, 36] },
-    2: { tint: "#d7f0c6", veil: [46, 122, 58] },
-    3: { tint: "#ffe59a", veil: [201, 154, 32] },
-    4: { tint: "#e8cfc0", veil: [108, 48, 72] },
-    5: { tint: "#f3c4b0", veil: [148, 36, 28] }
+/**
+ * 每张地图自己的场地味道。普攻没有全屏立绘，只能靠弹跳、压扁、残影色和一点小花活
+ * 让五张图打起来不像同一场；正式赛/鸡王再叠一层，不改招式判定。
+ */
+export type ArenaFlourish = "dust" | "leaf" | "grain" | "incense" | "ember";
+
+export interface ArenaMood {
+    tint: string;
+    veil: [number, number, number];
+    hop: number;
+    squash: number;
+    spin: number;
+    ghost: [number, number, number];
+    dust: [number, number, number];
+    flourish: ArenaFlourish;
+}
+
+export const ARENA_MOOD: Record<number, ArenaMood> = {
+    1: { tint: "#f3d9a4", veil: [196, 118, 36], hop: 0.88, squash: 1.18, spin: 0, ghost: [196, 118, 36], dust: [210, 150, 70], flourish: "dust" },
+    2: { tint: "#c5e8b0", veil: [46, 122, 58], hop: 1.28, squash: 0.92, spin: 8, ghost: [46, 140, 58], dust: [90, 170, 70], flourish: "leaf" },
+    3: { tint: "#f5d56a", veil: [201, 154, 32], hop: 1.02, squash: 1.08, spin: 4, ghost: [210, 170, 40], dust: [230, 190, 50], flourish: "grain" },
+    4: { tint: "#e0b8c8", veil: [108, 48, 72], hop: 1.1, squash: 0.96, spin: 22, ghost: [120, 50, 140], dust: [160, 80, 180], flourish: "incense" },
+    5: { tint: "#f0a090", veil: [148, 36, 28], hop: 1.16, squash: 1.32, spin: 6, ghost: [180, 40, 28], dust: [220, 70, 40], flourish: "ember" }
 };
+
+/** 热身用地图底味，正式赛砸得更重，鸡王改成火气。拷一份再改，别去动表。 */
+export function stageMood(mapId: number, encounter?: string): ArenaMood {
+    const base = ARENA_MOOD[mapId] || ARENA_MOOD[1];
+    const mood: ArenaMood = {
+        ...base,
+        veil: [...base.veil],
+        ghost: [...base.ghost],
+        dust: [...base.dust]
+    };
+    if (encounter === "official") mood.squash *= 1.12;
+    if (encounter === "final") {
+        mood.squash *= 1.22;
+        mood.hop *= 1.08;
+        mood.flourish = "ember";
+        mood.dust = [220, 48, 32];
+        mood.ghost = [220, 48, 32];
+    }
+    return mood;
+}
 
 export const SIGNATURE_LABEL: Record<SignatureId, string> = {
     none: "",

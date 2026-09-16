@@ -5,7 +5,7 @@ import { AiFighter, decideAction, decide } from "../assets/script/game/core/Batt
 import { BattleSession } from "../assets/script/game/core/BattleSession";
 import { DanmakuPool } from "../assets/script/game/core/Danmaku";
 import { Rng } from "../assets/script/game/core/Rng";
-import { enemyCombatProfile, STYLE_OPENING } from "../assets/script/game/core/BattleStyle";
+import { enemyCombatProfile, stageMood, STYLE_OPENING } from "../assets/script/game/core/BattleStyle";
 import { getItems, getRoute, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
 import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
@@ -900,6 +900,23 @@ function run() {
         assert(first.player === STYLE_OPENING[me.fightStyle || "brawler"], `玩家开场应是 ${STYLE_OPENING[me.fightStyle || "brawler"]}，实际 ${first.player}`);
         assert(first.enemy === STYLE_OPENING[foe.fightStyle || "brawler"], `敌人开场应是 ${STYLE_OPENING[foe.fightStyle || "brawler"]}，实际 ${first.enemy}`);
         assert(first.player !== first.enemy, "首场双方开场招相同，看起来会像镜像互啄");
+    });
+
+    ok("五张地图普攻演出有差分，正式赛和鸡王再加一层", () => {
+        const moods = [1, 2, 3, 4, 5].map(id => stageMood(id, "warmup"));
+        const hops = new Set(moods.map(m => m.hop));
+        const flourishes = new Set(moods.map(m => m.flourish));
+        const tints = new Set(moods.map(m => m.tint));
+        assert(hops.size === 5, "五张图弹跳不该一样");
+        assert(flourishes.size === 5, "五张图花活不该一样");
+        assert(tints.size === 5, "五张图场地染色不该一样");
+        assert(moods[1].hop > moods[0].hop, "青竹溪该比鸡鸣村跳得高");
+        assert(moods[3].spin > moods[0].spin, "古祠镇该比鸡鸣村转得多");
+        assert(moods[4].squash > moods[1].squash, "鸡王山砸地该比青竹溪重");
+        const official = stageMood(1, "official");
+        const finale = stageMood(5, "final");
+        assert(official.squash > moods[0].squash, "正式赛压扁要比热身重");
+        assert(finale.flourish === "ember" && finale.dust[0] > finale.dust[1], "鸡王场改火气");
     });
 
     ok("对撞折伤、闪避与红眼", () => {

@@ -17,7 +17,7 @@ import { BattleDanmaku } from "./BattleDanmaku";
 import { BattleFx } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
-import { ARENA_MOOD, SIGNATURE_LABEL, STYLE_LABEL, styleRhythm } from "../../core/BattleStyle";
+import { SIGNATURE_LABEL, STYLE_LABEL, stageMood, styleRhythm } from "../../core/BattleStyle";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
@@ -60,14 +60,14 @@ const BASIC_TEXT: Record<StrikeStyle, string> = {
 
 /** 各招式打中时的震屏力度，整只砸下来的自然要比啄一口重。 */
 const HIT_QUAKE: Record<StrikeStyle, number> = {
-    peck: 6,
-    jump: 9,
-    dive: 11,
-    leap: 20,
-    charge: 16,
-    tail: 12,
-    combo: 7,
-    feint: 8
+    peck: 8,
+    jump: 11,
+    dive: 13,
+    leap: 22,
+    charge: 18,
+    tail: 14,
+    combo: 9,
+    feint: 10
 };
 
 /**
@@ -109,9 +109,10 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         const foe = run.enemyFighter();
         this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
         const mapId = run.currentMap().id;
-        const mood = ARENA_MOOD[mapId] || ARENA_MOOD[1];
+        const encounter = run.currentRoute().encounter;
+        const mood = stageMood(mapId, encounter);
         const bg = this.node.getComponent(Sprite);
-        if (bg) bg.color = hexColor(run.currentRoute().encounter === "final" ? "#f0b4a8" : mood.tint);
+        if (bg) bg.color = hexColor(encounter === "final" ? "#f0b4a8" : mood.tint);
         const pHome = new Vec3(-styleRhythm(me.fightStyle).gap, P_HOME.y + styleRhythm(me.fightStyle).lane, 0);
         const eHome = new Vec3(styleRhythm(foe.fightStyle).gap, E_HOME.y + styleRhythm(foe.fightStyle).lane, 0);
         const pLabel = STYLE_LABEL[me.fightStyle || "brawler"];
@@ -122,7 +123,6 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         setLabel(this, "LabEnemyName", sig ? `${foe.name} · ${eLabel} ${sig}` : `${foe.name} · ${eLabel}`);
         setLabel(this, "LabLog", `${eLabel} vs ${pLabel}`);
         const layer = this.getNode("DanmakuLayer");
-        const encounter = run.currentRoute().encounter;
         if (layer) this.danmaku = new BattleDanmaku(layer,
             new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.danmakuGroup || "common"));
 
@@ -171,8 +171,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         }
         // 必须等 spawnChicken 建完再造 Actor：它会记下各部位此刻的位置当复位基准，
         // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
-        if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler");
-        if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler");
+        if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler", mood);
+        if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler", mood);
 
         // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
         const brain = new BattleBrain();
@@ -275,7 +275,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 sparks: layerFrames[3] || undefined,
                 titleFont: titleFont || undefined
             });
-            this.fx.wash(mood.veil, run.currentRoute().encounter === "final" || run.phase === "boss");
+            this.fx.paint(mood.dust);
+            this.fx.wash(mood.veil, encounter === "final" || run.phase === "boss");
         }
         await this.playIntro();
         if (this.closed) return;
@@ -416,6 +417,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const mode = side === "enemy" ? "half" : "full";
             this.fx?.skillWindup(self, style, title, side === "enemy", mode);
             void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.45, 1.15);
+        }
+        else {
+            this.fx?.basicWindup(self, style, side === "enemy");
         }
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));

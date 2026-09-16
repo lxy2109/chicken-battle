@@ -69,6 +69,7 @@ export class BattleFx {
     private liveSplash: Partial<Record<SplashMode, Node>> = {};
     private cinema: Node;
     private veilHold = 0;
+    private dust: [number, number, number] = [255, 220, 140];
 
     constructor(private root: Node, private arena: Node, private sheet: BattleFxSheet) {
         this.overlay = this.makeLayer("BattleFxOverlay", root, 1);
@@ -89,6 +90,39 @@ export class BattleFx {
         this.arenaFx.addComponent(UITransform).setContentSize(arena.getComponent(UITransform)!.contentSize);
         this.layout();
         root.once(Node.EventType.NODE_DESTROYED, this.clear, this);
+    }
+
+    /** 这一关的扬尘色，普攻斩痕和落地点跟着换。 */
+    paint(dust: [number, number, number]) {
+        this.dust = dust;
+    }
+
+    /**
+     * 普攻起手：一小圈蓄力、一两道速度线、一层残影。
+     * 绝招才上全屏立绘，这里只把这一口的方向和颜色交代清楚。
+     */
+    basicWindup(actor: ChickenActor | null, style: StrikeStyle, fromRight = false) {
+        const look = SKILL_LOOK[style];
+        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
+        actor?.ghost(tint);
+        if (style === "charge" || style === "leap" || style === "feint") {
+            actor?.ghost(new Color(this.dust[0], this.dust[1], this.dust[2]));
+        }
+        const p = actor?.node.worldPosition;
+        if (!p) return;
+        const local = this.toArena(p.x, p.y);
+        const dir = fromRight ? 1 : -1;
+        this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y - 6, 72, 72, 0.18, {
+            grow: 1.5, squash: 0.78, color: tint
+        });
+        if (style === "jump" || style === "leap" || style === "dive") {
+            this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 30, 86, 30, 0.16, {
+                grow: 1.65, squash: 0.48, color: new Color(this.dust[0], this.dust[1], this.dust[2])
+            });
+        }
+        if (style === "charge" || style === "combo" || style === "peck" || style === "tail") {
+            this.streaksAt(local.x, local.y, -dir, style === "charge" ? 4 : 2);
+        }
     }
 
     /** 按地图铺一层薄色，换图时场地立刻不像上一场。 */
@@ -136,6 +170,9 @@ export class BattleFx {
         const p = this.toArena(worldX, worldY);
         this.slashAt(p.x, p.y, direction, style, heavy || crit);
         this.shockAt(p.x, p.y - 36, crit ? 1.35 : heavy ? 1.1 : 0.7);
+        this.stamp(this.arenaFx, this.sheet.ring, p.x, p.y - 42, 78, 26, 0.16, {
+            grow: 1.7, squash: 0.45, color: new Color(this.dust[0], this.dust[1], this.dust[2])
+        });
         if (crit) {
             this.punch(0.16, 0.22);
             this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 170, 170, 0.22, { grow: 1.25, angle: (Math.random() - 0.5) * 40 });
@@ -147,8 +184,8 @@ export class BattleFx {
             this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 8, 120, 120, 0.18, { grow: 1.15, angle: (Math.random() - 0.5) * 50 });
             this.cracksAt(p.x, p.y - 48, direction, 2);
         }
-        else if (style === "peck" || style === "combo") {
-            this.streaksAt(p.x, p.y, direction, 3);
+        else {
+            this.streaksAt(p.x, p.y, direction, style === "peck" || style === "combo" ? 3 : 2);
         }
     }
 
@@ -229,11 +266,17 @@ export class BattleFx {
         const long = heavy ? 240 : style === "tail" ? 210 : style === "feint" ? 150 : 170;
         const thick = heavy ? 120 : style === "jump" ? 64 : 78;
         const tilt = style === "leap" || style === "dive" ? -48 : style === "tail" ? 28 : style === "charge" ? 4 : 8;
+        const [dr, dg, db] = this.dust;
         this.stamp(this.arenaFx, this.sheet.slash, x, y + 16, long, thick, 0.2, {
             sx: dir,
             angle: dir * tilt,
             grow: 1.18,
-            squash: 0.72
+            squash: 0.72,
+            color: new Color(
+                Math.round(255 * 0.4 + dr * 0.6),
+                Math.round(248 * 0.4 + dg * 0.6),
+                Math.round(220 * 0.4 + db * 0.6)
+            )
         });
     }
 
