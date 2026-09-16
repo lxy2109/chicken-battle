@@ -384,15 +384,19 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (skill) {
             const title = gameText("BattleViewComp_017", STYLE_TEXT[style]);
             const mode = side === "enemy" ? "half" : "full";
+            const full = mode === "full";
+            playGameEffect("skill");
             this.fx?.skillWindup(self, style, title, side === "enemy", mode);
-            void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.45, 1.15);
+            this.screenEffects?.skillCast(side === "player" ? 1 : -1, full);
+            self.pulse();
+            void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.55, full ? 1.35 : 1.2);
         }
         else {
             this.fx?.basicWindup(self, style, side === "enemy");
         }
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
-        });
+        }, skill);
     }
 
     private applyResult(evs: BattleEvent[]) {
@@ -401,26 +405,29 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     private onHit(from: BattleSide, to: BattleSide, dmg: number, crit: boolean) {
         const style = this.styleOf[from];
-        const heavy = this.skillOf[from] || style === "leap" || style === "charge" || style === "dive";
+        const skill = this.skillOf[from];
+        const heavy = skill || style === "leap" || style === "charge" || style === "dive";
         const source = this.chicken(from);
         const target = this.chicken(to);
         const direction = source && target && source.worldPosition.x !== target.worldPosition.x
             ? Math.sign(target.worldPosition.x - source.worldPosition.x) : from === "player" ? 1 : -1;
-        playGameEffect(crit ? "critical" : style === "peck" || style === "combo" ? "peck"
+        playGameEffect(crit ? "critical" : skill ? "skill" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
-        this.actor(to)?.flinch(crit ? 1.65 : heavy ? 1.3 : 1, direction);
+        this.actor(to)?.flinch(crit ? 1.75 : skill ? 1.55 : heavy ? 1.3 : 1, direction);
         if (target) {
-            this.impact?.play(target, direction, heavy, crit, this.featherColors[to], this.actor(to)?.home.y);
+            this.impact?.play(target, direction, heavy || skill, crit, this.featherColors[to], this.actor(to)?.home.y);
             const p = target.worldPosition;
-            this.fx?.hit(p.x, p.y, direction, style, heavy, crit);
+            this.fx?.hit(p.x, p.y, direction, style, heavy, crit, skill);
         }
         void this.spawnFx(
-            crit ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
+            crit || skill ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
             crit ? gameText("BattleViewComp_018", dmg) : `-${dmg}`,
-            crit ? 0.8 : 0.6, crit ? 1.65 : heavy ? 1.25 : 1.1
+            crit ? 0.8 : skill ? 0.7 : 0.6,
+            crit ? 1.65 : skill ? 1.4 : heavy ? 1.25 : 1.1
         );
-        // 整只砸下来和啄一口不该抖得一样重，按招式给个底，暴击再往上加。
-        this.screenEffects?.play(HIT_QUAKE[style] + (crit ? 11 : heavy ? 4 : 2), heavy, crit, direction);
+        // 整只砸下来和啄一口不该抖得一样重；绝招在招式底上再抬一档，暴击再往上加。
+        const quake = HIT_QUAKE[style] + (crit ? 11 : skill ? 8 : heavy ? 4 : 2);
+        this.screenEffects?.play(quake, heavy || skill, crit || skill, direction);
         if (crit) this.log(to === "player" ? "enemy" : "player", gameText("BattleViewComp_019"));
         this.refreshHp(false);
     }

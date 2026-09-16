@@ -43,6 +43,39 @@ export class BattleScreenEffects {
             .call(() => this.restoreCamera()).start();
     }
 
+    /**
+     * 绝招喊招瞬间：先推近定格，再轻轻回弹。
+     * 震幅压得比命中小，重点是“镜头贴上去看这一招”，不是把画面抖糊。
+     */
+    skillCast(direction = 1, full = true) {
+        if (!this.root.isValid || !this.camera?.isValid) return;
+        const strength = full ? 10 : 6;
+        this.restoreCamera();
+        this.home = this.camera.node.position.clone();
+        this.height = this.camera.orthoHeight;
+        this.strength = strength;
+        this.phase = { progress: 0 };
+        const bounds = this.root.getComponent(UITransform)!;
+        const width = bounds.width, height = bounds.height;
+        const zoom = (full ? 28 : 16) / Math.max(1, Math.min(width, height));
+        const apply = () => {
+            if (!this.camera.isValid || !this.home) return;
+            const p = this.phase.progress;
+            // 前半段推近，后半段带着微震退回，读招窗口更清楚。
+            const pull = p < 0.35 ? p / 0.35 : 1 - (p - 0.35) / 0.65;
+            const decay = pull * pull;
+            this.camera.node.setPosition(
+                this.home.x + Math.cos(p * Math.PI * 3) * strength * 0.35 * decay * direction,
+                this.home.y + Math.sin(p * Math.PI * 4) * strength * 0.2 * decay,
+                this.home.z);
+            this.camera.orthoHeight = this.height / (1 + zoom * decay);
+        };
+        apply();
+        this.motion = tween(this.phase)
+            .to(full ? 0.48 : 0.32, { progress: 1 }, { onUpdate: apply })
+            .call(() => this.restoreCamera()).start();
+    }
+
     private restoreCamera() {
         this.motion?.stop();
         this.motion = undefined;

@@ -144,14 +144,29 @@ export class BattleFx {
 
     skillCharge(actor: ChickenActor | null) {
         actor?.ghost(new Color(255, 230, 180));
+        actor?.ghost(new Color(255, 190, 90));
         const p = actor?.node.worldPosition;
         if (!p) return;
         const local = this.toArena(p.x, p.y);
         this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y + 8, 90, 90, 0.28, { grow: 1.7, squash: 0.75 });
+        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 28, 110, 36, 0.22, {
+            grow: 1.9, squash: 0.5, color: new Color(255, 220, 140)
+        });
+        this.stamp(this.arenaFx, this.sheet.focus, local.x, local.y + 12, 160, 160, 0.26, {
+            grow: 1.35, color: new Color(255, 236, 180)
+        });
     }
 
+    /**
+     * 绝招起手：蓄力圈 + 立绘 + 局内时缓。
+     * 全屏玩家招把世界压得更慢，半屏敌人招短一点，避免对面喊招把整场拖死。
+     */
     skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         this.skillCharge(actor);
+        // 立绘刚闪出时压时间轴，普攻继续在慢动作里挪，读招才有重量。
+        this.punch(mode === "full" ? 0.18 : 0.32, mode === "full" ? 0.42 : 0.24);
+        // 半屏喊招时补一记边框闪，全屏立绘自己够亮，不必再盖一层。
+        if (mode === "half") this.vignette(70);
         try {
             this.skillSplash(style, title, fromRight, mode);
         }
@@ -160,18 +175,29 @@ export class BattleFx {
         }
     }
 
-    hit(worldX: number, worldY: number, direction: number, style: StrikeStyle, heavy: boolean, crit: boolean) {
+    hit(worldX: number, worldY: number, direction: number, style: StrikeStyle, heavy: boolean, crit: boolean, skill = false) {
         const p = this.toArena(worldX, worldY);
-        this.slashAt(p.x, p.y, direction, style, heavy || crit);
-        this.shockAt(p.x, p.y - 36, crit ? 1.35 : heavy ? 1.1 : 0.7);
+        this.slashAt(p.x, p.y, direction, style, heavy || crit || skill);
+        this.shockAt(p.x, p.y - 36, crit ? 1.35 : skill ? 1.25 : heavy ? 1.1 : 0.7);
         this.stamp(this.arenaFx, this.sheet.ring, p.x, p.y - 42, 78, 26, 0.16, {
             grow: 1.7, squash: 0.45, color: new Color(this.dust[0], this.dust[1], this.dust[2])
         });
         if (crit) {
-            this.punch(0.16, 0.22);
+            this.punch(0.12, 0.26);
             this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 170, 170, 0.22, { grow: 1.25, angle: (Math.random() - 0.5) * 40 });
             this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 18, p.y, 140, 140, 0.2, { sx: direction, grow: 1.2 });
             this.cracksAt(p.x, p.y - 48, direction, 3);
+        }
+        else if (skill) {
+            // 绝招命中单独拉长顿帧，和“重普攻”区分开。
+            this.punch(0.1, 0.2);
+            this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 10, 150, 150, 0.22, { grow: 1.28, angle: (Math.random() - 0.5) * 48 });
+            this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 14, p.y, 120, 120, 0.18, { sx: direction, grow: 1.15 });
+            this.stamp(this.arenaFx, this.sheet.focus, p.x, p.y + 8, 200, 200, 0.2, {
+                grow: 1.2, color: new Color(SKILL_LOOK[style].rgb[0], SKILL_LOOK[style].rgb[1], SKILL_LOOK[style].rgb[2])
+            });
+            this.cracksAt(p.x, p.y - 48, direction, 3);
+            this.shockAt(p.x, p.y - 36, 0.9, 0.05);
         }
         else if (heavy) {
             this.punch(0.28, 0.09);

@@ -37,6 +37,8 @@ export class ChickenActor {
     /** 敌人是整图立绘时部位节点是关掉的，动作必须改整只/改 Illustration。 */
     private painted = false;
     private sheets: StrikeSheetPlayer | null = null;
+    /** 绝招演出放大系数：压扁、后仰、接触反馈都乘它，普攻保持 1。 */
+    private skillAmp = 1;
 
     constructor(readonly node: Node, home: Vec3, style: FightStyle = "brawler", private mood?: ArenaMood) {
         this.style = style;
@@ -78,15 +80,19 @@ export class ChickenActor {
      * onContact 在喙/脚真正碰到的那一帧回调，伤害要在这时结算才有打击感，
      * 收招和回位是之后的事，不该让对手多挨那半秒。所以它由各招式在接触瞬间自己叫，
      * 这里只负责兜底：一整套演完都没碰到，才补一个没打中。
+     *
+     * skill=true 时先演一段蓄力定格，再带着更大的压扁/残影冲出去，和普攻区分开。
      */
-    async strike(target: Node, style: StrikeStyle, onContact?: (hit: boolean) => void): Promise<boolean> {
+    async strike(target: Node, style: StrikeStyle, onContact?: (hit: boolean) => void, skill = false): Promise<boolean> {
         this.roaming = false;
         const tk = this.begin();
         // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
         // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
         this.resetPose();
+        this.skillAmp = skill ? 1.28 : 1;
         this.sheets?.play(style);
-        this.windup(style);
+        this.windup(style, skill);
+        if (skill) await this.skillPose(style, tk);
         let told = false;
         const contact = (hit: boolean) => {
             if (told) return;
@@ -95,8 +101,9 @@ export class ChickenActor {
             if (onContact) onContact(hit);
         };
 
-        const hit = await this.perform(target, style, tk, contact);
+        const hit = this.alive(tk) ? await this.perform(target, style, tk, contact) : false;
         contact(false);
+        this.skillAmp = 1;
         this.walkLegs(false, tk);
         if (this.alive(tk)) await this.retreat(tk);
         return hit;
@@ -437,15 +444,57 @@ export class ChickenActor {
         return n && n.isValid ? n : null;
     }
 
-    /** 出招前的小花活，不 await，免得把接触前预算吃掉。 */
-    private windup(_style: StrikeStyle) {
+    /** 出招前的小花活，不 await，免得把接触前预算吃掉。绝招多叠一层亮色残影。 */
+    private windup(_style: StrikeStyle, skill = false) {
         const f = this.mood?.flourish;
-        if (f === "leaf") this.flap(2);
+        if (f === "leaf") this.flap(skill ? 4 : 2);
         else if (f === "incense") this.lean(-(this.mood?.spin || 12) * 0.4, 0.05);
-        else if (f === "ember") this.flash(new Color(255, 90, 50), 0.08);
+        else if (f === "ember") this.flash(new Color(255, 90, 50), skill ? 0.16 : 0.08);
         else if (f === "dust") this.scaleTo(this.sx * 1.14, this.sy * 0.84, 0.05);
         else if (f === "grain") this.ghost();
         this.ghost(this.ghostTint());
+        if (skill) {
+            this.ghost(new Color(255, 236, 180));
+            this.flash(new Color(255, 220, 140), 0.18);
+        }
+    }
+
+    /**
+     * 绝招起手定格：先拉高再压扁蓄力，给全屏/半屏立绘留出读招窗口。
+     * 时长卡在 0.25 秒上下，不把接触前预算吃穿。
+     */
+    private async skillPose(style: StrikeStyle, tk: number) {
+        if (!this.alive(tk)) return;
+        const air = style === "jump" || style === "dive" || style === "leap";
+        const rush = style === "charge" || style === "peck" || style === "combo";
+        this.flap(air ? 7 : 4);
+        this.ghost(new Color(255, 245, 210));
+        this.ghost(new Color(255, 190, 90));
+        if (air) {
+            this.tuckLegs(-28, 0.08, 0.2);
+            this.scaleTo(this.sx * 0.74, this.sy * 1.32, 0.1);
+            this.lean(-14, 0.1);
+        }
+        else if (rush) {
+            this.squat(true, tk);
+            this.lean(20, 0.1);
+            this.scaleTo(this.sx * 1.2, this.sy * 0.72, 0.1);
+        }
+        else if (style === "tail") {
+            this.lean(-26, 0.1);
+            this.scaleTo(this.sx * 0.86, this.sy * 1.18, 0.1);
+        }
+        else {
+            this.lean(-18, 0.1);
+            this.scaleTo(this.sx * 1.16, this.sy * 0.8, 0.1);
+        }
+        await this.delay(0.14, tk);
+        if (!this.alive(tk)) return;
+        // 弹簧压到底再弹，观众能感到“这一下要砸过来了”。
+        this.scaleTo(this.sx * 1.24, this.sy * 0.7, 0.07);
+        this.ghost(new Color(255, 250, 220));
+        await this.delay(0.08, tk);
+        if (rush) this.squat(false, tk);
     }
 
     /** 打着那一帧按地图补一层味道，路数残影叠场地色。 */
@@ -458,6 +507,11 @@ export class ChickenActor {
         else if (f === "dust") this.ghost(new Color(196, 140, 70));
         const spin = this.mood?.spin ?? 0;
         if (spin >= 16) this.tiltPart(this.artNode(), spin * this.sign() * 0.35, 0.05, 0.12);
+        if (this.skillAmp > 1) {
+            this.ghost(new Color(255, 240, 200));
+            this.flash(new Color(255, 200, 90), 0.14);
+            this.tiltPart(this.artNode(), 14 * this.sign() * this.skillAmp, 0.04, 0.14);
+        }
     }
 
     private silhouetteColor() {
@@ -487,12 +541,14 @@ export class ChickenActor {
      */
     flinch(force = 1, direction = -this.sign()) {
         // 位移发生在角色局部空间，镜像角色也要沿来击方向后仰。
+        // 故意不动整只位移：双方同时在冲，抢 position 会把冲刺拧成一团。
         const localDirection = direction * (this.node.scale.x >= 0 ? 1 : -1);
         const nod = -18 * force * localDirection;
         this.tiltPart(this.child("Head"), nod, 0.04, 0.22);
         this.tiltPart(this.child("Neck"), nod * 0.3, 0.04, 0.22);
         this.tiltPart(this.child("Wing"), 16 * force, 0.05, 0.2);
         this.tiltPart(this.child("WingBack"), 12 * force, 0.05, 0.2);
+        this.tiltPart(this.artNode(), nod * 0.55, 0.04, 0.2);
         this.blink();
     }
 
@@ -740,15 +796,16 @@ export class ChickenActor {
         return v3(t.x + away, t.y - 12, 0);
     }
 
-    /** 砸实了的压扁回弹，落地和撞击都用它收尾。 */
+    /** 砸实了的压扁回弹，落地和撞击都用它收尾。绝招再压深一点。 */
     private squash(tk: number, wide = 1.28, flat = 0.62) {
         if (!this.alive(tk) || this.sheets?.busy) return;
         const map = this.mood?.squash ?? 1;
-        const w = 1 + (wide - 1) * this.rhythm.squash * map;
-        const f = 1 - (1 - flat) * this.rhythm.squash * map;
+        const amp = this.skillAmp;
+        const w = 1 + (wide - 1) * this.rhythm.squash * map * amp;
+        const f = 1 - (1 - flat) * this.rhythm.squash * map * Math.min(1.35, amp);
         tween(this.node)
-            .to(0.05, { scale: v3(this.sx * w, this.sy * Math.max(0.42, f), 1) })
-            .to(0.14, { scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
+            .to(0.05, { scale: v3(this.sx * w, this.sy * Math.max(0.38, f), 1) })
+            .to(this.skillAmp > 1 ? 0.18 : 0.14, { scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
             .start();
     }
 
