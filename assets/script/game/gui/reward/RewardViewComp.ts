@@ -1,5 +1,5 @@
 import { gameText } from "../../core/GameConfig";
-import { Button, Label, Sprite, _decorator } from "cc";
+import { Button, Label, Sprite, UITransform, Widget, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -82,7 +82,32 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
             setSpriteColor(card, opt.id === this.selectedId ? "#FFD23F" : "#FFFFFF");
             bindNodeClick(card, () => this.select(opt.id), this);
         }
+        this.fitCardSlot();
         this.ready = true;
+    }
+
+    /** 三张强化牌按父节点宽度等比缩小并水平居中，窄屏不再偏到一侧被裁。 */
+    private fitCardSlot() {
+        const slot = this.getNode("CardSlot");
+        if (!slot?.parent) return;
+        const widget = slot.getComponent(Widget);
+        if (widget) {
+            widget.isAlignLeft = false;
+            widget.isAlignRight = false;
+            widget.isAlignHorizontalCenter = true;
+            widget.horizontalCenter = 0;
+            widget.updateAlignment();
+        }
+        else {
+            slot.setPosition(0, slot.position.y, 0);
+        }
+        const parentUt = slot.parent.getComponent(UITransform);
+        const slotUt = slot.getComponent(UITransform);
+        if (!parentUt || !slotUt || slotUt.width <= 0) return;
+        const pad = 16;
+        const maxW = Math.max(120, parentUt.width - pad * 2);
+        const scale = Math.min(1, maxW / slotUt.width);
+        slot.setScale(scale, scale, 1);
     }
 
     private select(id: string) {

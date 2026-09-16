@@ -563,16 +563,23 @@ function makeBattle() {
     const root = panel(b, "battle", SF.bg_arena_figma);
     for (const side of ["Player", "Enemy"]) {
         const left = side === "Player";
-        const r = layoutBox(left ? 149 : 579, 89, 362, 66);
+        // 己方血条在上名字在下，敌方名字在上血条在下；头像跟着血条走，名字收在两行血条中间。
+        const barY = left ? 89 : 210;
+        const nameY = left ? 158 : 174;
+        const r = layoutBox(left ? 149 : 579, barY, 362, 66);
         const bar = b.node({ name: "Bar" + side, parent: root, ...r });
         b.sprite(bar, [90, 90, 90, 255], 0, F['ui/figma_hp']);
         const fill = b.node({ name: "Bar" + side + "Fill", parent: bar, w: r.w, h: r.h });
         b.sprite(fill, [255, 255, 255, 255], 3, F['ui/figma_hp'], 1);
         textNode(b, bar, "Lab" + side + "Hp", "0/0", 0, 0, { font: 17, w: 210, h: 30, color: INK.cream, outline: true });
-        figmaImage(b, root, side + "AvatarFrame", 'ui/figma_avatar', [left ? 44 : 889, 43, 157, 164]);
-        const portrait = placeNode(b, root, side + "Portrait", left ? 57 : 902, 61, 124, 126);
+        const avatarY = left ? 43 : 164;
+        const portraitY = left ? 61 : 182;
+        figmaImage(b, root, side + "AvatarFrame", 'ui/figma_avatar', [left ? 44 : 889, avatarY, 157, 164]);
+        const portrait = placeNode(b, root, side + "Portrait", left ? 57 : 902, portraitY, 124, 126);
         b.addComp(portrait, null, { type: "cc.Mask", fields: { _type: 1, _segments: 64 } });
-        placeText(b, root, "Lab" + side + "Name", "", left ? 149 : 579, 210, 362, 45, { font: 22, color: INK.cream, outline: true });
+        placeText(b, root, "Lab" + side + "Name", "", left ? 149 : 579, nameY, 362, 36, {
+            font: 16, color: INK.cream, outline: true, align: left ? 0 : 2
+        });
     }
     const arena = b.node({ name: "Arena", parent: root, w: 720, h: 1280 });
     b.node({ name: "PlayerSlot", parent: arena, x: BATTLE_HOME.player[0], y: BATTLE_HOME.player[1], w: 40, h: 40 });
@@ -606,7 +613,7 @@ function makeReward() {
     figmaImage(b, root, "RewardBanner", 'ui/figma_reward_banner');
     placeText(b, root, "LabTitle", "选择强化", 350, 305, 390, 100, { font: 40, color: INK.cream, outline: true });
     placeText(b, root, "LabHint", "选择一项强化", 220, 471, 640, 55, { font: 28, color: INK.cream, outline: true });
-    const r = layoutBox(73, 559, 912, 935);
+    const r = layoutBox(84, 559, 912, 935);
     const cards = b.node({ name: "CardSlot", parent: root, x: r.x, y: r.y, w: r.w, h: r.h });
     b.layout(cards, { type: 3, cols: 3, cellW: 208, cellH: 623.333, gapX: -8, gapY: 0, pad: 0 });
     placeText(b, root, "LabDesc", "", 100, 1500, 880, 50, { font: 19, color: INK.cream, outline: true });
