@@ -1,5 +1,6 @@
 import { gameNumber, gameText } from "../../core/GameConfig";
-import { _decorator, EditBox, Node, UITransform } from "cc";
+import { _decorator, Color, EditBox, Graphics, Label, Node, UITransform, Widget } from "cc";
+import { DEV } from "cc/env";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -10,12 +11,13 @@ import { Appearance, FaceId, PART_TEXT, PARTS, PartId, defaultAppearance } from 
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
 import { playScreenMusic } from "../GameAudio";
-import { bindClick, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
+import { bindClick, bindNodeClick, hexColor, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
 
 const CUSTOMIZE_PARTS: Array<PartId | "face"> = ["head", "face", "wing", "body", "leg"];
 const COLOR_INDEXES = [0, 1, 9, 4, 7, 5];
+const PREVIEW_ENDING_BTN = "BtnPreviewEnding";
 
 @ccclass("CustomizeViewComp")
 @executionOrder(-100)
@@ -83,7 +85,72 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
                 bindClick(this, `BtnColor${part.charAt(0).toUpperCase() + part.slice(1)}${i}`, () => this.selectColor(part, i));
             }
         }
+        this.mountPreviewEndingButton();
         this.refresh();
+    }
+
+    /**
+     * 开发预览专用：首页右上角一键进结局。
+     * 用 DEV 而不是 PREVIEW——PREVIEW 只含浏览器/模拟器，编辑器内预览是 EDITOR。
+     * 正式构建 DEV 为 false，不会挂。
+     */
+    private mountPreviewEndingButton() {
+        if (!DEV || !this.node?.isValid) return;
+        const host = this.node.getChildByName("content") || this.node;
+        let btn = host.getChildByName(PREVIEW_ENDING_BTN);
+        if (!btn) {
+            btn = new Node(PREVIEW_ENDING_BTN);
+            btn.layer = host.layer;
+            host.addChild(btn);
+        }
+        const ut = btn.getComponent(UITransform) || btn.addComponent(UITransform);
+        ut.setContentSize(180, 56);
+        const widget = btn.getComponent(Widget) || btn.addComponent(Widget);
+        widget.isAlignTop = true;
+        widget.isAlignRight = true;
+        widget.isAlignBottom = false;
+        widget.isAlignLeft = false;
+        widget.isAlignHorizontalCenter = false;
+        widget.isAlignVerticalCenter = false;
+        widget.top = 24;
+        widget.right = 24;
+        widget.alignMode = Widget.AlignMode.ALWAYS;
+        widget.enabled = true;
+        widget.updateAlignment();
+
+        const g = btn.getComponent(Graphics) || btn.addComponent(Graphics);
+        g.clear();
+        g.fillColor = new Color(40, 28, 16, 200);
+        g.roundRect(-90, -28, 180, 56, 12);
+        g.fill();
+
+        const labNode = btn.getChildByName("Lab") || new Node("Lab");
+        labNode.layer = btn.layer;
+        if (!labNode.parent) btn.addChild(labNode);
+        const labUt = labNode.getComponent(UITransform) || labNode.addComponent(UITransform);
+        labUt.setContentSize(170, 48);
+        labNode.setPosition(0, 0, 0);
+        const lab = labNode.getComponent(Label) || labNode.addComponent(Label);
+        lab.string = "看结局";
+        lab.fontSize = 28;
+        lab.lineHeight = 32;
+        lab.isBold = true;
+        lab.overflow = Label.Overflow.SHRINK;
+        lab.horizontalAlign = Label.HorizontalAlign.CENTER;
+        lab.verticalAlign = Label.VerticalAlign.CENTER;
+        lab.color = hexColor("#fffAEC");
+        lab.enableOutline = true;
+        lab.outlineColor = hexColor("#3a220c");
+        lab.outlineWidth = 3;
+        lab.useSystemFont = true;
+
+        bindNodeClick(btn, () => { void this.onPreviewEnding(); }, this);
+        btn.setSiblingIndex(host.children.length - 1);
+    }
+
+    private async onPreviewEnding() {
+        this.ent.run.screen = "ending";
+        await goScreen(this, "ending");
     }
 
     /** 表情/色块按 BottomBar 宽度等比收拢，窄屏左右不再被裁。 */

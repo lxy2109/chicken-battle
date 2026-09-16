@@ -10,6 +10,7 @@ import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { TEX } from "../../core/Catalog";
 import { goScreen, registerScreen } from "../Nav";
+import { UIBgAdaptation } from "../UIBgAdaptation";
 import { bindNodeClick, hexColor } from "../UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -19,6 +20,8 @@ const CHAMPION_NODE = "ChampionPanel";
 const TITLE_NODE = "LabChampion";
 const HOME_BTN = "BtnHome";
 const HOME_LAB = "BtnHomeLab";
+/** 结局片源像素尺寸，Cover 适配按这个基线放大铺满视口。 */
+const VIDEO_SIZE = { width: 406, height: 720 };
 
 @ccclass("EndingViewComp")
 @executionOrder(-100)
@@ -67,18 +70,28 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
         const node = new Node(VIDEO_NODE);
         node.layer = this.node.layer;
         this.node.addChild(node);
-        fillWidget(node);
+        const ut = node.addComponent(UITransform);
+        ut.setContentSize(VIDEO_SIZE.width, VIDEO_SIZE.height);
+        ut.setAnchorPoint(0.5, 0.5);
+        node.setPosition(0, 0, 0);
         node.addComponent(BlockInputEvents);
+
+        // 与全屏背景一致：按片源尺寸 Cover 放大，多出来的边裁掉，不再用 Widget 拉伸或 keepAspect 留黑边。
+        const adapt = node.addComponent(UIBgAdaptation);
+        const viewport = this.node.getComponent(UITransform);
+        if (viewport) adapt.viewportTransform = viewport;
+
         const player = node.addComponent(VideoPlayer);
         player.resourceType = VideoPlayer.ResourceType.LOCAL;
         player.playOnAwake = false;
         player.loop = false;
-        player.keepAspectRatio = true;
+        player.keepAspectRatio = false;
         player.fullScreenOnAwake = false;
         player.stayOnBottom = false;
         player.volume = 1;
         player.clip = clip;
         this.videoNode = node;
+        adapt.refresh();
 
         await new Promise<void>(resolve => {
             let settled = false;
@@ -92,6 +105,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
             node.on(VideoPlayer.EventType.COMPLETED, finish, this);
             node.on(VideoPlayer.EventType.ERROR, finish, this);
             node.on(VideoPlayer.EventType.META_LOADED, () => {
+                adapt.refresh();
                 const duration = player.duration;
                 if (duration > 0 && Number.isFinite(duration)) {
                     this.scheduleOnce(finish, duration + 1);
@@ -102,6 +116,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
                 if (!isValid(player) || player.isPlaying) return;
                 player.play();
             }, 1);
+            this.scheduleOnce(() => adapt.refresh(), 0);
             this.scheduleOnce(finish, 90);
         });
         this.stopEndingVideo();
