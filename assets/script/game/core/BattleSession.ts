@@ -12,6 +12,13 @@ import {
 export type Decider = (self: AiFighter, foe: AiFighter) => BattleDecision;
 
 const SIDES: BattleSide[] = ["player", "enemy"];
+/**
+ * 绝招立绘大约 1 秒，双方叠在一起会糊成一团。
+ * 这个窗口按真实秒算，不跟战斗时长缩放走。
+ */
+const SKILL_EXCLUSIVE = 1.35;
+/** 开场绝招错开：玩家先亮相，敌人晚半拍，避免第一波一起放。 */
+const SKILL_START: Record<BattleSide, number> = { player: 0.4, enemy: 0.72 };
 
 type Phase = "intro" | "combat" | "over";
 
@@ -43,14 +50,14 @@ interface PendingStrike {
     style: StrikeStyle;
 }
 
-function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
+function toLive(snap: FighterSnapshot, pace: number, skillStart: number): LiveFighter {
     const stats = cloneStats(snap.stats);
     return {
         name: snap.name,
         stats,
         atkCd: stats.firstStrike ? 0 : intervalOf(stats.spd) * pace * 0.5,
         healCd: 0,
-        skillCd: gameNumber("battle_skillCooldown") * 0.5,
+        skillCd: gameNumber("battle_skillCooldown") * skillStart,
         lockUsed: false,
         busy: false,
         beats: 0,
@@ -120,6 +127,9 @@ export class BattleSession {
     private durationScale: number;
     private decider: Decider;
     private boss: boolean;
+    /** 最近一次绝招还占着立绘，对面这段时间改打普攻。 */
+    private skillGate = 0;
+    private skillSide: BattleSide | null = null;
 
     /**
      * decider 留成口子是为了让 battle 层的行为树接管出招决策：
@@ -134,8 +144,8 @@ export class BattleSession {
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
         this.pace = boss ? gameNumber("battle_bossPace") : 1;
         this.dmgScale = gameNumber("battle_damageScale") * (boss ? gameNumber("battle_bossDamage") : 1);
-        this.player = toLive(player, this.pace);
-        this.enemy = toLive(enemy, this.pace);
+        this.player = toLive(player, this.pace, SKILL_START.player);
+        this.enemy = toLive(enemy, this.pace, SKILL_START.enemy);
         this.rng = new Rng(seed);
         this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : [gameText("BattleSession_001")]) });
         this.events.push({ type: "taunt", side: "enemy", text: this.rng.pick(enemy.taunts.length ? enemy.taunts : [gameText("BattleSession_002")]) });
@@ -186,6 +196,7 @@ export class BattleSession {
     tick(dt: number): BattleEvent[] {
         const out: BattleEvent[] = [];
         if (this.phase !== "combat" || dt <= 0) return out;
+        this.skillGate = Math.max(0, this.skillGate - dt);
         dt /= this.durationScale;
 
         for (const side of SIDES) {
@@ -198,9 +209,7 @@ export class BattleSession {
             if (actor.atkCd > 0) continue;
 
             const foe: BattleSide = side === "player" ? "enemy" : "player";
-            const d = actor.counterReady
-                ? { kind: "skill" as const, style: pickCounterStyle(actor) }
-                : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
+            const d = this.chooseAction(side, actor, foe);
             actor.counterReady = false;
             const style: StrikeStyle = actor.beats === 0 && d.kind !== "heal"
                 ? STYLE_OPENING[actor.fightStyle] : d.style;
@@ -219,6 +228,8 @@ export class BattleSession {
                 if (d.kind === "skill") {
                     actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
                     if (actor.fightStyle === "tank") actor.guard = true;
+                    this.skillGate = SKILL_EXCLUSIVE;
+                    this.skillSide = side;
                 }
                 actor.busy = true;
                 this.pending[side] = { to: foe, skill: d.kind === "skill", style };
@@ -378,6 +389,32 @@ export class BattleSession {
         if (f.raged) t *= f.fightStyle === "berserker" ? 0.72 : 0.84;
         if (f.enraged) t *= 0.8;
         return Math.max(gameNumber("battle_minInterval") * 0.85, t);
+    }
+
+    /**
+     * 出招：冷却好了本来会立刻放绝招，但对面立绘还在时改打普攻，CD 留给下一拍。
+     * 同一帧双方都好了，玩家先处理，所以自己的特效优先。
+     */
+    private chooseAction(side: BattleSide, actor: LiveFighter, foe: BattleSide): BattleDecision {
+        let d = actor.counterReady
+            ? { kind: "skill" as const, style: pickCounterStyle(actor) }
+            : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
+        if (d.kind === "skill" && actor.skillCd > 0 && !actor.counterReady) {
+            d = this.fallbackAttack(actor, foe, d.style);
+        }
+        if (d.kind !== "skill" || !this.skillOccupied(side, foe)) return d;
+        if (actor.counterReady) return { kind: "attack", style: d.style };
+        return this.fallbackAttack(actor, foe, d.style);
+    }
+
+    private fallbackAttack(actor: LiveFighter, foe: BattleSide, style: StrikeStyle): BattleDecision {
+        const d = this.decider({ ...this.toAi(actor), skillCd: 1 }, this.toAi(this.live(foe)));
+        return d.kind === "skill" ? { kind: "attack", style } : d;
+    }
+
+    private skillOccupied(side: BattleSide, foe: BattleSide): boolean {
+        if (this.pending[foe]?.skill) return true;
+        return this.skillGate > 0 && this.skillSide !== side;
     }
 
     private toAi(f: LiveFighter) {

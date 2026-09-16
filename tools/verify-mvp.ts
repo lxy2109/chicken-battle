@@ -948,6 +948,39 @@ function run() {
         assert(finale.flourish === "ember" && finale.dust[0] > finale.dust[1], "鸡王场改火气");
     });
 
+    ok("绝招错开，不跟对面叠特效", () => {
+        const run = new RunState(44);
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 800, maxHp: 800, firstStrike: 1 };
+        e.stats = { ...e.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 800, maxHp: 800, firstStrike: 1 };
+        p.fightStyle = "brawler";
+        e.fightStyle = "brawler";
+        const battle = new BattleSession(p, e, 44, false, () => ({ kind: "skill", style: "leap" }));
+        battle.beginCombat();
+        const last: Record<"player" | "enemy", number> = { player: -99, enemy: -99 };
+        const skills: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
+        let overlap = 0;
+        let t = 0;
+        let guard = 0;
+        while (!battle.done && guard++ < 8000) {
+            for (const ev of battle.tick(0.05)) {
+                if (ev.type !== "action" || ev.kind !== "skill") continue;
+                skills[ev.side] += 1;
+                const other = ev.side === "player" ? "enemy" : "player";
+                if (t - last[other] < 1.2) overlap += 1;
+                last[ev.side] = t;
+            }
+            for (const side of ["player", "enemy"] as const) {
+                if (battle.striking(side)) battle.resolveStrike(side, true);
+            }
+            t += 0.05;
+        }
+        assert(skills.player >= 3 && skills.enemy >= 3, `双方都应能放绝招，实际 玩家${skills.player} 敌人${skills.enemy}`);
+        assert(overlap === 0, `绝招立绘叠了 ${overlap} 次`);
+        assert(Math.abs(last.player - last.enemy) >= 1.2 || last.player < 0 || last.enemy < 0,
+            "最后一次绝招也不该贴在一起");
+    });
+
     ok("对撞折伤、闪避与红眼", () => {
         const run = new RunState(91);
         const p = run.playerFighter(), e = run.enemyFighter();

@@ -152,7 +152,6 @@ export class BattleFx {
 
     skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         this.skillCharge(actor);
-        if (mode === "full") playSkillAnnounce(style);
         try {
             this.skillSplash(style, title, fromRight, mode);
         }
@@ -363,6 +362,10 @@ export class BattleFx {
     private skillSplash(style: StrikeStyle, title: string, fromRight: boolean, mode: SplashMode) {
         const prefab = mode === "half" ? this.sheet.skillMiniPrefabs?.[style] : this.sheet.skillPrefabs?.[style];
         if (!prefab || !this.cinema.isValid || this.closed) return;
+        if (mode === "full") this.dropSplash("half");
+        else if (this.liveSplash.full) return;
+        // 全屏盖半屏时只喊自己的招；半屏单独亮相才出敌人那句。
+        playSkillAnnounce(style);
         this.layout();
         const { w, h } = this.size();
         const look = SKILL_LOOK[style];
