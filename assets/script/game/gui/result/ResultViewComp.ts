@@ -10,6 +10,7 @@ import { Appearance } from "../../core/Types";
 import { celebrateChicken, mournChicken, spawnChicken } from "../ChickenBinder";
 import { adaptView } from "../adaptView";
 import { goScreen, registerScreen } from "../Nav";
+import { playWinRibbon } from "../RibbonFx";
 import { playResultSuitVideo, stopSlotVideo } from "../SlotVideo";
 import { bindClick, setCoverSprite, setLabel, setNodeActive } from "../UiUtil";
 
@@ -47,6 +48,7 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
         const appearance = run.playerFighter().appearance;
         const look: Appearance = win ? appearance : { ...appearance, face: "sad" };
         bindClick(this, "BtnNext", this.onNext.bind(this));
+        if (win) void playWinRibbon(this);
         const gifTask = win ? playResultSuitVideo(this, "ChickenSlot", look) : Promise.resolve(false);
         // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
         if (!(await gifTask)) {

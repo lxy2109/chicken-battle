@@ -8,6 +8,7 @@ import { ChickenRun } from "../../chicken/ChickenRun";
 import { getStory } from "../../core/Catalog";
 import { spawnChicken } from "../ChickenBinder";
 import { goScreen, registerScreen } from "../Nav";
+import { playWinRibbon } from "../RibbonFx";
 import { bindClick, setLabel, playSparkles } from "../UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -24,6 +25,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
         setLabel(this, "LabDesc", getStory("ending"));
         setLabel(this, "LabHint", gameText("EndingViewComp_001"));
         await spawnChicken(this, "ChickenSlot", this.ent.run.playerFighter().appearance, 0.72);
+        void playWinRibbon(this);
         const slot = this.getNode("ChickenSlot");
         if (slot) {
             void playSparkles(slot, 12);

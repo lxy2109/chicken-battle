@@ -8,6 +8,7 @@ export const PREFAB_PATH = {
     fxSkill: "game/prefab/fx_skill",
     fxHeal: "game/prefab/fx_heal",
     fxStart: "game/prefab/fx_start",
+    fxRibbon: "game/prefab/fx_ribbon",
     taunt: "game/prefab/taunt_bubble",
     shopItem: "game/prefab/shop_item",
     shopSetItem: "game/prefab/shop_set_item",
