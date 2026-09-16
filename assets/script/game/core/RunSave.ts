@@ -90,6 +90,9 @@ export function decodeRun(raw: string): RunState {
     }
     run.bonus = p.bonus;
     run.partLevels = p.partLevels;
+    for (const opt of q.upgrades) {
+        if (opt.part) opt.nextLevel = (run.partLevels[opt.part] ?? 0) + 1;
+    }
     run.routeNode = node.id;
     run.stage = node.id;
     run.phase = node.kind;

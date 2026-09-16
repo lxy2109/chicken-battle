@@ -1,4 +1,4 @@
-import { Color, Font, Graphics, Label, Mask, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, Vec2, director, tween, v3 } from "cc";
+import { Color, Graphics, Label, Node, Prefab, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, Widget, director, instantiate, tween, v3 } from "cc";
 import { ChickenActor } from "../../battle/ChickenActor";
 import { StrikeStyle } from "../../core/Types";
 import { playSkillAnnounce } from "../GameAudio";
@@ -13,14 +13,8 @@ export interface BattleFxSheet {
     crack?: SpriteFrame;
     ink?: SpriteFrame;
     charge?: SpriteFrame;
-    skills?: Partial<Record<StrikeStyle, SpriteFrame>>;
-    skillBgs?: Partial<Record<StrikeStyle, SpriteFrame>>;
-    skillMinis?: Partial<Record<StrikeStyle, SpriteFrame>>;
-    rays?: SpriteFrame;
-    flare?: SpriteFrame;
-    banner?: SpriteFrame;
-    sparks?: SpriteFrame;
-    titleFont?: Font;
+    skillPrefabs?: Partial<Record<StrikeStyle, Prefab>>;
+    skillMiniPrefabs?: Partial<Record<StrikeStyle, Prefab>>;
 }
 
 type SplashEnter = "side" | "up" | "down" | "zoom" | "spin" | "feint" | "pulse";
@@ -31,7 +25,6 @@ type EaseName = "linear" | "quadIn" | "quadOut" | "cubicIn" | "cubicOut" | "quar
 interface SkillLook {
     rgb: [number, number, number];
     enter: SplashEnter;
-    ghosts: number;
     inTime: number;
     hold: number;
     outTime: number;
@@ -42,19 +35,19 @@ interface SkillLook {
 
 /** 每招自己的进出曲线，不能共用同一段 quadOut。 */
 const SKILL_LOOK: Record<StrikeStyle, SkillLook> = {
-    peck: { rgb: [255, 196, 72], enter: "zoom", ghosts: 0, inTime: 0.22, hold: 0.36, outTime: 0.16, inEase: "backOut", bgFrom: 1.02, bgTo: 1.06 },
-    jump: { rgb: [255, 220, 110], enter: "up", ghosts: 1, inTime: 0.3, hold: 0.62, outTime: 0.2, inEase: "sineOut", bgFrom: 1.08, bgTo: 1 },
-    dive: { rgb: [110, 190, 255], enter: "down", ghosts: 1, inTime: 0.2, hold: 0.48, outTime: 0.18, inEase: "expoIn", bgFrom: 0.96, bgTo: 1.05 },
-    leap: { rgb: [255, 120, 48], enter: "down", ghosts: 1, inTime: 0.32, hold: 0.52, outTime: 0.2, inEase: "cubicIn", bgFrom: 1.12, bgTo: 1 },
-    charge: { rgb: [255, 150, 60], enter: "side", ghosts: 1, inTime: 0.16, hold: 0.44, outTime: 0.16, inEase: "circIn", bgFrom: 1.04, bgTo: 1 },
-    tail: { rgb: [90, 220, 170], enter: "spin", ghosts: 1, inTime: 0.28, hold: 0.5, outTime: 0.2, inEase: "cubicOut", bgFrom: 1, bgTo: 1.07 },
-    combo: { rgb: [255, 230, 90], enter: "pulse", ghosts: 3, inTime: 0.42, hold: 0.38, outTime: 0.16, inEase: "quadOut", bgFrom: 1.06, bgTo: 1.02 },
-    feint: { rgb: [180, 120, 255], enter: "feint", ghosts: 1, inTime: 0.24, hold: 0.46, outTime: 0.18, inEase: "expoOut", bgFrom: 1.1, bgTo: 1 }
+    peck: { rgb: [255, 196, 72], enter: "zoom", inTime: 0.22, hold: 0.36, outTime: 0.16, inEase: "backOut", bgFrom: 1.02, bgTo: 1.06 },
+    jump: { rgb: [255, 220, 110], enter: "up", inTime: 0.3, hold: 0.62, outTime: 0.2, inEase: "sineOut", bgFrom: 1.08, bgTo: 1 },
+    dive: { rgb: [110, 190, 255], enter: "down", inTime: 0.2, hold: 0.48, outTime: 0.18, inEase: "expoIn", bgFrom: 0.96, bgTo: 1.05 },
+    leap: { rgb: [255, 120, 48], enter: "down", inTime: 0.32, hold: 0.52, outTime: 0.2, inEase: "cubicIn", bgFrom: 1.12, bgTo: 1 },
+    charge: { rgb: [255, 150, 60], enter: "side", inTime: 0.16, hold: 0.44, outTime: 0.16, inEase: "circIn", bgFrom: 1.04, bgTo: 1 },
+    tail: { rgb: [90, 220, 170], enter: "spin", inTime: 0.28, hold: 0.5, outTime: 0.2, inEase: "cubicOut", bgFrom: 1, bgTo: 1.07 },
+    combo: { rgb: [255, 230, 90], enter: "pulse", inTime: 0.42, hold: 0.38, outTime: 0.16, inEase: "quadOut", bgFrom: 1.06, bgTo: 1.02 },
+    feint: { rgb: [180, 120, 255], enter: "feint", inTime: 0.24, hold: 0.46, outTime: 0.18, inEase: "expoOut", bgFrom: 1.1, bgTo: 1 }
 };
 
 /**
  * 战斗电影感：斩痕贴图、冲击波、残影、竖屏招式立绘。
- * 玩家绝招走竖屏全屏立绘；敌人绝招走无底板的小贴纸。不再叠黑框宽银幕和暗色闪屏。
+ * 玩家绝招走全屏预制体，敌人绝招走半屏预制体。标题位置改 prefab，不要再代码里逐字摆。
  */
 export class BattleFx {
     private overlay: Node;
@@ -159,12 +152,12 @@ export class BattleFx {
 
     skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         this.skillCharge(actor);
-        playSkillAnnounce(style);
+        if (mode === "full") playSkillAnnounce(style);
         try {
             this.skillSplash(style, title, fromRight, mode);
         }
         catch {
-            /* 立绘缺图或 Label 组件冲突时不能把绝招特效整段吃掉 */
+            /* 预制体没进包时不能把绝招整段吃掉 */
         }
     }
 
@@ -363,395 +356,164 @@ export class BattleFx {
         }).start();
     }
 
-    /** 竖屏全屏立绘；敌人走无底板小贴纸。两边可以同时播，不能互相挤掉。 */
+    /**
+     * 竖屏全屏立绘 / 敌人半屏贴纸，都走预制体。
+     * 标题位置做在 prefab 里，这里只负责进出场。
+     */
     private skillSplash(style: StrikeStyle, title: string, fromRight: boolean, mode: SplashMode) {
-        if (mode === "half") {
-            this.skillMiniBurst(style, title, fromRight);
-            return;
-        }
-        if (!this.cinema.isValid || this.closed) return;
+        const prefab = mode === "half" ? this.sheet.skillMiniPrefabs?.[style] : this.sheet.skillPrefabs?.[style];
+        if (!prefab || !this.cinema.isValid || this.closed) return;
         this.layout();
         const { w, h } = this.size();
         const look = SKILL_LOOK[style];
-        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
         const dir = fromRight ? 1 : -1;
-        const hero = this.sheet.skills?.[style];
-        const bgFrame = this.sheet.skillBgs?.[style];
-        const hold = look.hold;
-        const fadeOut = look.outTime;
-        const bw = w;
-        const bh = h;
-        const cx = 0;
-        const artY = 0;
-
-        const root = new Node("SkillSplash");
+        const root = instantiate(prefab);
         root.layer = this.cinema.layer;
         root.parent = this.cinema;
-        root.addComponent(UITransform).setContentSize(w, h);
-        const fade = root.addComponent(UIOpacity);
+        const fade = root.getComponent(UIOpacity) || root.addComponent(UIOpacity);
         fade.opacity = 0;
-        this.dropSplash("full");
-        this.liveSplash.full = root;
-        this.hideVeil();
+        this.dropSplash(mode);
+        this.liveSplash[mode] = root;
+        if (mode === "full") this.hideVeil();
 
-        const spanX = w * 0.64;
-        const spanY = h * 0.38;
-        const bgPose = this.enterStart(look, cx, artY, dir, spanX, spanY, 0.42);
-        const sceneRoot = new Node("Scene");
-        sceneRoot.layer = root.layer;
-        sceneRoot.parent = root;
-        const sceneUt = sceneRoot.addComponent(UITransform);
-        sceneUt.setContentSize(bw, bh);
-        sceneRoot.setPosition(bgPose.x, bgPose.y, 0);
-        sceneRoot.angle = bgPose.angle;
-        const mask = sceneRoot.addComponent(Mask);
-        mask.type = Mask.Type.GRAPHICS_RECT;
-        this.colorPlate(sceneRoot, bw, bh, look.rgb);
-
-        const scene = this.coverBg(sceneRoot, bgFrame, sceneUt);
-        if (scene) {
-            const cover = scene.node.scale.x;
-            const from = cover * bgPose.scale * look.bgFrom;
-            scene.node.setScale(from, from, 1);
-            tween(scene.node).to(look.inTime + hold, { scale: v3(cover * look.bgTo, cover * look.bgTo, 1) }, { easing: "sineInOut" }).start();
+        this.applySplashTitle(root, title);
+        if (mode === "full") this.fitFullSplash(root, w, h);
+        else {
+            root.getComponent(Widget)?.updateAlignment();
+            root.getComponent(UITransform)?.setContentSize(w, h);
+            root.setPosition(0, 0, 0);
         }
+        const board = this.child(root, mode === "half" ? "Board" : "Scene") || root;
+        if (mode === "half" && !fromRight) board.setPosition(-Math.abs(board.position.x), board.position.y, 0);
 
-        const rays = this.piece(sceneRoot, this.sheet.rays, bw * 1.05, bh * 1.05, 0, 0, { scale: 0.72, color: tint, opacity: 0 });
-        if (rays) {
-            tween(rays.op).to(0.12, { opacity: 110 }).start();
-            tween(rays.node).to(look.inTime, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
-                .by(hold, { angle: dir * 8 }).start();
-        }
-        const flare = this.piece(sceneRoot, this.sheet.flare, bh * 0.82, bh * 0.82, 0, 0, { scale: 0.45, color: tint, opacity: 0 });
-        if (flare) {
-            tween(flare.op).to(0.1, { opacity: 110 }).start();
-            tween(flare.node).to(0.18, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
-                .to(0.16, { scale: v3(0.88, 0.88, 1) })
-                .to(0.16, { scale: v3(1.06, 1.06, 1) }).start();
-        }
-
-        const ring = this.piece(sceneRoot, this.sheet.ring || this.sheet.charge, bw * 0.7, bh * 0.22, 0, -bh * 0.28, {
-            scale: 0.35, color: tint, opacity: 0
-        });
-        if (ring) {
-            tween(ring.op).delay(0.06).to(0.08, { opacity: 180 }).to(0.28, { opacity: 0 }).start();
-            tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.5, 1.1, 1) }, { easing: "quadOut" }).start();
-        }
-
-        tween(sceneRoot).to(look.inTime, {
-            position: v3(cx, artY, 0),
-            angle: 0
+        const rest = board.position.clone();
+        const spanX = w * (mode === "full" ? 0.64 : 0.2);
+        const spanY = h * (mode === "full" ? 0.38 : 0.12);
+        const start = this.enterStart(look, rest.x, rest.y, dir, spanX, spanY, mode === "full" ? 0.42 : 1);
+        board.setPosition(start.x, start.y, 0);
+        board.angle = start.angle;
+        if (mode === "half") board.setScale(start.scale, start.scale, 1);
+        tween(board).to(look.inTime, {
+            position: v3(rest.x, rest.y, 0),
+            angle: 0,
+            scale: v3(1, 1, 1)
         }, { easing: look.inEase }).start();
+        const bg = this.child(root, "CoverBg");
+        if (bg && mode !== "full") {
+            const cover = Math.abs(bg.scale.x) || 1;
+            bg.setScale(cover * start.scale * look.bgFrom, cover * start.scale * look.bgFrom, 1);
+            tween(bg).to(look.inTime + look.hold, { scale: v3(cover * look.bgTo, cover * look.bgTo, 1) }, { easing: "sineInOut" }).start();
+        }
 
-        const native = hero?.originalSize;
+        const hero = this.child(root, "Hero");
+        if (hero) {
+            const hx = hero.position.x, hy = hero.position.y;
+            const fill = Math.abs(hero.scale.x) || 1;
+            this.poseHeroStart(hero, look, hx, hy, dir, w, h, fill);
+            this.playHeroEnter(hero, look, hx, hy, dir, look.hold, fill);
+        }
+
+        const titleNode = this.child(root, "Title");
+        if (titleNode) {
+            titleNode.setScale(1.28, 1.28, 1);
+            tween(titleNode).delay(look.inTime * 0.35)
+                .to(0.14, { scale: v3(1, 1, 1) }, { easing: "backOut" }).start();
+        }
+        const rays = this.child(root, "Rays");
+        if (rays) tween(rays).by(look.inTime + look.hold, { angle: dir * 8 }).start();
+        const flare = this.child(root, "Flare");
+        if (flare) {
+            tween(flare).to(0.18, { scale: v3(1.08, 1.08, 1) }, { easing: "quadOut" })
+                .to(0.16, { scale: v3(0.94, 0.94, 1) })
+                .to(0.16, { scale: v3(1.04, 1.04, 1) }).start();
+        }
+        const ring = this.child(root, "Ring");
+        if (ring) {
+            const ringOp = ring.getComponent(UIOpacity) || ring.addComponent(UIOpacity);
+            ringOp.opacity = 0;
+            tween(ringOp).delay(0.06).to(0.08, { opacity: 180 }).to(0.28, { opacity: 0 }).start();
+            tween(ring).delay(0.06).to(0.36, { scale: v3(1.35, 1.08, 1) }, { easing: "quadOut" }).start();
+        }
+
+        const extra = mode === "full" ? 0.12 : 0.1;
+        tween(fade).to(0.08, { opacity: 255 })
+            .delay(look.inTime + look.hold + extra)
+            .to(look.outTime, { opacity: 0 }, { easing: "quadOut" })
+            .call(() => this.dropSplash(mode)).start();
+    }
+
+    /** 根节点和 Scene 拉满画布；背景走 UIBgAdaptation Cover，立绘按 Cover 放大，多出来的边由 Mask 裁掉。 */
+    private fitFullSplash(root: Node, w: number, h: number) {
+        const widget = root.getComponent(Widget);
+        if (widget) widget.updateAlignment();
+        const rootUt = root.getComponent(UITransform);
+        if (rootUt) rootUt.setContentSize(w, h);
+        root.setScale(1, 1, 1);
+        root.setPosition(0, 0, 0);
+        const scene = this.child(root, "Scene");
+        scene?.getComponent(UITransform)?.setContentSize(w, h);
+        this.bindCoverBg(this.child(root, "CoverBg"));
+        this.coverFit(this.child(root, "Hero"), w, h);
+    }
+
+    /** 背景用和界面一样的 Cover 适配，视口对准 SkillCinema。 */
+    private bindCoverBg(bg: Node | null) {
+        if (!bg) return;
+        const adapt = bg.getComponent(UIBgAdaptation) || bg.addComponent(UIBgAdaptation);
+        const viewport = this.cinema.getComponent(UITransform);
+        if (viewport) adapt.viewportTransform = viewport;
+        adapt.refresh();
+    }
+
+    /** 720×1280 竖屏立绘按 Cover 放大，缺贴图时也按这套设计尺寸算，避免缩在画布中间。 */
+    private coverFit(node: Node | null, w: number, h: number) {
+        if (!node) return 1;
+        const ut = node.getComponent(UITransform);
+        const sp = node.getComponent(Sprite);
+        const native = sp?.spriteFrame?.originalSize;
         const artW = native && native.width > 0 ? native.width : 720;
         const artH = native && native.height > 0 ? native.height : 1280;
-        const fill = Math.max(bw / artW, bh / artH);
-
-        let startX = 0, startY = 0, startScale = fill * 0.92, startAngle = 0;
-        if (look.enter === "side") startX = dir * bw * 0.7;
-        else if (look.enter === "up") startY = -bh * 0.28;
-        else if (look.enter === "down") startY = bh * 0.32;
-        else if (look.enter === "zoom") startScale = fill * 1.22;
-        else if (look.enter === "pulse") startScale = fill * 1.12;
-        else if (look.enter === "spin") {
-            startX = dir * bw * 0.28;
-            startAngle = -dir * 50;
-        }
-        else if (look.enter === "feint") {
-            startX = -dir * bw * 0.45;
-            startScale = fill * 0.84;
-        }
-
-        if (look.enter === "feint") {
-            const decoy = this.piece(sceneRoot, hero, artW, artH, dir * bw * 0.4, 0, { scale: fill * 0.9, opacity: 0, color: tint });
-            if (decoy) {
-                tween(decoy.op).to(0.08, { opacity: 140 }).delay(0.08).to(0.12, { opacity: 0 }).start();
-                tween(decoy.node).to(0.16, { position: v3(dir * 18, 0, 0) }, { easing: "quartOut" }).start();
-            }
-        }
-
-        for (let i = 0; i < look.ghosts; i++) {
-            const ox = (i - (look.ghosts - 1) / 2) * 28 * dir;
-            const ghost = this.piece(sceneRoot, hero, artW, artH, startX + ox, startY, {
-                scale: startScale * 0.92, opacity: 0, color: tint, angle: startAngle
-            });
-            if (!ghost) continue;
-            tween(ghost.op).delay(0.03 * i).to(0.1, { opacity: 80 }).delay(0.12).to(0.18, { opacity: 0 }).start();
-            tween(ghost.node).delay(0.03 * i)
-                .to(look.inTime * 0.85, { position: v3(ox, 0, 0), scale: v3(fill * 1.02, fill * 1.02, 1), angle: 0 }, { easing: look.inEase }).start();
-        }
-
-        const art = this.piece(sceneRoot, hero, artW, artH, startX, startY, { scale: startScale, angle: startAngle });
-        if (art) this.playHeroEnter(art.node, look, 0, 0, dir, hold, fill);
-
-        const streakN = 5;
-        for (let i = 0; i < streakN; i++) {
-            const oy = (i - (streakN - 1) / 2) * 28;
-            const streak = this.piece(sceneRoot, this.sheet.streak, 180 + i * 14, 32, -dir * bw * 0.18, oy, {
-                scale: 0.6, opacity: 0, angle: (i - 1) * 5, color: tint
-            });
-            if (!streak) continue;
-            streak.node.setScale(-dir * 0.6, 0.6, 1);
-            tween(streak.op).delay(0.02 * i).to(0.06, { opacity: 180 }).to(0.16, { opacity: 0 }).start();
-            tween(streak.node).delay(0.02 * i).by(0.22, { position: v3(-dir * 70, 0, 0) }, { easing: "quadOut" }).start();
-        }
-
-        const sparkFrame = this.sheet.sparks || this.sheet.star;
-        const sparkSpot = [[-0.32, 0.22], [0.3, 0.18], [-0.18, -0.2], [0.26, -0.16], [0, 0.32], [0.08, -0.28]];
-        for (let i = 0; i < sparkSpot.length; i++) {
-            const [nx, ny] = sparkSpot[i];
-            const spark = this.piece(sceneRoot, sparkFrame, 90, 90, nx * bw, ny * bh, {
-                scale: 0.2, opacity: 0, angle: i * 28, color: tint
-            });
-            if (!spark) continue;
-            tween(spark.op).delay(0.05 + i * 0.03).to(0.06, { opacity: 255 }).delay(0.1).to(0.16, { opacity: 0 }).start();
-            tween(spark.node).delay(0.05 + i * 0.03)
-                .to(0.12, { scale: v3(1.15, 1.15, 1) }, { easing: "backOut" })
-                .to(0.16, { scale: v3(0.4, 0.4, 1) }).start();
-        }
-
-        if (style === "charge" || style === "leap" || style === "dive") {
-            const slash = this.piece(sceneRoot, this.sheet.slash, bw * 0.9, bh * 0.28, dir * 12, 0, {
-                scale: 0.4, opacity: 0, angle: style === "leap" || style === "dive" ? -dir * 42 : dir * 8
-            });
-            if (slash) {
-                slash.node.setScale(dir * 0.4, 0.4, 1);
-                tween(slash.op).delay(look.inTime * 0.55).to(0.05, { opacity: 200 }).to(0.16, { opacity: 0 }).start();
-                tween(slash.node).delay(look.inTime * 0.55).to(0.14, { scale: v3(dir * 1.05, 0.85, 1) }, { easing: "quartOut" }).start();
-            }
-        }
-
-        const vertical = look.enter === "up" || look.enter === "down";
-        this.stampTitle(sceneRoot, title, look, {
-            x: vertical ? dir * bw * 0.08 : 0,
-            y: vertical ? bh * 0.02 : -bh * 0.06,
-            size: vertical ? 152 : 138,
-            dir
-        });
-
-        tween(fade).to(0.08, { opacity: 255 }).delay(look.inTime + hold + 0.12).to(fadeOut, { opacity: 0 }, { easing: "quadOut" })
-            .call(() => this.dropSplash("full")).start();
+        const fill = Math.max(w / artW, h / artH);
+        ut?.setContentSize(artW, artH);
+        node.setScale(fill, fill, 1);
+        return fill;
     }
 
-    /** 敌人绝招：贴在自己一侧的小贴纸，不铺底板、不遮战场。 */
-    private skillMiniBurst(style: StrikeStyle, title: string, fromRight: boolean) {
-        if (!this.cinema.isValid || this.closed) return;
-        this.layout();
-        const { w, h } = this.size();
-        const look = SKILL_LOOK[style];
-        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
-        const dir = fromRight ? 1 : -1;
-        const hero = this.sheet.skillMinis?.[style] || this.sheet.skills?.[style];
-        const hold = look.hold * 0.72;
-        const fadeOut = look.outTime;
-        const size = Math.min(w, h) * 0.4;
-        const cx = dir * w * 0.28;
-        const artY = h * 0.04;
-
-        const root = new Node("SkillMini");
-        root.layer = this.cinema.layer;
-        root.parent = this.cinema;
-        root.addComponent(UITransform).setContentSize(w, h);
-        const fade = root.addComponent(UIOpacity);
-        fade.opacity = 0;
-        this.dropSplash("half");
-        this.liveSplash.half = root;
-
-        const native = hero?.originalSize;
-        const artW = native && native.width > 0 ? native.width : 512;
-        const artH = native && native.height > 0 ? native.height : 512;
-        const fill = size / Math.max(artW, artH);
-        const spanX = w * 0.2;
-        const spanY = h * 0.12;
-        let startX = cx, startY = artY, startScale = fill * 0.88, startAngle = 0;
-        if (look.enter === "side") startX = cx + dir * spanX;
-        else if (look.enter === "up") startY = artY - spanY;
-        else if (look.enter === "down") startY = artY + spanY;
-        else if (look.enter === "zoom") startScale = fill * 1.28;
-        else if (look.enter === "pulse") startScale = fill * 1.14;
-        else if (look.enter === "spin") {
-            startX = cx + dir * spanX * 0.5;
-            startAngle = -dir * 50;
-        }
-        else if (look.enter === "feint") {
-            startX = cx - dir * spanX * 0.7;
-            startScale = fill * 0.8;
-        }
-
-        if (look.enter === "feint") {
-            const decoy = this.piece(root, hero, artW, artH, cx + dir * size * 0.35, artY, { scale: fill * 0.9, opacity: 0, color: tint });
-            if (decoy) {
-                tween(decoy.op).to(0.08, { opacity: 140 }).delay(0.08).to(0.12, { opacity: 0 }).start();
-                tween(decoy.node).to(0.16, { position: v3(cx + dir * 18, artY, 0) }, { easing: "quartOut" }).start();
-            }
-        }
-
-        for (let i = 0; i < Math.min(1, look.ghosts); i++) {
-            const ox = 22 * dir;
-            const ghost = this.piece(root, hero, artW, artH, startX + ox, startY, {
-                scale: startScale * 0.92, opacity: 0, color: tint, angle: startAngle
-            });
-            if (!ghost) continue;
-            tween(ghost.op).to(0.1, { opacity: 70 }).delay(0.1).to(0.16, { opacity: 0 }).start();
-            tween(ghost.node)
-                .to(look.inTime * 0.85, { position: v3(cx + ox, artY, 0), scale: v3(fill * 1.02, fill * 1.02, 1), angle: 0 }, { easing: look.inEase }).start();
-        }
-
-        const art = this.piece(root, hero, artW, artH, startX, startY, { scale: startScale, angle: startAngle });
-        if (art) this.playHeroEnter(art.node, look, cx, artY, dir, hold, fill);
-
-        for (let i = 0; i < 3; i++) {
-            const oy = (i - 1) * 22;
-            const streak = this.piece(root, this.sheet.streak, 140 + i * 12, 28, cx - dir * size * 0.22, artY + oy, {
-                scale: 0.55, opacity: 0, angle: (i - 1) * 6, color: tint
-            });
-            if (!streak) continue;
-            streak.node.setScale(-dir * 0.55, 0.55, 1);
-            tween(streak.op).delay(0.02 * i).to(0.06, { opacity: 180 }).to(0.16, { opacity: 0 }).start();
-            tween(streak.node).delay(0.02 * i).by(0.2, { position: v3(-dir * 50, 0, 0) }, { easing: "quadOut" }).start();
-        }
-
-        if (style === "charge" || style === "leap" || style === "dive") {
-            const slash = this.piece(root, this.sheet.slash, size * 1.15, size * 0.36, cx + dir * 8, artY, {
-                scale: 0.4, opacity: 0, angle: style === "leap" || style === "dive" ? -dir * 42 : dir * 8
-            });
-            if (slash) {
-                slash.node.setScale(dir * 0.4, 0.4, 1);
-                tween(slash.op).delay(look.inTime * 0.55).to(0.05, { opacity: 200 }).to(0.16, { opacity: 0 }).start();
-                tween(slash.node).delay(look.inTime * 0.55).to(0.14, { scale: v3(dir * 1.05, 0.85, 1) }, { easing: "quartOut" }).start();
-            }
-        }
-
-        const ring = this.piece(root, this.sheet.ring || this.sheet.charge, size * 0.9, size * 0.28, cx, artY - size * 0.28, {
-            scale: 0.35, color: tint, opacity: 0
-        });
-        if (ring) {
-            tween(ring.op).delay(0.06).to(0.08, { opacity: 160 }).to(0.28, { opacity: 0 }).start();
-            tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.4, 1.05, 1) }, { easing: "quadOut" }).start();
-        }
-
-        const vertical = look.enter === "up" || look.enter === "down";
-        this.stampTitle(root, title, look, {
-            x: cx - dir * size * 0.08,
-            y: vertical ? artY + 8 : artY - size * 0.12,
-            size: vertical ? 96 : 88,
-            dir
-        });
-
-        tween(fade).to(0.08, { opacity: 255 }).delay(look.inTime + hold + 0.1).to(fadeOut, { opacity: 0 }, { easing: "quadOut" })
-            .call(() => this.dropSplash("half")).start();
-    }
-
-    /** 招式名逐字蹦出，沿上下或左右错落，字色跟着这一招的特效走。 */
-    private stampTitle(parent: Node, title: string, look: SkillLook, pose: { x: number; y: number; size: number; dir: number }) {
-        let prefix = "";
+    private applySplashTitle(root: Node, title: string) {
         let name = title.replace(/\s+/g, "");
         const cut = name.indexOf("·");
-        if (cut >= 0) {
-            prefix = name.slice(0, cut);
-            name = name.slice(cut + 1);
-        }
-        const chars = Array.from(name);
-        if (!chars.length) return;
-        const vertical = look.enter === "up" || look.enter === "down";
-        const size = pose.size;
-        const step = size * (vertical ? 1.32 : 1.26);
-        const n = chars.length;
-        const seed = look.enter.length * 13 + n * 7;
-        const mid = (n - 1) / 2;
-
-        if (prefix) {
-            const tagX = vertical ? pose.x : pose.x;
-            const tagY = vertical
-                ? pose.y + step * mid + size * 0.62
-                : pose.y + size * 0.82;
-            this.glyph(parent, prefix, Math.round(size * 0.34), tagX, tagY, look, 0, -pose.dir * 6, true, 0.28);
-        }
-
-        for (let i = 0; i < n; i++) {
-            const jitter = ((i * 37 + seed) % 9) - 4;
-            const tilt = ((i * 17 + seed * 3) % 11) - 5;
-            const bump = i === 0 ? 8 : i === n - 1 ? 4 : 0;
-            let x: number;
-            let y: number;
-            if (vertical) {
-                const along = look.enter === "down" ? (i - mid) * step : (mid - i) * step;
-                x = pose.x + jitter * 2.2 + (i % 2 === 0 ? -8 : 8);
-                y = pose.y + along;
-            }
-            else {
-                x = pose.x + (i - mid) * step;
-                y = pose.y + jitter * 3.2 + Math.sin(i * 1.2 + seed) * 10;
-            }
-            const tint = 0.34 + (i % 3) * 0.1;
-            this.glyph(parent, chars[i], size + bump, x, y, look, 0.06 + i * 0.07, tilt, false, tint);
-        }
+        if (cut >= 0) name = name.slice(cut + 1);
+        const lab = this.child(root, "TitleName")?.getComponent(Label);
+        if (lab && name) lab.string = name;
     }
 
-    private mixRgb(a: [number, number, number], t: number) {
-        return new Color(
-            Math.round(255 * (1 - t) + a[0] * t),
-            Math.round(248 * (1 - t) + a[1] * t),
-            Math.round(220 * (1 - t) + a[2] * t)
-        );
+    private poseHeroStart(hero: Node, look: SkillLook, destX: number, destY: number, dir: number, w: number, h: number, fill: number) {
+        let x = destX, y = destY, scale = fill * 0.92, angle = 0;
+        if (look.enter === "side") x = destX + dir * w * 0.35;
+        else if (look.enter === "up") y = destY - h * 0.16;
+        else if (look.enter === "down") y = destY + h * 0.18;
+        else if (look.enter === "zoom") scale = fill * 1.22;
+        else if (look.enter === "pulse") scale = fill * 1.12;
+        else if (look.enter === "spin") {
+            x = destX + dir * w * 0.16;
+            angle = -dir * 50;
+        }
+        else if (look.enter === "feint") {
+            x = destX - dir * w * 0.22;
+            scale = fill * 0.84;
+        }
+        hero.setPosition(x, y, 0);
+        hero.setScale(scale, scale, 1);
+        hero.angle = angle;
     }
 
-    private glyph(
-        parent: Node,
-        text: string,
-        size: number,
-        x: number,
-        y: number,
-        look: SkillLook,
-        delay: number,
-        tilt: number,
-        tag: boolean,
-        tint: number
-    ) {
-        const node = new Node(tag ? "SkillTag" : "SkillGlyph");
-        node.layer = parent.layer;
-        node.parent = parent;
-        node.setPosition(x, y, 0);
-        node.angle = tilt;
-        node.setScale(1.55, 1.55, 1);
-        const label = node.addComponent(Label);
-        label.string = text;
-        label.fontSize = size;
-        label.lineHeight = size + 10;
-        label.overflow = Label.Overflow.NONE;
-        label.enableWrapText = false;
-        label.color = this.mixRgb(look.rgb, tag ? 0.22 : tint);
-        label.enableOutline = true;
-        label.outlineColor = new Color(
-            Math.round(look.rgb[0] * 0.28),
-            Math.round(look.rgb[1] * 0.14),
-            Math.round(look.rgb[2] * 0.1)
-        );
-        label.outlineWidth = Math.max(tag ? 3 : 6, Math.round(size * 0.075));
-        label.enableShadow = true;
-        label.shadowColor = new Color(0, 0, 0, 170);
-        label.shadowOffset = new Vec2(2, -3);
-        label.shadowBlur = 2;
-        const font = this.sheet.titleFont;
-        if (font) {
-            label.useSystemFont = false;
-            label.font = font;
+    private child(root: Node, name: string): Node | null {
+        if (root.name === name) return root;
+        for (const node of root.children) {
+            const hit = this.child(node, name);
+            if (hit) return hit;
         }
-        else {
-            label.useSystemFont = true;
-            label.fontFamily = "华文琥珀";
-            label.isBold = true;
-        }
-        const box = Math.max(size * (tag ? text.length * 1.05 : 1.45), 28);
-        node.getComponent(UITransform)!.setContentSize(box, size * 1.4);
-        const op = node.addComponent(UIOpacity);
-        op.opacity = 0;
-        tween(op).delay(delay).to(0.05, { opacity: 255 }).start();
-        tween(node).delay(delay)
-            .to(0.12, { scale: v3(1.08, 1.08, 1) }, { easing: "backOut" })
-            .to(0.08, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
-            .start();
+        return null;
     }
 
     private playHeroEnter(node: Node, look: SkillLook, destX: number, destY: number, dir: number, hold: number, fill = 1) {
@@ -813,67 +575,6 @@ export class BattleFx {
             scale = 1 - 0.22 * amount;
         }
         return { x, y: py, scale, angle };
-    }
-
-    /** 底板用原图尺寸 + Cover，和界面背景同一套 UIBgAdaptation。 */
-    private coverBg(parent: Node, frame: SpriteFrame | undefined, viewport: UITransform) {
-        if (!frame || !parent.isValid) return null;
-        const node = new Node("CoverBg");
-        node.layer = parent.layer;
-        node.parent = parent;
-        const native = frame.originalSize;
-        const w = native.width > 0 ? native.width : frame.rect.width;
-        const h = native.height > 0 ? native.height : frame.rect.height;
-        node.addComponent(UITransform).setContentSize(w, h);
-        const sp = node.addComponent(Sprite);
-        sp.sizeMode = Sprite.SizeMode.CUSTOM;
-        sp.spriteFrame = frame;
-        const op = node.addComponent(UIOpacity);
-        op.opacity = 255;
-        const adapt = node.addComponent(UIBgAdaptation);
-        adapt.viewportTransform = viewport;
-        adapt.refresh();
-        adapt.unscheduleAllCallbacks();
-        return { node, op };
-    }
-
-    private colorPlate(parent: Node, w: number, h: number, rgb: [number, number, number]) {
-        const node = new Node("Plate");
-        node.layer = parent.layer;
-        node.parent = parent;
-        node.addComponent(UITransform).setContentSize(w, h);
-        const g = node.addComponent(Graphics);
-        g.fillColor = new Color(Math.round(rgb[0] * 0.22), Math.round(rgb[1] * 0.14), Math.round(rgb[2] * 0.12), 255);
-        g.rect(-w / 2, -h / 2, w, h);
-        g.fill();
-        return node;
-    }
-
-    private piece(
-        parent: Node,
-        frame: SpriteFrame | undefined,
-        w: number,
-        h: number,
-        x: number,
-        y: number,
-        opt: { angle?: number; scale?: number; color?: Color; opacity?: number } = {}
-    ) {
-        if (!frame || !parent.isValid) return null;
-        const node = new Node("Piece");
-        node.layer = parent.layer;
-        node.parent = parent;
-        node.setPosition(x, y, 0);
-        const s = opt.scale ?? 1;
-        node.setScale(s, s, 1);
-        node.angle = opt.angle ?? 0;
-        node.addComponent(UITransform).setContentSize(w, h);
-        const sp = node.addComponent(Sprite);
-        sp.sizeMode = Sprite.SizeMode.CUSTOM;
-        sp.spriteFrame = frame;
-        if (opt.color) sp.color = opt.color;
-        const op = node.addComponent(UIOpacity);
-        op.opacity = opt.opacity ?? 255;
-        return { node, op };
     }
 
     private dropSplash(mode?: SplashMode) {

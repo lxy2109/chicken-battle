@@ -3,7 +3,7 @@ import { hasTables } from "./Config";
 import { inferFightStyle } from "./BattleStyle";
 import { getMaps, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
 import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
-import { PartLevels, canUpgrade, partScale, upgradeBonus } from "./PartUpgrade";
+import { PartLevels, partScale, upgradeBonus } from "./PartUpgrade";
 import { rollUpgrades } from "./RewardGen";
 import { Rng } from "./Rng";
 import {
@@ -238,7 +238,7 @@ export class RunState {
     }
 
     levelUp(part: PartId) {
-        if (!canUpgrade(this.partLevels, part)) return;
+        if (!part) return;
         this.partLevels[part] = (this.partLevels[part] ?? 0) + 1;
     }
 

@@ -150,12 +150,20 @@ class Builder {
         });
     }
 
+    opacity(nodeId, value = 255) {
+        this.addComp(nodeId, null, {
+            type: "cc.UIOpacity",
+            fields: { _opacity: value }
+        });
+    }
+
     label(nodeId, text, opt = {}) {
         const font = Math.max(14, opt.font || 28);
         const col = opt.color || INK.dark;
         const outline = opt.outline || false;
         const w = opt.w || 240;
         const h = Math.max(opt.h || font + 12, Math.ceil(font * 1.2) + (outline ? 6 : 0));
+        const outlineCol = opt.outlineColor || [58, 34, 12, 255];
         this.addComp(nodeId, null, {
             type: "cc.Label",
             fields: {
@@ -165,13 +173,16 @@ class Builder {
                 _actualFontSize: font, _fontSize: font, _fontFamily: "Arial",
                 // SHRINK 而不是 NONE：NONE 会让节点尺寸跟着文字内容变，
                 // 金币从 8 变成 128 时左对齐的数字会左右横跳，空文本更是直接塌成 0 宽。
-                _lineHeight: Math.round(font * 1.2), _overflow: 2, _enableWrapText: true,
-                _font: null, _isSystemFontUsed: true, _spacingX: 0,
+                _lineHeight: Math.round(font * 1.2), _overflow: 2, _enableWrapText: opt.wrap !== false,
+                _font: opt.fontUuid ? { __uuid__: opt.fontUuid, __expectedType__: "cc.TTFFont" } : null,
+                _isSystemFontUsed: !opt.fontUuid, _spacingX: 0,
                 _isItalic: false, _isBold: opt.bold !== false, _isUnderline: false, _underlineHeight: 2,
                 _cacheMode: 0, _enableOutline: !!outline,
-                _outlineColor: color(58, 34, 12, 255), _outlineWidth: opt.outlineWidth || 3,
-                _enableShadow: false, _shadowColor: color(0, 0, 0, 255),
-                _shadowOffset: vec2(2, 2), _shadowBlur: 2
+                _outlineColor: color(outlineCol[0], outlineCol[1], outlineCol[2], outlineCol[3] ?? 255),
+                _outlineWidth: opt.outlineWidth || 3,
+                _enableShadow: !!opt.shadow,
+                _shadowColor: color(0, 0, 0, opt.shadow ? 170 : 255),
+                _shadowOffset: vec2(opt.shadowX ?? 2, opt.shadowY ?? 2), _shadowBlur: 2
             }
         });
         const ui = this.objs[nodeId]._components[0];
@@ -768,7 +779,8 @@ function makeRewardCard() {
     b.sprite(slot, [255, 255, 255, 255], 1, SF.slot_frame);
     iconNode(b, slot, "Icon", SF.icon_star, 0, 0, 76);
 
-    textNode(b, root, "LabTitle", "强化", 0, 218, { font: 22, w: 178, h: 70, color: INK.cream, outline: true });
+    textNode(b, root, "LabTitle", "强化", 0, 236, { font: 22, w: 178, h: 36, color: INK.cream, outline: true, wrap: false });
+    textNode(b, root, "LabLevel", "Lv1", 0, 200, { font: 20, w: 110, h: 28, color: INK.cream, outline: true, wrap: false });
     textNode(b, root, "LabDesc", "描述", 0, -32, { font: 21, w: 170, h: 116, color: INK.dark, align: 1 });
     const gold = b.node({ name: "GoldRow", parent: root, x: 0, y: -138, w: 178, h: 34 });
     iconNode(b, gold, "GoldIcon", SF.icon_coin, -48, 0, 30);
@@ -781,6 +793,158 @@ function makeRewardCard() {
 }
 
 //#endregion
+
+/**
+ * 全屏 / 半屏绝招立绘。标题做在预制体上，不再运行时逐字乱摆。
+ * 打开对应 prefab 就能改「绝招」和招式名的位置。
+ */
+const SKILL_SPLASH = [
+    { style: "peck", name: "鸡啄米", rgb: [255, 196, 72], enter: "zoom" },
+    { style: "jump", name: "金鸡独立", rgb: [255, 220, 110], enter: "up" },
+    { style: "dive", name: "乌鸦坐飞鸡", rgb: [110, 190, 255], enter: "down" },
+    { style: "leap", name: "天外飞鸡", rgb: [255, 120, 48], enter: "down" },
+    { style: "charge", name: "铁头功", rgb: [255, 150, 60], enter: "side" },
+    { style: "tail", name: "神龙摆尾", rgb: [90, 220, 170], enter: "spin" },
+    { style: "combo", name: "连珠神啄", rgb: [255, 230, 90], enter: "pulse" },
+    { style: "feint", name: "金蝉脱壳", rgb: [180, 120, 255], enter: "feint" }
+];
+
+/**
+ * 全屏立绘：根节点按设计分辨率 1080×1920 铺满。
+ * 贴图本身是 720×1280，不要靠 Sprite CUSTOM 硬拉到 1080——编辑器打开预制体时
+ * 经常按 originalSize 把节点缩回去，看起来就不是全屏。立绘用原生尺寸 ×1.5。
+ */
+const SKILL_ART = { w: 720, h: 1280 };
+const SKILL_FULL = { w: 1080, h: 1920, k: 1.5 };
+
+function skillTitlePos(enter, half) {
+    if (half) return { x: 0, y: -168 };
+    if (enter === "up") return { x: -150, y: 280 };
+    if (enter === "down") return { x: -150, y: -260 };
+    if (enter === "zoom" || enter === "pulse") return { x: -150, y: -210 };
+    return { x: -150, y: 24 };
+}
+
+function sx(n) {
+    return Math.round(n * SKILL_FULL.k);
+}
+
+function skillInk(rgb, t) {
+    return [
+        Math.round(255 * (1 - t) + rgb[0] * t),
+        Math.round(248 * (1 - t) + rgb[1] * t),
+        Math.round(220 * (1 - t) + rgb[2] * t),
+        255
+    ];
+}
+
+function skillOutline(rgb) {
+    return [Math.round(rgb[0] * 0.28), Math.round(rgb[1] * 0.14), Math.round(rgb[2] * 0.1), 255];
+}
+
+function skillTitleOpts(rgb, font, w, h, align = 0) {
+    return {
+        font,
+        w,
+        h,
+        align,
+        wrap: false,
+        color: skillInk(rgb, 0.42),
+        outline: true,
+        outlineWidth: Math.max(4, Math.round(font * 0.08)),
+        outlineColor: skillOutline(rgb),
+        shadow: true,
+        shadowX: 2,
+        shadowY: -3,
+        fontUuid: uuids.skill_title,
+        bold: true
+    };
+}
+
+function writePrefabMeta(rel, name, uuid) {
+    const full = path.join(ROOT, rel + ".meta");
+    if (fs.existsSync(full)) return;
+    fs.writeFileSync(full, JSON.stringify({
+        ver: "1.1.50",
+        importer: "prefab",
+        imported: true,
+        uuid,
+        files: [".json"],
+        subMetas: {},
+        userData: { syncNodeName: name }
+    }, null, 2) + "\n");
+}
+
+function makeSkillSplashes() {
+    const dirMeta = path.join(ROOT, "assets/bundle/game/prefab/skill.meta");
+    fs.mkdirSync(path.join(ROOT, "assets/bundle/game/prefab/skill"), { recursive: true });
+    if (!fs.existsSync(dirMeta)) {
+        fs.writeFileSync(dirMeta, JSON.stringify({
+            ver: "1.2.0",
+            importer: "directory",
+            imported: true,
+            uuid: "a1b2c3d4-6006-4000-8000-000000000000",
+            files: [],
+            subMetas: {},
+            userData: {}
+        }, null, 2) + "\n");
+    }
+    SKILL_SPLASH.forEach((skill, i) => {
+        makeSkillFull(skill, i + 1);
+        makeSkillHalf(skill, i + 9);
+    });
+}
+
+function makeSkillFull(skill, uuidIndex) {
+    const name = `skill_full_${skill.style}`;
+    const b = new Builder(name);
+    const tint = skill.rgb.concat(255);
+    const { w, h, k } = SKILL_FULL;
+    const root = b.node({ name, w, h });
+    b.widget(root, 45, { w, h });
+    b.opacity(root, 255);
+    const scene = b.node({ name: "Scene", parent: root, w, h });
+    b.addComp(scene, null, { type: "cc.Mask", fields: { _type: 0 } });
+    const bg = b.node({ name: "CoverBg", parent: scene, w: SKILL_ART.w, h: SKILL_ART.h, sx: k, sy: k });
+    b.sprite(bg, [255, 255, 255, 255], 0, SF[`skill_bg_${skill.style}`]);
+    const rays = b.node({ name: "Rays", parent: scene, w: sx(760), h: sx(1360) });
+    b.sprite(rays, [tint[0], tint[1], tint[2], 110], 0, SF.skill_layer_rays);
+    const flare = b.node({ name: "Flare", parent: scene, w: sx(560), h: sx(560) });
+    b.sprite(flare, [tint[0], tint[1], tint[2], 110], 0, SF.skill_layer_flare);
+    const ring = b.node({ name: "Ring", parent: scene, y: sx(-340), w: sx(504), h: sx(160) });
+    b.sprite(ring, [tint[0], tint[1], tint[2], 180], 0, SF.shock_ring);
+    const hero = b.node({ name: "Hero", parent: scene, w: SKILL_ART.w, h: SKILL_ART.h, sx: k, sy: k });
+    b.sprite(hero, [255, 255, 255, 255], 0, SF[`skill_${skill.style}`]);
+    const titleAt = skillTitlePos(skill.enter, false);
+    const title = b.node({ name: "Title", parent: scene, x: sx(titleAt.x), y: sx(titleAt.y), w: sx(360), h: sx(168) });
+    textNode(b, title, "TitleTag", "绝招", sx(-40), sx(52), skillTitleOpts(skill.rgb, sx(30), sx(200), sx(40), 0));
+    textNode(b, title, "TitleName", skill.name, 0, sx(-18), skillTitleOpts(skill.rgb, sx(68), sx(340), sx(96), 0));
+    const rel = `assets/bundle/game/prefab/skill/${name}.prefab`;
+    writePrefab(rel, b.finish(root));
+    writePrefabMeta(rel, name, "a1b2c3d4-6006-4000-8000-" + uuidIndex.toString(16).padStart(12, "0"));
+}
+
+function makeSkillHalf(skill, uuidIndex) {
+    const name = `skill_half_${skill.style}`;
+    const b = new Builder(name);
+    const tint = skill.rgb.concat(255);
+    const { w, h } = SKILL_FULL;
+    const root = b.node({ name, w, h });
+    b.widget(root, 45, { w, h });
+    b.opacity(root, 255);
+    const board = b.node({ name: "Board", parent: root, x: sx(176), y: sx(36), w: sx(300), h: sx(400) });
+    const hero = b.node({ name: "Hero", parent: board, y: sx(36), w: sx(280), h: sx(242) });
+    b.sprite(hero, [255, 255, 255, 255], 0, SF[`skill_mini_${skill.style}`]);
+    const ring = b.node({ name: "Ring", parent: board, y: sx(-108), w: sx(260), h: sx(82) });
+    b.sprite(ring, [tint[0], tint[1], tint[2], 160], 0, SF.shock_ring);
+    const titleAt = skillTitlePos(skill.enter, true);
+    const title = b.node({ name: "Title", parent: board, x: sx(titleAt.x), y: sx(titleAt.y), w: sx(280), h: sx(108) });
+    textNode(b, title, "TitleTag", "绝招", 0, sx(32), skillTitleOpts(skill.rgb, sx(22), sx(160), sx(30), 1));
+    textNode(b, title, "TitleName", skill.name, 0, sx(-16), skillTitleOpts(skill.rgb, sx(40), sx(260), sx(56), 1));
+    const rel = `assets/bundle/game/prefab/skill/${name}.prefab`;
+    writePrefab(rel, b.finish(root));
+    writePrefabMeta(rel, name, "a1b2c3d4-6006-4000-8000-" + uuidIndex.toString(16).padStart(12, "0"));
+}
 
 function writeWhitePng() {
     const w = 64, h = 64;
@@ -821,7 +985,12 @@ function writeWhitePng() {
 }
 
 const ONLY = process.argv[2];
+const FORCE = process.argv.includes("--force");
 function emit(name, fn) {
+    if (name === "skill" && !FORCE) {
+        if (ONLY === "skill") console.log("skip skill prefabs (hand-authored). Use: node tools/gen-prefabs.cjs skill --force");
+        return;
+    }
     if (!ONLY || ONLY === name) fn();
 }
 emit("customize", makeCustomize);
@@ -834,6 +1003,8 @@ emit("reward", makeReward);
 emit("shop", makeShop);
 emit("ending", makeEnding);
 emit("chicken", makeChicken);
+emit("skill", makeSkillSplashes);
+emit("reward_card", makeRewardCard);
 if (!ONLY) {
     makeFx("fx_hit", "-10", [200, 60, 60, 220]);
     makeFx("fx_skill", "技能", [80, 80, 220, 220]);
@@ -842,7 +1013,6 @@ if (!ONLY) {
     makeTauntBubble();
     makeShopItem();
     makeShopSetItem();
-    makeRewardCard();
     writeWhitePng();
 }
 console.log(ONLY ? `prefab generated: ${ONLY}` : "prefabs generated");

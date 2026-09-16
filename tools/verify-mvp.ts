@@ -557,6 +557,35 @@ function run() {
         assert(run.screen !== "reward", "挑完就该走");
     });
 
+    ok("强化牌上的等级跟着部位已选次数走", () => {
+        const run = new RunState(61);
+        run.confirmAppearance(defaultAppearance());
+        run.enterFight();
+        run.startBattle();
+        run.settle(true);
+        run.afterResult();
+        const first = run.upgrades[0];
+        assert(first.nextLevel === 1, "没练过的部位应显示 Lv1");
+        run.pickReward(first.id);
+        assert(run.partLevels[first.part!] === 1, "确认后该部位记一级");
+
+        run.partLevels = { head: 4, body: 2, leg: 1 };
+        const cards = rollUpgrades(1, 77, run.partLevels);
+        assert(cards.length === 3, "应仍发三张");
+        for (const card of cards) {
+            const expect = (run.partLevels[card.part!] ?? 0) + 1;
+            assert(card.nextLevel === expect, `${card.part} 已练 ${expect - 1} 级，牌面应是 Lv${expect}，实际 Lv${card.nextLevel}`);
+        }
+        run.upgrades = cards;
+        run.screen = "reward";
+        const restored = decodeRun(encodeRun(run));
+        assert(restored.partLevels.head === 4 && restored.partLevels.body === 2, "存档应保留部位等级");
+        for (const card of restored.upgrades) {
+            const expect = (restored.partLevels[card.part!] ?? 0) + 1;
+            assert(card.nextLevel === expect, "读档后牌面等级应按当前部位重算");
+        }
+    });
+
     ok("强化只加一份属性并撑大部位", () => {
         const run = new RunState(12);
         run.confirmAppearance(defaultAppearance());

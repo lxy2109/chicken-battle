@@ -6,6 +6,7 @@ import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { GameUIBase } from "../../common/GameUIBase";
 import { ChickenRun } from "../../chicken/ChickenRun";
 import { PREFAB_PATH, TEX } from "../../core/Catalog";
+import { levelOf } from "../../core/PartUpgrade";
 import { PART_TEXT, RewardOption } from "../../core/Types";
 import { goScreen, registerScreen } from "../Nav";
 import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setSpriteColor } from "../UiUtil";
@@ -23,10 +24,12 @@ function rewardIcon(opt: RewardOption): string {
     return "star";
 }
 
-/** 部位强化的牌面写清练哪儿、练到几级，纯 buff 就只有名字。 */
-function cardTitle(opt: RewardOption): string {
-    if (!opt.part) return opt.title;
-    return gameText("RewardViewComp_001", PART_TEXT[opt.part], opt.nextLevel!);
+/** 部位强化的牌面写清练哪儿、练到几级，等级按当前 partLevels 现算，避免存档里的 nextLevel 过期。 */
+function cardLines(opt: RewardOption, currentLevel: number): { title: string; level: string } {
+    if (!opt.part) return { title: opt.title, level: "" };
+    const text = gameText("RewardViewComp_001", PART_TEXT[opt.part], currentLevel);
+    const split = text.split("\n");
+    return { title: split[0] || text, level: split[1] || `Lv${currentLevel}` };
 }
 
 @ccclass("RewardViewComp")
@@ -68,9 +71,20 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
             card.parent = slot;
 
             const title = card.getChildByName("LabTitle")?.getComponent(Label);
+            const levelLab = card.getChildByName("LabLevel")?.getComponent(Label);
             const desc = card.getChildByName("LabDesc")?.getComponent(Label);
             const gold = card.getChildByName("GoldRow")?.getChildByName("LabGold")?.getComponent(Label);
-            if (title) title.string = cardTitle(opt);
+            const nextLevel = opt.part ? levelOf(run.partLevels, opt.part) + 1 : 0;
+            if (opt.part) opt.nextLevel = nextLevel;
+            const lines = cardLines(opt, nextLevel);
+            if (title) {
+                title.string = levelLab ? lines.title : (lines.level ? `${lines.title}\n${lines.level}` : lines.title);
+                title.enableWrapText = !levelLab;
+            }
+            if (levelLab) {
+                levelLab.node.active = !!lines.level;
+                levelLab.string = lines.level;
+            }
             if (desc) desc.string = opt.desc;
             if (gold) gold.string = `+${opt.gold}`;
             const goldRow = card.getChildByName("GoldRow");

@@ -1,5 +1,5 @@
 import { gameText, gameTextOr } from "../../core/GameConfig";
-import { JsonAsset, Label, Node, Sprite, SpriteFrame, TTFFont, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { JsonAsset, Label, Node, Prefab, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -199,7 +199,6 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
         const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
         const skillKeys = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"] as const;
-        const layerKeys = ["skill_layer_rays", "skill_layer_flare", "skill_layer_banner", "skill_layer_sparks"] as const;
         const fxFrames = await Promise.all(fxKeys.map(async name => {
             try {
                 return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
@@ -208,54 +207,29 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 return null;
             }
         }));
-        const skillFrames = await Promise.all(skillKeys.map(async name => {
+        const skillPrefabs = await Promise.all(skillKeys.map(async name => {
             try {
-                return await this.load("bundle", `game/texture/fx/skill_${name}/spriteFrame`, SpriteFrame);
+                return await this.load("bundle", PREFAB_PATH.skillFull(name), Prefab);
             }
             catch {
                 return null;
             }
         }));
-        const skillBgFrames = await Promise.all(skillKeys.map(async name => {
+        const skillMiniPrefabs = await Promise.all(skillKeys.map(async name => {
             try {
-                return await this.load("bundle", `game/texture/fx/skill_bg_${name}/spriteFrame`, SpriteFrame);
+                return await this.load("bundle", PREFAB_PATH.skillHalf(name), Prefab);
             }
             catch {
                 return null;
             }
         }));
-        const skillMiniFrames = await Promise.all(skillKeys.map(async name => {
-            try {
-                return await this.load("bundle", `game/texture/fx/skill_mini_${name}/spriteFrame`, SpriteFrame);
-            }
-            catch {
-                return null;
-            }
-        }));
-        const layerFrames = await Promise.all(layerKeys.map(async name => {
-            try {
-                return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
-            }
-            catch {
-                return null;
-            }
-        }));
-        let titleFont: TTFFont | null = null;
-        try {
-            titleFont = await this.load("bundle", "game/font/skill_title", TTFFont);
-        }
-        catch {
-            titleFont = null;
-        }
         if (this.closed) return;
         if (arena) {
-            const skills: Partial<Record<StrikeStyle, SpriteFrame>> = {};
-            const skillBgs: Partial<Record<StrikeStyle, SpriteFrame>> = {};
-            const skillMinis: Partial<Record<StrikeStyle, SpriteFrame>> = {};
+            const fulls: Partial<Record<StrikeStyle, Prefab>> = {};
+            const halves: Partial<Record<StrikeStyle, Prefab>> = {};
             skillKeys.forEach((key, i) => {
-                if (skillFrames[i]) skills[key] = skillFrames[i]!;
-                if (skillBgFrames[i]) skillBgs[key] = skillBgFrames[i]!;
-                if (skillMiniFrames[i]) skillMinis[key] = skillMiniFrames[i]!;
+                if (skillPrefabs[i]) fulls[key] = skillPrefabs[i]!;
+                if (skillMiniPrefabs[i]) halves[key] = skillMiniPrefabs[i]!;
             });
             this.fx = new BattleFx(this.node, arena, {
                 slash: fxFrames[0] || undefined,
@@ -266,14 +240,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 crack: fxFrames[5] || undefined,
                 ink: fxFrames[6] || undefined,
                 charge: fxFrames[7] || undefined,
-                skills,
-                skillBgs,
-                skillMinis,
-                rays: layerFrames[0] || undefined,
-                flare: layerFrames[1] || undefined,
-                banner: layerFrames[2] || undefined,
-                sparks: layerFrames[3] || undefined,
-                titleFont: titleFont || undefined
+                skillPrefabs: fulls,
+                skillMiniPrefabs: halves
             });
             this.fx.paint(mood.dust);
             this.fx.wash(mood.veil, encounter === "final" || run.phase === "boss");

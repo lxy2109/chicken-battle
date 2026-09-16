@@ -11,7 +11,9 @@ export const PREFAB_PATH = {
     taunt: "game/prefab/taunt_bubble",
     shopItem: "game/prefab/shop_item",
     shopSetItem: "game/prefab/shop_set_item",
-    rewardCard: "game/prefab/reward_card"
+    rewardCard: "game/prefab/reward_card",
+    skillFull: (style: string) => `game/prefab/skill/skill_full_${style}`,
+    skillHalf: (style: string) => `game/prefab/skill/skill_half_${style}`
 };
 
 /** bundle 内贴图路径，供 GameComponent.setSprite 运行时换图。 */
