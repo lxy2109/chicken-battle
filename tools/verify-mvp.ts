@@ -1015,6 +1015,15 @@ function run() {
         assert(meme / 5000 > 0.77 && meme / 5000 < 0.83, "坤坤80%主题弹幕，允许重复");
     });
 
+    ok("哈鸡米、新一鸡、坤坤有专属对战曲", () => {
+        const audio = path.resolve(process.cwd(), "assets/bundle/game/audio/boss_battle");
+        const named: Record<string, string> = { s3_official: "hajimi.mp3", s4_official: "xinyi.mp3", kun_boss: "kun.mp3" };
+        for (const [id, file] of Object.entries(named)) {
+            assert(!!getRoute().find(n => n.enemyId === id && n.kind === "boss"), `${id} 应是 boss 节点`);
+            assert(fs.existsSync(path.join(audio, file)), `缺少 ${file}`);
+        }
+    });
+
     if (fail.length) {
         console.log("\nFAILED", fail.length);
         process.exit(1);

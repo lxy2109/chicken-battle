@@ -26,7 +26,7 @@ export async function goScreen(from: CCView<ChickenRun>, screen?: RunScreen) {
     openingViews.add(from);
     try {
         await openRunView(ent, ctor);
-        playScreenMusic(target);
+        playScreenMusic(target, from.ent.run.currentRoute().enemyId);
         from.remove();
     } catch (error) {
         console.error("[Nav] 界面资源加载失败，可重试", target, error);
