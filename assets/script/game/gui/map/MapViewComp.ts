@@ -1,4 +1,4 @@
-import { gameText } from "../../core/GameConfig";
+import { gameText, gameTextOr } from "../../core/GameConfig";
 import { BlockInputEvents, Color, Graphics, Label, Node, UIOpacity, UITransform, tween, view, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -77,8 +77,9 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
         bindClick(this, "BtnHome", () => goScreen(this, "customize"));
-        setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : gameText("MapViewComp_003"));
-        bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : this.onBattleNode(run.routeNode));
+        const skip = run.canSkipClearedBattles();
+        setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : skip ? gameTextOr("MapViewComp_012", "一键跳过") : gameText("MapViewComp_003"));
+        bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : skip ? this.onSkipCleared() : this.onBattleNode(run.routeNode));
         const shop = this.getNode("BtnShop");
         if (shop && shop.scale.z === 0) shop.setScale(shop.scale.x, shop.scale.y, 1);
         bindClick(this, "BtnShop", this.onShop.bind(this));
@@ -94,8 +95,8 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             const node = battleNodes[i];
             const stage = this.getNode(`BtnStage${i + 1}`);
             if (!node || !stage) continue;
-            const cleared = node.id < current;
             const active = node.id === current;
+            const cleared = !active && (node.id < current || run.claimedGoldNodes.includes(node.id));
             await setNodeSprite(this, `BtnStage${i + 1}`, TEX.mapNode(cleared ? "chest" : active ? "stage" : "lock"));
             setSpriteColor(stage, cleared || active ? "#FFFFFF" : "#9C8A72");
             setLabel(this, `LabStageNum${i + 1}`, cleared ? "✓" : `${run.currentMap().id}-${i + 1}`);
@@ -153,6 +154,12 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         }
         run.enterFight();
         if (run.screen === "prebattle") await goScreen(this);
+    }
+
+    private async onSkipCleared() {
+        if (this.switchingMap) return;
+        if (!this.ent.run.skipClearedBattles()) return;
+        if (this.ent.run.screen === "result") await goScreen(this);
     }
 
     private async onShop() {

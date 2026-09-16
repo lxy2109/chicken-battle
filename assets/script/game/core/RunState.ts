@@ -1,4 +1,4 @@
-import { gameNumber, gameText } from "./GameConfig";
+import { gameNumber, gameText, gameTextOr } from "./GameConfig";
 import { hasTables } from "./Config";
 import { inferFightStyle } from "./BattleStyle";
 import { getMaps, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
@@ -101,6 +101,19 @@ export class RunState {
         this.shopPending = false;
         this.onChanged?.();
         return true;
+    }
+
+    /** 已首通热身只跳过对战，结算和强化与实打相同。 */
+    canSkipClearedBattles(): boolean {
+        if (this.screen !== "map" || this.nextMap || this.upgrades.length > 0) return false;
+        const node = this.currentRoute();
+        return node.kind === "battle" && this.claimedGoldNodes.includes(node.id);
+    }
+
+    skipClearedBattles(): boolean {
+        if (!this.canSkipClearedBattles()) return false;
+        this.settle(true);
+        return this.screen === "result" && this.lastWin;
     }
 
     confirmAppearance(appearance: Appearance) {
@@ -320,6 +333,7 @@ export class RunState {
 
     mapHint(): string {
         if (this.nextMap) return gameText("RunState_001", this.nextMap.name);
+        if (this.canSkipClearedBattles()) return gameTextOr("RunState_008", "热身已打过，可跳过对战并选择强化");
         const node = this.currentRoute();
         if (node.kind === "boss") return node.encounter === "final" ? gameText("RunState_002") : gameText("RunState_003");
         return this.claimedGoldNodes.includes(node.id) ? gameText("RunState_004") : gameText("RunState_005", node.goldWin || 0);

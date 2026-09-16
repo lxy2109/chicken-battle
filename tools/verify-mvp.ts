@@ -426,6 +426,73 @@ function run() {
         assert(restored.lastGoldGain === 0, "重打第二图已首通小关不能再刷金币");
     });
 
+    ok("正式赛失败后可跳过已通关对战并保留强化", () => {
+        const map2Battles = getRoute().filter(n => n.mapId === 2 && n.kind === "battle");
+        const run = new RunState(90);
+        run.confirmAppearance(defaultAppearance());
+        run.gold = 500;
+        run.claimedGoldNodes = map2Battles.map(n => n.id);
+        run.routeNode = mapBoss(2);
+        run.phase = "boss";
+        run.screen = "battle";
+        assert(!run.canSkipClearedBattles() && !run.skipClearedBattles(), "正式赛进行中不能跳过");
+        run.settle(false);
+        run.afterResult();
+        if (run.upgrades.length) run.pickReward(run.upgrades[0].id);
+        assert(run.routeNode === mapStart(2) && String(run.screen) === "map", "失败回到本图起点");
+        assert(run.canSkipClearedBattles(), "已通关热身应可跳过对战");
+        assert(run.mapHint().includes("跳过"), "地图提示可跳过对战");
+        const gold = run.gold;
+        const claimed = run.claimedGoldNodes.slice();
+        let saved = "";
+        run.onChanged = () => { saved = encodeRun(run); };
+        assert(run.skipClearedBattles(), "一键跳过应成功");
+        assert(run.lastWin && run.upgrades.length === 3 && String(run.screen) === "result", "跳过对战后仍进入结算并发强化牌");
+        assert(run.routeNode === map2Battles[1].id, "每关只跳过当前对战");
+        assert(run.lastGoldGain === 0 && run.gold === gold && JSON.stringify(run.claimedGoldNodes) === JSON.stringify(claimed), "已首通不重复发金币、不改账本");
+        const restored = decodeRun(saved);
+        assert(restored.screen === "result" && restored.upgrades.length === 3 && restored.routeNode === map2Battles[1].id, "跳过结算与强化牌随存档恢复");
+        restored.afterResult();
+        const picked = restored.upgrades[0];
+        const before = picked.part ? (restored.partLevels[picked.part] || 0) : 0;
+        assert(restored.pickReward(picked.id), "跳过后仍可选择强化");
+        if (picked.part) assert((restored.partLevels[picked.part] || 0) === before + 1, "强化生效");
+        if (String(restored.screen) === "shop") restored.leaveShop();
+        while (restored.canSkipClearedBattles()) {
+            assert(restored.skipClearedBattles() && restored.upgrades.length === 3, "后续已通关热身同样跳过对战并留强化");
+            restored.afterResult();
+            if (restored.upgrades.length) restored.pickReward(restored.upgrades[0].id);
+            if (String(restored.screen) === "shop") restored.leaveShop();
+        }
+        assert(restored.routeNode === mapBoss(2) && restored.phase === "boss" && String(restored.screen) === "map", "热身全部跳过后到达正式赛");
+        assert(!restored.canSkipClearedBattles(), "正式赛不能跳过");
+        restored.enterFight();
+        assert(String(restored.screen) === "prebattle", "正式赛仍需实际对战");
+
+        const fresh = new RunState(91);
+        fresh.confirmAppearance(defaultAppearance());
+        assert(!fresh.canSkipClearedBattles(), "未打过的热身不能跳过");
+
+        const partial = new RunState(92);
+        partial.screen = "map";
+        partial.routeNode = mapStart(2);
+        partial.stage = mapStart(2);
+        partial.phase = "battle";
+        partial.claimedGoldNodes = [mapStart(2)];
+        assert(partial.skipClearedBattles() && partial.upgrades.length === 3, "已通关的当前关可跳过对战并留强化");
+        partial.afterResult();
+        partial.pickReward(partial.upgrades[0].id);
+        if (String(partial.screen) === "shop") partial.leaveShop();
+        assert(partial.routeNode === map2Battles[1].id && !partial.canSkipClearedBattles(), "停在未打过的热身，不能继续跳");
+
+        const finalFail = new RunState(93);
+        finalFail.routeNode = kunId();
+        finalFail.phase = "boss";
+        finalFail.screen = "map";
+        finalFail.claimedGoldNodes = getRoute().filter(n => n.kind === "battle").map(n => n.id);
+        assert(!finalFail.canSkipClearedBattles(), "最终挑战不能靠跳过热身进入");
+    });
+
     ok("首通金币和结算幂等，未首通的新节点仍给奖励", () => {
         const run = new RunState(34);
         run.confirmAppearance(defaultAppearance());
