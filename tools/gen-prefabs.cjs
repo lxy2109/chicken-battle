@@ -623,9 +623,8 @@ function makeShop() {
     placeText(b, root, "LabGold", "0", 917, 45, 102, 68, { font: 28, color: INK.cream, outline: true });
     const back = figmaImage(b, root, "BtnBack", 'ui/figma_back');
     b.button(back);
-    const ir = layoutBox(90, 990, 900, 540);
-    const items = b.node({ name: "ItemSlot", parent: root, x: ir.x, y: ir.y, w: ir.w, h: ir.h });
-    b.layout(items, { type: 3, cols: 3, cellW: 180, cellH: 164, gapX: 16, gapY: 16, pad: 8 });
+    // ItemSlot 铺满画布；真正的 2×3 货架坐标和翻页由 ShopViewComp 按背景图格子摆。
+    const items = b.node({ name: "ItemSlot", parent: root, w: 720, h: 1280 });
     placeText(b, root, "LabDesc", "", 160, 1630, 760, 70, { font: 22, color: INK.cream, outline: true });
     placeButton(b, root, "BtnLeave", "返回地图", 300, 1760, 480, 120, "yellow");
     const modal = b.node({ name: "PurchaseModal", parent: root, w: 720, h: 1280, active: false });
