@@ -1,6 +1,7 @@
 import { Color, Font, Graphics, Label, Mask, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, Vec2, director, tween, v3 } from "cc";
 import { ChickenActor } from "../../battle/ChickenActor";
 import { StrikeStyle } from "../../core/Types";
+import { playSkillAnnounce } from "../GameAudio";
 import { UIBgAdaptation } from "../UIBgAdaptation";
 
 export interface BattleFxSheet {
@@ -158,6 +159,7 @@ export class BattleFx {
 
     skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         this.skillCharge(actor);
+        playSkillAnnounce(style);
         try {
             this.skillSplash(style, title, fromRight, mode);
         }
