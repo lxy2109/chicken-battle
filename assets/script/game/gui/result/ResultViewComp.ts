@@ -26,35 +26,46 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const win = run.lastWin;
-        await setCoverSprite(this, TEX.background(win ? "result_figma" : "result_lose_figma"));
-        const battleNode = routeNode(run.lastBattleNode);
-        const boss = battleNode.kind === "boss";
-        setLabel(this, "LabHeader", run.playerFighter().name);
-        setLabel(this, "BtnNextLab", win && boss
-            ? (battleNode.encounter === "final" ? gameText("ResultViewComp_001") : gameText("ResultViewComp_002")) : run.upgrades.length ? gameText("ResultViewComp_003") : gameText("ResultViewComp_004"));
-        setLabel(this, "LabGold", `+${run.lastGoldGain}`);
-        setLabel(this, "LabDesc", run.lastFirstClear ? gameText("ResultViewComp_007") : win ? gameText("ResultViewComp_008") : gameText("ResultViewComp_009"));
-
-        // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
-        let hint: string;
-        if (boss) hint = win ? battleNode.encounter === "final" ? gameText("ResultViewComp_010") : gameText("ResultViewComp_011", getMaps().find(map => map.id === (battleNode.mapId || 1))!.name)
-            : battleNode.encounter === "final" ? gameText("ResultViewComp_012") : gameText("ResultViewComp_013");
-        else hint = win ? gameText("ResultViewComp_016") : gameText("ResultViewComp_017");
-        if (run.upgrades.length > 0) hint += gameText("ResultViewComp_018");
-        // 失败底图已经写了「失败 / 变强继续挑战！」，不再叠爆炸框和底部说明。
-        setLabel(this, "LabHint", win ? hint : "");
-        setNodeActive(this, "LossBanner", false);
-        setNodeActive(this, "LabHint", win);
+        // 先挂继续按钮。结算演出失败时也不能把玩家关在这页。
+        bindClick(this, "BtnNext", this.onNext.bind(this));
         const appearance = run.playerFighter().appearance;
         const look: Appearance = win ? appearance : { ...appearance, face: "sad" };
-        bindClick(this, "BtnNext", this.onNext.bind(this));
-        if (win) void playWinRibbon(this);
-        const gifTask = win ? playResultSuitVideo(this, "ChickenSlot", look) : Promise.resolve(false);
-        // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
-        if (!(await gifTask)) {
-            const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
-            if (win) celebrateChicken(chicken, look);
-            else mournChicken(chicken);
+        try {
+            await setCoverSprite(this, TEX.background(win ? "result_figma" : "result_lose_figma"));
+            const battleNode = routeNode(run.lastBattleNode);
+            const boss = battleNode.kind === "boss";
+            setLabel(this, "LabHeader", run.playerFighter().name);
+            setLabel(this, "BtnNextLab", win && boss
+                ? (battleNode.encounter === "final" ? gameText("ResultViewComp_001") : gameText("ResultViewComp_002")) : run.upgrades.length ? gameText("ResultViewComp_003") : gameText("ResultViewComp_004"));
+            setLabel(this, "LabGold", `+${run.lastGoldGain}`);
+            setLabel(this, "LabDesc", run.lastFirstClear ? gameText("ResultViewComp_007") : win ? gameText("ResultViewComp_008") : gameText("ResultViewComp_009"));
+
+            // 按钮上已经写着"继续"，这里就别再喊一遍"点击继续"，直接告诉玩家下一步是什么。
+            let hint: string;
+            const mapName = getMaps().find(map => map.id === (battleNode.mapId || 1))?.name || "";
+            if (boss) hint = win ? battleNode.encounter === "final" ? gameText("ResultViewComp_010") : gameText("ResultViewComp_011", mapName)
+                : battleNode.encounter === "final" ? gameText("ResultViewComp_012") : gameText("ResultViewComp_013");
+            else hint = win ? gameText("ResultViewComp_016") : gameText("ResultViewComp_017");
+            if (run.upgrades.length > 0) hint += gameText("ResultViewComp_018");
+            // 失败底图已经写了「失败 / 变强继续挑战！」，不再叠爆炸框和底部说明。
+            setLabel(this, "LabHint", win ? hint : "");
+            setNodeActive(this, "LossBanner", false);
+            setNodeActive(this, "LabHint", win);
+            if (win) void playWinRibbon(this);
+            const gifTask = win ? playResultSuitVideo(this, "ChickenSlot", look) : Promise.resolve(false);
+            // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
+            if (!(await gifTask)) {
+                const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
+                if (win) celebrateChicken(chicken, look);
+                else mournChicken(chicken);
+            }
+        } catch (error) {
+            console.error("[Result] 结算演出失败，仍可继续", error);
+            try {
+                const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
+                if (win) celebrateChicken(chicken, look);
+                else mournChicken(chicken);
+            } catch { /* 按钮已可点 */ }
         }
     }
 

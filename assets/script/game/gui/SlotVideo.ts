@@ -14,7 +14,11 @@ const GIF_NODE = "SuitGif";
 export async function playResultSuitVideo(view: GameComponent, slotName: string, appearance: Appearance): Promise<boolean> {
     const suit = suitForWinGif(appearance);
     if (!suit) return false;
-    const ok = await playSlotGif(view, slotName, TEX.suitGif(suit.id));
+    const path = TEX.suitGif(suit.id);
+    const ok = await Promise.race([
+        playSlotGif(view, slotName, path).catch(() => false),
+        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 2000))
+    ]);
     if (!ok) console.warn("[SuitGif] 套装 GIF 播放失败", suit.id);
     return ok;
 }

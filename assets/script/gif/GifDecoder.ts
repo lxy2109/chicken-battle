@@ -395,11 +395,13 @@ function downloadBytes(url: string): Promise<Uint8Array | null> {
         const req = new XMLHttpRequest();
         req.open("GET", url, true);
         req.responseType = "arraybuffer";
+        req.timeout = 3000;
         req.onload = () => {
             if (req.status === 200 || req.status === 0) resolve(new Uint8Array(req.response));
             else resolve(null);
         };
         req.onerror = () => resolve(null);
+        req.ontimeout = () => resolve(null);
         req.send();
     });
 }
