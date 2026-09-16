@@ -27,7 +27,9 @@ export const TEX = {
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
     /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>.gif。 */
-    suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`
+    suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`,
+    /** 打败坤坤鸡后的全屏结局视频。 */
+    endingVideo: "game/video/ending"
 };
 
 /** 每张地图对应 `gui/map/map_${id}` 预制体，背景和落点都做在预制体上。 */

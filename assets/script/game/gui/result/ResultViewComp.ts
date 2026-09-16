@@ -1,5 +1,5 @@
 import { gameText } from "../../core/GameConfig";
-import { _decorator } from "cc";
+import { _decorator, VideoClip } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -57,6 +57,11 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
             if (win) celebrateChicken(chicken, look);
             else mournChicken(chicken);
             if (win) void playResultSuitVideo(this, "ChickenSlot", look);
+            if (win && boss && battleNode.encounter === "final") {
+                void this.load("bundle", TEX.endingVideo, VideoClip).catch(error => {
+                    console.warn("[Result] 结局视频预加载失败", error);
+                });
+            }
         } catch (error) {
             console.error("[Result] 结算演出失败，仍可继续", error);
             try {

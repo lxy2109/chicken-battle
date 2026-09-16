@@ -43,7 +43,8 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         new Promise<void>((resolve, reject) => {
             oops.res.loadAny("bundle", [prefab,
                 "game/prefab/chicken", "game/feather-gradient",
-                ...((key === "ResultView" || key === "EndingView") ? ["game/prefab/fx_ribbon"] : []),
+                ...((key === "ResultView") ? ["game/prefab/fx_ribbon"] : []),
+                ...((key === "EndingView") ? ["game/video/ending"] : []),
                 ...backgrounds.map(bg => `game/texture/bg/${bg}/spriteFrame`)],
             null, (error: Error | null) => error ? reject(error) : resolve());
         })
@@ -67,7 +68,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
         result: ["LabHeader", "LabGold", "BtnNext"],
         reward: ["BtnConfirm"],
         shop: ["BtnLeave"],
-        ending: ["LabTitle", "GainCard", "BtnCharacter"]
+        ending: ["LabChampion", "BtnHome"]
     };
     const names = entrances[node.name] || [];
     const visit = (parent: Node) => {

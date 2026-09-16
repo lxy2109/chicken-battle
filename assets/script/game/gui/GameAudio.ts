@@ -35,6 +35,7 @@ let musicPath = "";
 export function musicFor(screen: RunScreen, enemyId?: string) {
     if (screen === "battle") return (enemyId && GAME_AUDIO.boss[enemyId]) || GAME_AUDIO.music.battle;
     if (screen === "customize") return GAME_AUDIO.music.home;
+    if (screen === "ending") return "";
     return GAME_AUDIO.music.village;
 }
 
