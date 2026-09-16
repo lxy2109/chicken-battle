@@ -530,11 +530,11 @@ function makeCharacter() {
         const slot = figmaImage(b, root, "Slot" + i, 'ui/figma_equip_slot', [83 + i % 4 * 247, 1280 + Math.floor(i / 4) * 240, 180, 180]);
         b.objs[slot]._active = false;
         b.button(slot);
-        iconNode(b, slot, "SlotIcon" + i, SF.icon_star, 0, 0, 96);
+        iconNode(b, slot, "SlotIcon" + i, SF.icon_star, 0, 8, 88);
         textNode(b, slot, "LabSlot" + i, "", 0, -78, { font: 18, w: 150, h: 32, color: INK.cream });
         textNode(b, slot, "LabSlotState" + i, "", 0, 44, { font: 16, w: 110, h: 24, color: INK.cream, outline: true });
     }
-    const sets = placeText(b, root, "LabSets", "", 60, 1800, 960, 80, { font: 22, color: INK.cream });
+    const sets = placeText(b, root, "LabSets", "", 36, 1740, 1008, 150, { font: 22, color: INK.cream });
     b.objs[sets]._active = false;
     writePrefab("assets/bundle/gui/character/character.prefab", b.finish(root));
 }
