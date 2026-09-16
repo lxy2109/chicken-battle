@@ -37,6 +37,7 @@ export default class GifFrameAni extends Component {
 
     private _refreshId = 0;
     private _cacheKey = "";
+    private _bytes: Uint8Array | null = null;
     private _maxW = 0;
     private _maxH = 0;
     private _movie: GifMovie | null = null;
@@ -62,6 +63,17 @@ export default class GifFrameAni extends Component {
     /** 运行时指定资源，首帧出来就算成功，其余帧后台继续解。 */
     async play(asset: Asset, maxWidth = 0, maxHeight = 0, cacheKey = ""): Promise<boolean> {
         this._asset = asset;
+        this._bytes = null;
+        this._maxW = Math.max(0, maxWidth | 0);
+        this._maxH = Math.max(0, maxHeight | 0);
+        this._cacheKey = cacheKey;
+        await this.refresh();
+        return this._inited && this.isValid;
+    }
+
+    async playBytes(bytes: Uint8Array, maxWidth = 0, maxHeight = 0, cacheKey = ""): Promise<boolean> {
+        this._asset = null;
+        this._bytes = bytes;
         this._maxW = Math.max(0, maxWidth | 0);
         this._maxH = Math.max(0, maxHeight | 0);
         this._cacheKey = cacheKey;
@@ -78,12 +90,8 @@ export default class GifFrameAni extends Component {
         this._acc = 0;
         this.cd = 0;
         this.frameInd = 0;
-        if (!this._asset || !isValid(this._asset)) {
-            console.warn("[SuitGif] 资源没有可用的 GIF 数据", this._asset);
-            return;
-        }
         try {
-            const bytes = await readGifBytes(this._asset);
+            const bytes = this._bytes || (this._asset && isValid(this._asset) ? await readGifBytes(this._asset) : null);
             if (id !== this._refreshId || !this.isValid) return;
             if (!bytes || bytes.length < 14 || bytes[0] !== 0x47 || bytes[1] !== 0x49 || bytes[2] !== 0x46) {
                 console.warn("[SuitGif] 不是 GIF 文件", bytes?.length);

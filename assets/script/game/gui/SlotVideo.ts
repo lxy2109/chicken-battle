@@ -1,7 +1,7 @@
-import { Asset, BufferAsset, Node, Sprite, UITransform, assetManager } from "cc";
+import { Node, Sprite, UITransform } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import GifFrameAni from "../../gif/GifFrameAni";
-import { readGifBytes, watchGif } from "../../gif/GifDecoder";
+import { isGifBytes, loadGifBytes, watchGif } from "../../gif/GifDecoder";
 import { TEX, getSets } from "../core/Catalog";
 import { Appearance } from "../core/Types";
 
@@ -15,10 +15,7 @@ export async function playResultSuitVideo(view: GameComponent, slotName: string,
     const suit = suitForWinGif(appearance);
     if (!suit) return false;
     const path = TEX.suitGif(suit.id);
-    const ok = await Promise.race([
-        playSlotGif(view, slotName, path).catch(() => false),
-        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 2000))
-    ]);
+    const ok = await playSlotGif(view, slotName, path).catch(() => false);
     if (!ok) console.warn("[SuitGif] 套装 GIF 播放失败", suit.id);
     return ok;
 }
@@ -27,12 +24,13 @@ export async function playResultSuitVideo(view: GameComponent, slotName: string,
 export async function playSlotGif(view: GameComponent, slotName: string, path: string): Promise<boolean> {
     const slot = view.getNode(slotName);
     if (!slot) return false;
-    const asset = await loadGifAsset(view, path);
-    if (!asset) return false;
-    if (!slot.isValid) return false;
+    const bytes = await loadGifBytes("bundle", path);
+    if (!isGifBytes(bytes) || !slot.isValid) return false;
+    const ready = await waitFirstFrame(path, bytes);
+    if (!ready || !slot.isValid) return false;
     const ani = mountSlotGif(slot);
     const box = slot.getComponent(UITransform);
-    const ok = await ani.play(asset, box?.width || 360, box?.height || 490, path);
+    const ok = await ani.playBytes(bytes, box?.width || 360, box?.height || 490, path);
     if (!ok || !ani.isValid || !slot.isValid) {
         stopSlotVideo(slot);
         return false;
@@ -47,15 +45,27 @@ export function stopSlotVideo(slot: Node | undefined | null) {
 }
 
 /** 战斗结算演出时就开始解当前套装 GIF，进结果页时尽量只等首帧。 */
-export function preloadResultSuitGif(view: GameComponent, appearance: Appearance) {
+export function preloadResultSuitGif(_view: GameComponent, appearance: Appearance) {
     const suit = suitForWinGif(appearance);
     if (!suit) return;
     const path = TEX.suitGif(suit.id);
-    void loadGifAsset(view, path).then(async asset => {
-        if (!asset) return;
-        const bytes = await readGifBytes(asset);
-        if (bytes) watchGif(path, bytes, () => { /* 只要把解码跑起来 */ });
+    void loadGifBytes("bundle", path).then(bytes => {
+        if (isGifBytes(bytes)) watchGif(path, bytes, () => { /* 只要把解码跑起来 */ });
     }).catch(err => console.warn("[SuitGif] 预加载失败", path, err));
+}
+
+function waitFirstFrame(path: string, bytes: Uint8Array): Promise<boolean> {
+    return new Promise(resolve => {
+        let done = false;
+        const finish = (ok: boolean) => {
+            if (done) return;
+            done = true;
+            resolve(ok);
+        };
+        watchGif(path, bytes, (movie, index) => {
+            if (index === 0 && movie.frames.length) finish(true);
+        }).then(movie => finish(movie.frames.length > 0), () => finish(false));
+    });
 }
 
 function suitForWinGif(appearance: Appearance) {
@@ -91,32 +101,4 @@ function fitGifToSlot(node: Node, slot: Node) {
     node.setScale(scale, scale, 1);
 }
 
-async function loadGifAsset(view: GameComponent, path: string): Promise<Asset | null> {
-    for (const candidate of gifPathCandidates(path)) {
-        const asset = await view.load("bundle", candidate, Asset);
-        if (asset) return asset;
-        const buffer = await view.load("bundle", candidate, BufferAsset);
-        if (buffer) return buffer;
-    }
-    const bundle = assetManager.getBundle("bundle");
-    const infos = bundle?.getDirWithPath("game/equip_win_gif") || [];
-    const base = path.split("/").pop() || "";
-    const hit = infos.find(info => {
-        const name = (info.path || "").split("/").pop() || "";
-        return name === base || name.startsWith(base) || name.startsWith(`${base}.`);
-    });
-    if (hit?.path) {
-        const asset = await view.load("bundle", hit.path, Asset);
-        if (asset) return asset;
-        const buffer = await view.load("bundle", hit.path, BufferAsset);
-        if (buffer) return buffer;
-    }
-    console.warn("[SuitGif] 找不到资源", path);
-    return null;
-}
 
-function gifPathCandidates(path: string): string[] {
-    const withExt = path.endsWith(".gif") ? path : `${path}.gif`;
-    const noExt = withExt.slice(0, -4);
-    return [withExt, noExt];
-}

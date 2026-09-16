@@ -1,4 +1,4 @@
-import { Asset, BufferAsset } from "cc";
+import { Asset, BufferAsset, assetManager } from "cc";
 
 export interface GifPatch {
     delay: number;
@@ -25,6 +25,34 @@ type GifJob = {
 };
 
 const jobs = new Map<string, GifJob>();
+const byteJobs = new Map<string, Promise<Uint8Array | null>>();
+
+export function isGifBytes(bytes: Uint8Array | null | undefined): bytes is Uint8Array {
+    return !!bytes && bytes.length >= 14 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
+}
+
+/**
+ * 按二进制读套装 GIF。不要走 assetManager.load：引擎把 .gif 当图片解，
+ * 安卓原生上 5～12MB 动图经常解失败或极慢，结算就只剩立绘。
+ */
+export function loadGifBytes(bundleName: string, path: string): Promise<Uint8Array | null> {
+    const key = `${bundleName}:${path.replace(/\.gif$/i, "")}`;
+    const hit = byteJobs.get(key);
+    if (hit) return hit;
+    const job = readGifFromBundle(bundleName, path).then(bytes => {
+        if (!isGifBytes(bytes)) {
+            byteJobs.delete(key);
+            return null;
+        }
+        return bytes;
+    }, err => {
+        console.warn("[SuitGif] 读取失败", path, err);
+        byteJobs.delete(key);
+        return null;
+    });
+    byteJobs.set(key, job);
+    return job;
+}
 
 /** 同一份 GIF 只解一次；多个界面可以同时听首帧。 */
 export function watchGif(
@@ -380,10 +408,77 @@ function toBytes(native: unknown): Uint8Array | null {
     return null;
 }
 
+type FileUtilsLike = {
+    getDataFromFile?: (path: string) => ArrayBuffer | Uint8Array | null;
+    isFileExist?: (path: string) => boolean;
+    fullPathForFilename?: (path: string) => string;
+};
+
+async function readGifFromBundle(bundleName: string, path: string): Promise<Uint8Array | null> {
+    const url = gifNativeUrl(bundleName, path);
+    if (url) {
+        const fromUrl = await readBytesFromUrl(url);
+        if (isGifBytes(fromUrl)) return fromUrl;
+    }
+    console.warn("[SuitGif] 找不到二进制", path, url);
+    return null;
+}
+
+function gifNativeUrl(bundleName: string, path: string): string | null {
+    const bundle = assetManager.getBundle(bundleName);
+    if (!bundle) return null;
+    const clean = path.replace(/\.gif$/i, "");
+    const base = clean.split("/").pop() || "";
+    const info = bundle.getInfoWithPath(clean)
+        || bundle.getInfoWithPath(path)
+        || (bundle.getDirWithPath("game/equip_win_gif") || []).find(item => {
+            const name = (item.path || "").split("/").pop() || "";
+            return name === base || name.startsWith(`${base}.`);
+        });
+    if (!info?.uuid) return null;
+    const utils = (assetManager as unknown as { utils?: { getUrlWithUuid?: (uuid: string, options: { isNative: boolean; nativeExt: string }) => string } }).utils;
+    return utils?.getUrlWithUuid?.(info.uuid, { isNative: true, nativeExt: ".gif" }) || null;
+}
+
+function readBytesFromUrl(url: string): Promise<Uint8Array | null> {
+    const local = readLocalBytes(url);
+    if (isGifBytes(local)) return Promise.resolve(local);
+    return downloadArrayBuffer(url);
+}
+
 function readLocalBytes(url: string): Uint8Array | null {
-    const fileUtils = (globalThis as { jsb?: { fileUtils?: { getDataFromFile?: (path: string) => ArrayBuffer | Uint8Array | null } } }).jsb?.fileUtils;
-    const data = fileUtils?.getDataFromFile?.(url);
-    return data ? toBytes(data) : null;
+    const fileUtils = (globalThis as { jsb?: { fileUtils?: FileUtilsLike } }).jsb?.fileUtils;
+    if (!fileUtils?.getDataFromFile) return null;
+    const candidates = [url];
+    if (url.startsWith("file://")) candidates.push(url.slice(7));
+    const noQuery = url.split("?")[0];
+    if (noQuery !== url) candidates.push(noQuery);
+    for (const candidate of candidates) {
+        try {
+            const full = fileUtils.fullPathForFilename?.(candidate) || candidate;
+            const data = fileUtils.getDataFromFile(full) || (full !== candidate ? fileUtils.getDataFromFile(candidate) : null);
+            const bytes = toBytes(data);
+            if (isGifBytes(bytes)) return bytes;
+        }
+        catch { /* 下一条路径 */ }
+    }
+    return null;
+}
+
+function downloadArrayBuffer(url: string): Promise<Uint8Array | null> {
+    const downloader = assetManager.downloader as unknown as {
+        _downloadArrayBuffer?: (url: string, options: Record<string, unknown>, onComplete: (err: Error | null, data?: ArrayBuffer) => void) => void;
+    };
+    if (typeof downloader._downloadArrayBuffer === "function") {
+        return new Promise(resolve => {
+            downloader._downloadArrayBuffer!(url, {}, (err, data) => {
+                const bytes = toBytes(data);
+                if (!err && isGifBytes(bytes)) resolve(bytes);
+                else downloadBytes(url).then(resolve);
+            });
+        });
+    }
+    return downloadBytes(url);
 }
 
 function downloadBytes(url: string): Promise<Uint8Array | null> {
@@ -395,9 +490,9 @@ function downloadBytes(url: string): Promise<Uint8Array | null> {
         const req = new XMLHttpRequest();
         req.open("GET", url, true);
         req.responseType = "arraybuffer";
-        req.timeout = 3000;
+        req.timeout = 30000;
         req.onload = () => {
-            if (req.status === 200 || req.status === 0) resolve(new Uint8Array(req.response));
+            if (req.status === 200 || req.status === 0) resolve(toBytes(req.response));
             else resolve(null);
         };
         req.onerror = () => resolve(null);

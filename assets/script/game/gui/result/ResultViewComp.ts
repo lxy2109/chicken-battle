@@ -52,13 +52,11 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
             setNodeActive(this, "LossBanner", false);
             setNodeActive(this, "LabHint", win);
             if (win) void playWinRibbon(this);
-            const gifTask = win ? playResultSuitVideo(this, "ChickenSlot", look) : Promise.resolve(false);
-            // 胜利且成套后在 ChickenSlot 播套装 GIF；没有片源时仍展示立绘/拼装鸡。
-            if (!(await gifTask)) {
-                const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
-                if (win) celebrateChicken(chicken, look);
-                else mournChicken(chicken);
-            }
+            // 先出立绘，GIF 首帧好了再换上。安卓读 10MB 级动图可能要几秒，不能把槽位留空。
+            const chicken = await spawnChicken(this, "ChickenSlot", look, 1.2);
+            if (win) celebrateChicken(chicken, look);
+            else mournChicken(chicken);
+            if (win) void playResultSuitVideo(this, "ChickenSlot", look);
         } catch (error) {
             console.error("[Result] 结算演出失败，仍可继续", error);
             try {
