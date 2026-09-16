@@ -107,7 +107,7 @@ export class ChickenActor {
 
     //#region 招式
 
-    /** 贴身啄：走过去先蓄一下再猛啄。整只点头，立绘也能看出来。 */
+    /** 鸡啄米：走过去先蓄一下再猛啄。整只点头，立绘也能看出来。 */
     private async peckMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
         this.lean(10, 0.06);
@@ -121,7 +121,7 @@ export class ChickenActor {
     }
 
     /**
-     * 跳踢：一路小跳着逼过去，落点上补一脚。
+     * 金鸡独立：一路小跳着逼过去，落点上补一脚。
      * 每一步都走抛物线，连起来就是蹦过去的观感——以前是先抬一下再直线平移，
      * 那点抬升立刻被插值拉平，所以怎么看都不像跳。
      */
@@ -140,7 +140,7 @@ export class ChickenActor {
         return true;
     }
 
-    /** 飞扑：先窜到高处，再压着身子一头扎下来。 */
+    /** 乌鸦坐飞鸡：先窜到高处，再压着身子一头扎下来。 */
     private async diveMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.flap(7);
         this.tuckLegs(-24, 0.06, 0.2);
@@ -161,8 +161,8 @@ export class ChickenActor {
     }
 
     /**
-     * 腾空下砸：原地窜起一大截，在最高点停一拍，再整只砸到对手头上。
-     * 那一拍停顿是留给观众反应的，没有它就只是个高一点的飞扑。
+     * 天外飞鸡：原地窜起一大截，在最高点停一拍，再整只砸到对手头上。
+     * 那一拍停顿是留给观众反应的，没有它就只是个高一点的乌鸦坐飞鸡。
      */
     private async leapMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.flap(6);
@@ -189,7 +189,7 @@ export class ChickenActor {
         return true;
     }
 
-    /** 扑翅冲撞：压低身子贴地加速撞过去，撞实了自己也被弹开。 */
+    /** 铁头功：压低身子贴地加速撞过去，撞实了自己也被弹开。 */
     private async chargeMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.flap(8);
         this.squat(true, tk);
@@ -209,7 +209,7 @@ export class ChickenActor {
         return true;
     }
 
-    /** 转身扫尾：整只转一圈抽过去。立绘没有尾巴，转圈才看得出这一招。 */
+    /** 神龙摆尾：整只转一圈抽过去。立绘没有尾巴，转圈才看得出这一招。 */
     private async tailMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
         this.lean(-18, 0.06);
@@ -221,7 +221,7 @@ export class ChickenActor {
         return true;
     }
 
-    /** 连啄：贴上去快啄三下，一下比一下猛，伤害仍然只结算一次。 */
+    /** 连珠神啄：贴上去快啄三下，一下比一下猛，伤害仍然只结算一次。 */
     private async comboMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
         const hit = await this.advance(target, tk, 160, this.dur(0.08));
@@ -236,7 +236,7 @@ export class ChickenActor {
         return true;
     }
 
-    /** 假动作：先虚晃一下把对手骗住，再绕到它另一侧偷一口。 */
+    /** 金蝉脱壳：先虚晃一下把对手骗住，再绕到它另一侧偷一口。 */
     private async feintMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.lean(-16, 0.06);
         this.tiltPart(this.child("Head"), -14 * this.sign(), 0.06, 0.1);
@@ -710,7 +710,7 @@ export class ChickenActor {
         return this.ease(p, 0.14, "quadOut", tk);
     }
 
-    /** 转身扫尾：整只甩过去再转回来，立绘靠转圈认招。 */
+    /** 神龙摆尾：整只甩过去再转回来，立绘靠转圈认招。 */
     private async sweep(tk: number) {
         const dir = this.sign();
         this.lean(-32, 0.08);

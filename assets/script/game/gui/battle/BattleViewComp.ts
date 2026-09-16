@@ -1,10 +1,10 @@
 import { gameText, gameTextOr } from "../../core/GameConfig";
-import { Color, JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
-import { CCView } from "db://oops-framework/module/common/CCView";
+import { GameUIBase } from "../../common/GameUIBase";
 import { BattleAnimPlayer } from "../../battle/BattleAnimPlayer";
 import { BattleAnimator } from "../../battle/BattleAnimator";
 import { BattleBrain } from "../../battle/BattleBrain";
@@ -25,7 +25,7 @@ import { preloadResultSuitGif } from "../SlotVideo";
 import { hexColor, setLabel } from "../UiUtil";
 import { playGameEffect } from "../GameAudio";
 
-const { ccclass } = _decorator;
+const { ccclass, executionOrder } = _decorator;
 
 /** 与 battle.prefab 里 PlayerSlot / EnemySlot 的落点保持一致。 */
 const P_HOME = new Vec3(-160, -76, 0);
@@ -65,9 +65,10 @@ const HIT_QUAKE: Record<StrikeStyle, number> = {
  * 出招演出是各跑各的异步链，互相不等待，所以场上会出现两只鸡同时扑上去的画面。
  */
 @ccclass("BattleViewComp")
+@executionOrder(-100)
 @ecs.register("BattleView", false)
 @gui.register("BattleView", { layer: LayerType.UI, prefab: "gui/battle/battle" })
-export class BattleViewComp extends CCView<ChickenRun> {
+export class BattleViewComp extends GameUIBase<ChickenRun> {
     private session!: BattleSession;
     private playerNode: Node | null = null;
     private enemyNode: Node | null = null;
@@ -185,7 +186,33 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }
         this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
         const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
+        const skillKeys = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"] as const;
+        const layerKeys = ["skill_layer_rays", "skill_layer_flare", "skill_layer_banner", "skill_layer_sparks"] as const;
         const fxFrames = await Promise.all(fxKeys.map(async name => {
+            try {
+                return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
+            }
+            catch {
+                return null;
+            }
+        }));
+        const skillFrames = await Promise.all(skillKeys.map(async name => {
+            try {
+                return await this.load("bundle", `game/texture/fx/skill_${name}/spriteFrame`, SpriteFrame);
+            }
+            catch {
+                return null;
+            }
+        }));
+        const skillBgFrames = await Promise.all(skillKeys.map(async name => {
+            try {
+                return await this.load("bundle", `game/texture/fx/skill_bg_${name}/spriteFrame`, SpriteFrame);
+            }
+            catch {
+                return null;
+            }
+        }));
+        const layerFrames = await Promise.all(layerKeys.map(async name => {
             try {
                 return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
             }
@@ -195,6 +222,12 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }));
         if (this.closed) return;
         if (arena) {
+            const skills: Partial<Record<StrikeStyle, SpriteFrame>> = {};
+            const skillBgs: Partial<Record<StrikeStyle, SpriteFrame>> = {};
+            skillKeys.forEach((key, i) => {
+                if (skillFrames[i]) skills[key] = skillFrames[i]!;
+                if (skillBgFrames[i]) skillBgs[key] = skillBgFrames[i]!;
+            });
             this.fx = new BattleFx(this.node, arena, {
                 slash: fxFrames[0] || undefined,
                 star: fxFrames[1] || undefined,
@@ -203,7 +236,13 @@ export class BattleViewComp extends CCView<ChickenRun> {
                 focus: fxFrames[4] || undefined,
                 crack: fxFrames[5] || undefined,
                 ink: fxFrames[6] || undefined,
-                charge: fxFrames[7] || undefined
+                charge: fxFrames[7] || undefined,
+                skills,
+                skillBgs,
+                rays: layerFrames[0] || undefined,
+                flare: layerFrames[1] || undefined,
+                banner: layerFrames[2] || undefined,
+                sparks: layerFrames[3] || undefined
             });
             this.fx.wash(mood.veil, run.currentRoute().encounter === "final" || run.phase === "boss");
         }
@@ -297,8 +336,6 @@ export class BattleViewComp extends CCView<ChickenRun> {
         }
         else if (ev.type === "clash") {
             playGameEffect("skill");
-            this.playerActor?.flash(new Color(20, 10, 10), 0.1);
-            this.enemyActor?.flash(new Color(20, 10, 10), 0.1);
             this.playerActor?.bounce();
             this.enemyActor?.bounce();
             const a = this.playerNode?.worldPosition;
@@ -307,7 +344,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
                 this.impact?.playClash((a.x + b.x) / 2, (a.y + b.y) / 2);
                 this.fx?.clash((a.x + b.x) / 2, (a.y + b.y) / 2);
             }
-            this.screenEffects?.play(22, true, true, ev.winner === "player" ? 1 : -1);
+            this.screenEffects?.play(18, true, false, ev.winner === "player" ? 1 : -1);
             this.log(ev.winner, gameTextOr("BattleViewComp_024", "对撞！"));
         }
         else if (ev.type === "rage") {
@@ -323,7 +360,7 @@ export class BattleViewComp extends CCView<ChickenRun> {
             const who = this.actor(ev.side);
             who?.pulse();
             this.fx?.enrage(who);
-            this.screenEffects?.play(18, true, true, -1);
+            this.screenEffects?.play(14, true, false, -1);
             this.log(ev.side, gameTextOr("BattleViewComp_027", "暴走！"));
         }
         else if (ev.type === "end") {
@@ -344,13 +381,14 @@ export class BattleViewComp extends CCView<ChickenRun> {
         this.skillOf[side] = skill;
         this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : STYLE_TEXT[style]);
         if (skill) {
-            this.fx?.skillWindup(self);
-            void this.spawnFx(PREFAB_PATH.fxSkill, side, gameText("BattleViewComp_017", STYLE_TEXT[style]), 0.45, 1.15);
+            const title = gameText("BattleViewComp_017", STYLE_TEXT[style]);
+            const mode = side === "enemy" ? "half" : "full";
+            this.fx?.skillWindup(self, style, title, side === "enemy", mode);
+            void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.45, 1.15);
         }
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         });
-        if (skill) this.fx?.skillDone();
     }
 
     private applyResult(evs: BattleEvent[]) {
@@ -367,7 +405,6 @@ export class BattleViewComp extends CCView<ChickenRun> {
         playGameEffect(crit ? "critical" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
         this.actor(to)?.flinch(crit ? 1.65 : heavy ? 1.3 : 1, direction);
-        if (crit) this.actor(from)?.flash(new Color(255, 240, 180), 0.08);
         if (target) {
             this.impact?.play(target, direction, heavy, crit, this.featherColors[to], this.actor(to)?.home.y);
             const p = target.worldPosition;

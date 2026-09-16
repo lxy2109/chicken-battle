@@ -83,7 +83,27 @@ const FX = [
     "focus_burst",
     "ground_crack",
     "ink_burst",
-    "charge_ring"
+    "charge_ring",
+    "skill_peck",
+    "skill_jump",
+    "skill_dive",
+    "skill_leap",
+    "skill_charge",
+    "skill_tail",
+    "skill_combo",
+    "skill_feint",
+    "skill_layer_rays",
+    "skill_layer_flare",
+    "skill_layer_banner",
+    "skill_layer_sparks",
+    "skill_bg_peck",
+    "skill_bg_jump",
+    "skill_bg_dive",
+    "skill_bg_leap",
+    "skill_bg_charge",
+    "skill_bg_tail",
+    "skill_bg_combo",
+    "skill_bg_feint"
 ];
 
 const uuids = Object.assign(
