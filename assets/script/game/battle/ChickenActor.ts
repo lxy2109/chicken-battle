@@ -1,6 +1,7 @@
 import { Color, Node, Sprite, Tween, UIOpacity, UITransform, tween, v3, Vec3 } from "cc";
 import { ArenaMood, StyleRhythm, styleRhythm } from "../core/BattleStyle";
 import { FightStyle, StrikeStyle } from "../core/Types";
+import { StrikeSheetPlayer } from "./StrikeSheetPlayer";
 
 /** 冲刺残影同时最多留几张，多了就像拖影糊成一片。 */
 let ghosts = 0;
@@ -35,6 +36,7 @@ export class ChickenActor {
     readonly style: FightStyle;
     /** 敌人是整图立绘时部位节点是关掉的，动作必须改整只/改 Illustration。 */
     private painted = false;
+    private sheets: StrikeSheetPlayer | null = null;
 
     constructor(readonly node: Node, home: Vec3, style: FightStyle = "brawler", private mood?: ArenaMood) {
         this.style = style;
@@ -43,6 +45,7 @@ export class ChickenActor {
         this.sx = node.scale.x;
         this.sy = node.scale.y;
         this.painted = !!node.getChildByName("Illustration")?.active;
+        this.sheets = node.getChildByName("Illustration")?.getComponent(StrikeSheetPlayer) ?? null;
         for (const sp of node.getComponentsInChildren(Sprite)) {
             this.tints.push({ sp, base: sp.color.clone() });
         }
@@ -82,6 +85,7 @@ export class ChickenActor {
         // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
         // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
         this.resetPose();
+        this.sheets?.play(style);
         this.windup(style);
         let told = false;
         const contact = (hit: boolean) => {
@@ -422,8 +426,13 @@ export class ChickenActor {
         );
     }
 
+    warmupSheets() {
+        return this.sheets?.warmup();
+    }
+
     private artNode(): Node | null {
-        if (!this.painted) return null;
+        // 立绘序列帧自己在播待机/出招时，不要再 tween 转 Illustration。
+        if (!this.painted || this.sheets?.busy || this.sheets?.idlePlaying) return null;
         const n = this.child("Illustration");
         return n && n.isValid ? n : null;
     }
@@ -544,6 +553,7 @@ export class ChickenActor {
     private begin(): number {
         this.token += 1;
         this.stopAll();
+        this.sheets?.halt();
         const list = this.waiters;
         this.waiters = [];
         for (const fn of list) fn();
@@ -680,6 +690,7 @@ export class ChickenActor {
     }
 
     private lean(deg: number, dur = 0.08) {
+        if (this.sheets?.busy) return;
         tween(this.node).to(dur, { angle: deg * this.sign() }, { easing: "quadOut" }).start();
     }
 
@@ -731,7 +742,7 @@ export class ChickenActor {
 
     /** 砸实了的压扁回弹，落地和撞击都用它收尾。 */
     private squash(tk: number, wide = 1.28, flat = 0.62) {
-        if (!this.alive(tk)) return;
+        if (!this.alive(tk) || this.sheets?.busy) return;
         const map = this.mood?.squash ?? 1;
         const w = 1 + (wide - 1) * this.rhythm.squash * map;
         const f = 1 - (1 - flat) * this.rhythm.squash * map;
@@ -746,7 +757,7 @@ export class ChickenActor {
      * 被抢占后就别再站起来了：那会儿新动作已经摆好自己的姿态，这一下会把它盖掉。
      */
     private squat(on: boolean, tk: number) {
-        if (!this.alive(tk)) return;
+        if (!this.alive(tk) || this.sheets?.busy) return;
         const x = on ? this.sx * 1.22 : this.sx;
         const y = on ? this.sy * 0.74 : this.sy;
         tween(this.node).to(0.08, { scale: v3(x, y, 1) }).start();
@@ -768,11 +779,13 @@ export class ChickenActor {
         this.tiltSeq(this.child("Wing"), [[14 * dir, 0.06], [-10 * dir, 0.1], [0, 0.14]]);
         this.tiltSeq(this.child("Head"), [[12 * dir, 0.08], [-8 * dir, 0.12], [0, 0.1]]);
         this.tiltSeq(this.artNode(), [[18 * dir, 0.08], [-22 * dir, 0.14], [0, 0.12]]);
-        tween(this.node)
-            .to(0.12, { angle: -(170 + extra) * dir }, { easing: "quadIn" })
-            .to(0.16, { angle: 18 * dir }, { easing: "quadOut" })
-            .to(0.1, { angle: 0 })
-            .start();
+        if (!this.sheets?.busy) {
+            tween(this.node)
+                .to(0.12, { angle: -(170 + extra) * dir }, { easing: "quadIn" })
+                .to(0.16, { angle: 18 * dir }, { easing: "quadOut" })
+                .to(0.1, { angle: 0 })
+                .start();
+        }
         this.squash(tk, 1.22, 0.7);
         await this.delay(0.38, tk);
         if (!this.alive(tk)) return;
@@ -793,6 +806,7 @@ export class ChickenActor {
     }
 
     private scaleTo(x: number, y: number, dur: number) {
+        if (this.sheets?.busy) return;
         tween(this.node).to(dur, { scale: v3(x, y, 1) }).start();
     }
 
@@ -929,10 +943,12 @@ export class ChickenActor {
                 this.tiltPart(head, 22 * dir * amp, dur * 0.4, dur * 0.6);
                 this.tiltPart(neck, 8 * dir * amp, dur * 0.4, dur * 0.6);
             }
-            tween(this.node)
-                .to(dur * 0.4, { angle: 20 * dir * amp, scale: v3(this.sx * 1.16, this.sy * 0.82, 1) })
-                .to(dur * 0.6, { angle: 0, scale: v3(this.sx, this.sy, 1) })
-                .start();
+            if (!this.sheets?.busy) {
+                tween(this.node)
+                    .to(dur * 0.4, { angle: 20 * dir * amp, scale: v3(this.sx * 1.16, this.sy * 0.82, 1) })
+                    .to(dur * 0.6, { angle: 0, scale: v3(this.sx, this.sy, 1) })
+                    .start();
+            }
             return this.delay(dur, tk);
         }
         const wind = dur * 0.32;
@@ -946,11 +962,13 @@ export class ChickenActor {
             this.tiltSeq(neck, [[-7 * dir * amp, wind], [12 * dir * amp, snap], [0, back]]);
             this.tiltSeq(wing, [[16 * amp, wind], [-10 * amp, snap], [0, back]]);
         }
-        tween(this.node)
-            .to(wind, { angle: -18 * dir * amp, scale: v3(this.sx * 0.9, this.sy * 1.12, 1) })
-            .to(snap, { angle: 26 * dir * amp, scale: v3(this.sx * 1.22, this.sy * 0.76, 1) })
-            .to(back, { angle: 0, scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
-            .start();
+        if (!this.sheets?.busy) {
+            tween(this.node)
+                .to(wind, { angle: -18 * dir * amp, scale: v3(this.sx * 0.9, this.sy * 1.12, 1) })
+                .to(snap, { angle: 26 * dir * amp, scale: v3(this.sx * 1.22, this.sy * 0.76, 1) })
+                .to(back, { angle: 0, scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
+                .start();
+        }
         return this.delay(dur, tk);
     }
 
@@ -964,11 +982,13 @@ export class ChickenActor {
             this.tiltPart(this.child("LegR"), 16, 0.06, 0.14);
             this.tiltPart(this.child("Head"), 10 * dir, 0.06, 0.12);
         }
-        tween(this.node)
-            .to(0.06, { angle: -12 * dir })
-            .to(0.08, { angle: 16 * dir })
-            .to(0.12, { angle: 0 })
-            .start();
+        if (!this.sheets?.busy) {
+            tween(this.node)
+                .to(0.06, { angle: -12 * dir })
+                .to(0.08, { angle: 16 * dir })
+                .to(0.12, { angle: 0 })
+                .start();
+        }
     }
 
     private bob(tk: number) {

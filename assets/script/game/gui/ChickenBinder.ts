@@ -2,6 +2,7 @@ import { Color, EffectAsset, Graphics, Material, Vec4, Label, Node, Rect, Sprite
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { FACE_TEXT, Appearance, FaceId, PartId } from "../core/Types";
 import { PART_NODE, TEX, showcaseSuit, itemById } from "../core/Catalog";
+import { StrikeSheetPlayer } from "../battle/StrikeSheetPlayer";
 import { setSpriteColor } from "./UiUtil";
 
 export async function spawnChicken(view: GameComponent, slotName: string, appearance: Appearance, scale = 1, flip = false): Promise<Node | null> {
@@ -38,6 +39,9 @@ export async function spawnChicken(view: GameComponent, slotName: string, appear
         transform.setContentSize(rect.width * ratio, rect.height * ratio);
         // Original Figma chickens face left; the actor's default faces right.
         art.setScale(-1, 1, 1);
+        const sheets = art.addComponent(StrikeSheetPlayer);
+        sheets.sheetKey = appearance.illustration || (suit ? `set_${suit.id}` : "");
+        void sheets.startIdle();
         return node;
     }
     if (flip) {

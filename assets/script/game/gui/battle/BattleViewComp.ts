@@ -173,6 +173,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
         if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler", mood);
         if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler", mood);
+        await Promise.all([this.playerActor?.warmupSheets(), this.enemyActor?.warmupSheets()].filter(Boolean));
 
         // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
         const brain = new BattleBrain();
