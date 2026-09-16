@@ -1,6 +1,7 @@
-import { Color, Graphics, Label, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, director, tween, v3 } from "cc";
+import { Color, Graphics, Label, Mask, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, director, tween, v3 } from "cc";
 import { ChickenActor } from "../../battle/ChickenActor";
 import { StrikeStyle } from "../../core/Types";
+import { UIBgAdaptation } from "../UIBgAdaptation";
 
 export interface BattleFxSheet {
     slash?: SpriteFrame;
@@ -310,7 +311,7 @@ export class BattleFx {
         }).start();
     }
 
-    /** 竖屏全屏或半屏：底板原地呼吸，主体按招式曲线单独入场。 */
+    /** 竖屏全屏或半屏：底板跟招式同一条入场曲线走，主体幅度更大。 */
     private skillSplash(style: StrikeStyle, title: string, fromRight: boolean, mode: SplashMode) {
         if (!this.overlay.isValid || this.closed) return;
         this.dropSplash();
@@ -338,34 +339,60 @@ export class BattleFx {
         this.splash = root;
         this.hideVeil();
 
-        const scene = this.piece(root, bgFrame, bw, bh, cx, artY, { scale: look.bgFrom, opacity: 0 });
+        const spanX = half ? w * 0.42 : w * 0.64;
+        const spanY = half ? h * 0.28 : h * 0.38;
+        const bgPose = this.enterStart(look, cx, artY, dir, spanX, spanY, 0.42);
+        const sceneRoot = new Node("Scene");
+        sceneRoot.layer = root.layer;
+        sceneRoot.parent = root;
+        const sceneUt = sceneRoot.addComponent(UITransform);
+        sceneUt.setContentSize(bw, bh);
+        sceneRoot.setPosition(bgPose.x, bgPose.y, 0);
+        sceneRoot.angle = bgPose.angle;
+        const mask = sceneRoot.addComponent(Mask);
+        mask.type = Mask.Type.GRAPHICS_STENCIL;
+        const clip = sceneRoot.getComponent(Graphics) || sceneRoot.addComponent(Graphics);
+        clip.clear();
+        clip.fillColor = Color.WHITE;
+        clip.rect(-bw / 2, -bh / 2, bw, bh);
+        clip.fill();
+        this.colorPlate(sceneRoot, bw, bh, look.rgb);
+
+        const scene = this.coverBg(sceneRoot, bgFrame, sceneUt);
         if (scene) {
-            tween(scene.op).to(0.14, { opacity: half ? 210 : 255 }).delay(hold).to(fadeOut, { opacity: 0 }).start();
-            tween(scene.node).to(look.inTime + hold, { scale: v3(look.bgTo, look.bgTo, 1) }, { easing: "sineInOut" }).start();
+            const cover = scene.node.scale.x;
+            const from = cover * bgPose.scale * look.bgFrom;
+            scene.node.setScale(from, from, 1);
+            tween(scene.node).to(look.inTime + hold, { scale: v3(cover * look.bgTo, cover * look.bgTo, 1) }, { easing: "sineInOut" }).start();
         }
 
-        const rays = this.piece(root, this.sheet.rays, half ? w * 0.8 : w * 1.35, half ? h * 0.8 : h * 1.15, cx, artY, { scale: 0.52, color: tint, opacity: 0 });
+        const rays = this.piece(sceneRoot, this.sheet.rays, bw * 1.05, bh * 1.05, 0, 0, { scale: 0.72, color: tint, opacity: 0 });
         if (rays) {
-            tween(rays.op).to(0.12, { opacity: half ? 160 : 210 }).delay(hold).to(fadeOut, { opacity: 0 }).start();
-            tween(rays.node).to(0.26, { scale: v3(1.18, 1.18, 1) }, { easing: "quadOut" })
-                .by(hold, { angle: dir * 10 }).start();
+            tween(rays.op).to(0.12, { opacity: half ? 90 : 120 }).start();
+            tween(rays.node).to(look.inTime, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
+                .by(hold, { angle: dir * 8 }).start();
         }
 
-        const flare = this.piece(root, this.sheet.flare, bh * 1.45, bh * 1.45, cx, artY, { scale: 0.35, color: tint, opacity: 0 });
+        const flare = this.piece(sceneRoot, this.sheet.flare, bh * 0.82, bh * 0.82, 0, 0, { scale: 0.45, color: tint, opacity: 0 });
         if (flare) {
-            tween(flare.op).to(0.1, { opacity: 230 }).delay(hold).to(fadeOut, { opacity: 0 }).start();
-            tween(flare.node).to(0.18, { scale: v3(1.08, 1.08, 1) }, { easing: "quadOut" })
-                .to(0.16, { scale: v3(0.9, 0.9, 1) })
-                .to(0.16, { scale: v3(1.12, 1.12, 1) }).start();
+            tween(flare.op).to(0.1, { opacity: 110 }).start();
+            tween(flare.node).to(0.18, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
+                .to(0.16, { scale: v3(0.88, 0.88, 1) })
+                .to(0.16, { scale: v3(1.06, 1.06, 1) }).start();
         }
 
-        const ring = this.piece(root, this.sheet.ring || this.sheet.charge, bw * 0.62, bh * 0.3, cx, artY - bh * 0.32, {
+        const ring = this.piece(sceneRoot, this.sheet.ring || this.sheet.charge, bw * 0.62, bh * 0.3, 0, -bh * 0.32, {
             scale: 0.35, color: tint, opacity: 0
         });
         if (ring) {
             tween(ring.op).delay(0.06).to(0.08, { opacity: 200 }).to(0.28, { opacity: 0 }).start();
             tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.7, 1.15, 1) }, { easing: "quadOut" }).start();
         }
+
+        tween(sceneRoot).to(look.inTime, {
+            position: v3(cx, artY, 0),
+            angle: 0
+        }, { easing: look.inEase }).start();
 
         let startX = cx, startY = artY, startScale = 0.86, startAngle = 0;
         if (look.enter === "side") startX = cx + dir * w * (half ? 0.42 : 0.64);
@@ -526,6 +553,59 @@ export class BattleFx {
                 .to(0.1, { scale: v3(1, 1, 1) }, { easing: "quadOut" });
         }
         motion.start();
+    }
+
+    /** 入场起点：amount=1 是主体行程，底板用更小的量跟着走。 */
+    private enterStart(look: SkillLook, cx: number, y: number, dir: number, spanX: number, spanY: number, amount: number) {
+        let x = cx, py = y, scale = 1, angle = 0;
+        if (look.enter === "side") x = cx + dir * spanX * amount;
+        else if (look.enter === "up") py = y - spanY * amount;
+        else if (look.enter === "down") py = y + spanY * amount * 1.1;
+        else if (look.enter === "zoom") scale = 1 + 0.38 * amount;
+        else if (look.enter === "pulse") scale = 1 + 0.22 * amount;
+        else if (look.enter === "spin") {
+            x = cx + dir * spanX * 0.45 * amount;
+            angle = -dir * 70 * amount;
+        }
+        else if (look.enter === "feint") {
+            x = cx - dir * spanX * 0.86 * amount;
+            scale = 1 - 0.22 * amount;
+        }
+        return { x, y: py, scale, angle };
+    }
+
+    /** 底板用原图尺寸 + Cover，和界面背景同一套 UIBgAdaptation。 */
+    private coverBg(parent: Node, frame: SpriteFrame | undefined, viewport: UITransform) {
+        if (!frame || !parent.isValid) return null;
+        const node = new Node("CoverBg");
+        node.layer = parent.layer;
+        node.parent = parent;
+        const native = frame.originalSize;
+        const w = native.width > 0 ? native.width : frame.rect.width;
+        const h = native.height > 0 ? native.height : frame.rect.height;
+        node.addComponent(UITransform).setContentSize(w, h);
+        const sp = node.addComponent(Sprite);
+        sp.sizeMode = Sprite.SizeMode.CUSTOM;
+        sp.spriteFrame = frame;
+        const op = node.addComponent(UIOpacity);
+        op.opacity = 255;
+        const adapt = node.addComponent(UIBgAdaptation);
+        adapt.viewportTransform = viewport;
+        adapt.refresh();
+        adapt.unscheduleAllCallbacks();
+        return { node, op };
+    }
+
+    private colorPlate(parent: Node, w: number, h: number, rgb: [number, number, number]) {
+        const node = new Node("Plate");
+        node.layer = parent.layer;
+        node.parent = parent;
+        node.addComponent(UITransform).setContentSize(w, h);
+        const g = node.addComponent(Graphics);
+        g.fillColor = new Color(Math.round(rgb[0] * 0.22), Math.round(rgb[1] * 0.14), Math.round(rgb[2] * 0.12), 255);
+        g.rect(-w / 2, -h / 2, w, h);
+        g.fill();
+        return node;
     }
 
     private piece(
