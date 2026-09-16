@@ -1,4 +1,4 @@
-import { Color, Graphics, Label, Mask, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, director, tween, v3 } from "cc";
+import { Color, Font, Graphics, Label, Mask, Node, Sprite, SpriteFrame, Tween, UIOpacity, UITransform, Vec2, director, tween, v3 } from "cc";
 import { ChickenActor } from "../../battle/ChickenActor";
 import { StrikeStyle } from "../../core/Types";
 import { UIBgAdaptation } from "../UIBgAdaptation";
@@ -14,10 +14,12 @@ export interface BattleFxSheet {
     charge?: SpriteFrame;
     skills?: Partial<Record<StrikeStyle, SpriteFrame>>;
     skillBgs?: Partial<Record<StrikeStyle, SpriteFrame>>;
+    skillMinis?: Partial<Record<StrikeStyle, SpriteFrame>>;
     rays?: SpriteFrame;
     flare?: SpriteFrame;
     banner?: SpriteFrame;
     sparks?: SpriteFrame;
+    titleFont?: Font;
 }
 
 type SplashEnter = "side" | "up" | "down" | "zoom" | "spin" | "feint" | "pulse";
@@ -51,7 +53,7 @@ const SKILL_LOOK: Record<StrikeStyle, SkillLook> = {
 
 /**
  * 战斗电影感：斩痕贴图、冲击波、残影、竖屏招式立绘。
- * 绝招走竖屏全屏/半屏，不再叠黑框宽银幕和暗色闪屏。
+ * 玩家绝招走竖屏全屏立绘；敌人绝招走无底板的小贴纸。不再叠黑框宽银幕和暗色闪屏。
  */
 export class BattleFx {
     private overlay: Node;
@@ -64,7 +66,7 @@ export class BattleFx {
     private punching = 0;
     private closed = false;
     private live = 0;
-    private splash: Node | null = null;
+    private liveSplash: Partial<Record<SplashMode, Node>> = {};
     private cinema: Node;
     private veilHold = 0;
 
@@ -109,7 +111,7 @@ export class BattleFx {
         g.rect(w / 2 - 56, -h / 2, 56, h);
         g.fill();
         this.veilHold = heavy ? 200 : 140;
-        this.veilFade.opacity = this.splash ? 0 : this.veilHold;
+        this.veilFade.opacity = this.liveSplash.full ? 0 : this.veilHold;
     }
 
     skillCharge(actor: ChickenActor | null) {
@@ -122,7 +124,12 @@ export class BattleFx {
 
     skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         this.skillCharge(actor);
-        this.skillSplash(style, title, fromRight, mode);
+        try {
+            this.skillSplash(style, title, fromRight, mode);
+        }
+        catch {
+            /* 立绘缺图或 Label 组件冲突时不能把绝招特效整段吃掉 */
+        }
     }
 
     hit(worldX: number, worldY: number, direction: number, style: StrikeStyle, heavy: boolean, crit: boolean) {
@@ -311,24 +318,26 @@ export class BattleFx {
         }).start();
     }
 
-    /** 竖屏全屏或半屏：底板跟招式同一条入场曲线走，主体幅度更大。 */
+    /** 竖屏全屏立绘；敌人走无底板小贴纸。两边可以同时播，不能互相挤掉。 */
     private skillSplash(style: StrikeStyle, title: string, fromRight: boolean, mode: SplashMode) {
-        if (!this.overlay.isValid || this.closed) return;
-        this.dropSplash();
+        if (mode === "half") {
+            this.skillMiniBurst(style, title, fromRight);
+            return;
+        }
+        if (!this.cinema.isValid || this.closed) return;
         this.layout();
         const { w, h } = this.size();
         const look = SKILL_LOOK[style];
         const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
         const dir = fromRight ? 1 : -1;
-        const half = mode === "half";
         const hero = this.sheet.skills?.[style];
         const bgFrame = this.sheet.skillBgs?.[style];
-        const hold = look.hold * (half ? 0.82 : 1);
+        const hold = look.hold;
         const fadeOut = look.outTime;
-        const cx = half ? dir * w * 0.16 : 0;
-        const artY = half ? 24 : 0;
-        const bw = half ? w * 0.72 : w;
-        const bh = half ? h * 0.78 : h;
+        const bw = w;
+        const bh = h;
+        const cx = 0;
+        const artY = 0;
 
         const root = new Node("SkillSplash");
         root.layer = this.cinema.layer;
@@ -336,11 +345,12 @@ export class BattleFx {
         root.addComponent(UITransform).setContentSize(w, h);
         const fade = root.addComponent(UIOpacity);
         fade.opacity = 0;
-        this.splash = root;
+        this.dropSplash("full");
+        this.liveSplash.full = root;
         this.hideVeil();
 
-        const spanX = half ? w * 0.42 : w * 0.64;
-        const spanY = half ? h * 0.28 : h * 0.38;
+        const spanX = w * 0.64;
+        const spanY = h * 0.38;
         const bgPose = this.enterStart(look, cx, artY, dir, spanX, spanY, 0.42);
         const sceneRoot = new Node("Scene");
         sceneRoot.layer = root.layer;
@@ -350,12 +360,7 @@ export class BattleFx {
         sceneRoot.setPosition(bgPose.x, bgPose.y, 0);
         sceneRoot.angle = bgPose.angle;
         const mask = sceneRoot.addComponent(Mask);
-        mask.type = Mask.Type.GRAPHICS_STENCIL;
-        const clip = sceneRoot.getComponent(Graphics) || sceneRoot.addComponent(Graphics);
-        clip.clear();
-        clip.fillColor = Color.WHITE;
-        clip.rect(-bw / 2, -bh / 2, bw, bh);
-        clip.fill();
+        mask.type = Mask.Type.GRAPHICS_RECT;
         this.colorPlate(sceneRoot, bw, bh, look.rgb);
 
         const scene = this.coverBg(sceneRoot, bgFrame, sceneUt);
@@ -368,11 +373,10 @@ export class BattleFx {
 
         const rays = this.piece(sceneRoot, this.sheet.rays, bw * 1.05, bh * 1.05, 0, 0, { scale: 0.72, color: tint, opacity: 0 });
         if (rays) {
-            tween(rays.op).to(0.12, { opacity: half ? 90 : 120 }).start();
+            tween(rays.op).to(0.12, { opacity: 110 }).start();
             tween(rays.node).to(look.inTime, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
                 .by(hold, { angle: dir * 8 }).start();
         }
-
         const flare = this.piece(sceneRoot, this.sheet.flare, bh * 0.82, bh * 0.82, 0, 0, { scale: 0.45, color: tint, opacity: 0 });
         if (flare) {
             tween(flare.op).to(0.1, { opacity: 110 }).start();
@@ -381,12 +385,12 @@ export class BattleFx {
                 .to(0.16, { scale: v3(1.06, 1.06, 1) }).start();
         }
 
-        const ring = this.piece(sceneRoot, this.sheet.ring || this.sheet.charge, bw * 0.62, bh * 0.3, 0, -bh * 0.32, {
+        const ring = this.piece(sceneRoot, this.sheet.ring || this.sheet.charge, bw * 0.7, bh * 0.22, 0, -bh * 0.28, {
             scale: 0.35, color: tint, opacity: 0
         });
         if (ring) {
-            tween(ring.op).delay(0.06).to(0.08, { opacity: 200 }).to(0.28, { opacity: 0 }).start();
-            tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.7, 1.15, 1) }, { easing: "quadOut" }).start();
+            tween(ring.op).delay(0.06).to(0.08, { opacity: 180 }).to(0.28, { opacity: 0 }).start();
+            tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.5, 1.1, 1) }, { easing: "quadOut" }).start();
         }
 
         tween(sceneRoot).to(look.inTime, {
@@ -394,60 +398,65 @@ export class BattleFx {
             angle: 0
         }, { easing: look.inEase }).start();
 
-        let startX = cx, startY = artY, startScale = 0.86, startAngle = 0;
-        if (look.enter === "side") startX = cx + dir * w * (half ? 0.42 : 0.64);
-        else if (look.enter === "up") startY = artY - h * (half ? 0.28 : 0.38);
-        else if (look.enter === "down") startY = artY + h * (half ? 0.32 : 0.42);
-        else if (look.enter === "zoom") startScale = 1.38;
-        else if (look.enter === "pulse") startScale = 1.22;
+        const native = hero?.originalSize;
+        const artW = native && native.width > 0 ? native.width : 720;
+        const artH = native && native.height > 0 ? native.height : 1280;
+        const fill = Math.max(bw / artW, bh / artH);
+
+        let startX = 0, startY = 0, startScale = fill * 0.92, startAngle = 0;
+        if (look.enter === "side") startX = dir * bw * 0.7;
+        else if (look.enter === "up") startY = -bh * 0.28;
+        else if (look.enter === "down") startY = bh * 0.32;
+        else if (look.enter === "zoom") startScale = fill * 1.22;
+        else if (look.enter === "pulse") startScale = fill * 1.12;
         else if (look.enter === "spin") {
-            startX = cx + dir * w * 0.28;
-            startAngle = -dir * 70;
+            startX = dir * bw * 0.28;
+            startAngle = -dir * 50;
         }
         else if (look.enter === "feint") {
-            startX = cx - dir * w * (half ? 0.36 : 0.55);
-            startScale = 0.78;
+            startX = -dir * bw * 0.45;
+            startScale = fill * 0.84;
         }
 
         if (look.enter === "feint") {
-            const decoy = this.piece(root, hero, bw, bh, cx + dir * w * 0.42, artY, { scale: 0.9, opacity: 0, color: tint });
+            const decoy = this.piece(sceneRoot, hero, artW, artH, dir * bw * 0.4, 0, { scale: fill * 0.9, opacity: 0, color: tint });
             if (decoy) {
                 tween(decoy.op).to(0.08, { opacity: 140 }).delay(0.08).to(0.12, { opacity: 0 }).start();
-                tween(decoy.node).to(0.16, { position: v3(cx + dir * 28, artY, 0) }, { easing: "quartOut" }).start();
+                tween(decoy.node).to(0.16, { position: v3(dir * 18, 0, 0) }, { easing: "quartOut" }).start();
             }
         }
 
         for (let i = 0; i < look.ghosts; i++) {
-            const ox = (i - (look.ghosts - 1) / 2) * 36 * dir;
-            const ghost = this.piece(root, hero, bw, bh, startX + ox, startY, {
+            const ox = (i - (look.ghosts - 1) / 2) * 28 * dir;
+            const ghost = this.piece(sceneRoot, hero, artW, artH, startX + ox, startY, {
                 scale: startScale * 0.92, opacity: 0, color: tint, angle: startAngle
             });
             if (!ghost) continue;
-            tween(ghost.op).delay(0.03 * i).to(0.1, { opacity: 90 }).delay(0.12).to(0.18, { opacity: 0 }).start();
+            tween(ghost.op).delay(0.03 * i).to(0.1, { opacity: 80 }).delay(0.12).to(0.18, { opacity: 0 }).start();
             tween(ghost.node).delay(0.03 * i)
-                .to(look.inTime * 0.85, { position: v3(cx + ox, artY, 0), scale: v3(1.02, 1.02, 1), angle: 0 }, { easing: look.inEase }).start();
+                .to(look.inTime * 0.85, { position: v3(ox, 0, 0), scale: v3(fill * 1.02, fill * 1.02, 1), angle: 0 }, { easing: look.inEase }).start();
         }
 
-        const art = this.piece(root, hero, bw, bh, startX, startY, { scale: startScale, angle: startAngle });
-        if (art) this.playHeroEnter(art.node, look, cx, artY, dir, hold);
+        const art = this.piece(sceneRoot, hero, artW, artH, startX, startY, { scale: startScale, angle: startAngle });
+        if (art) this.playHeroEnter(art.node, look, 0, 0, dir, hold, fill);
 
-        const streakFrame = this.sheet.streak;
-        for (let i = 0; i < (half ? 3 : 5); i++) {
-            const oy = (i - 2) * 28;
-            const streak = this.piece(root, streakFrame, 220 + i * 18, 38, cx - dir * 80, artY + oy, {
-                scale: 0.6, opacity: 0, angle: (i - 2) * 6, color: tint
+        const streakN = 5;
+        for (let i = 0; i < streakN; i++) {
+            const oy = (i - (streakN - 1) / 2) * 28;
+            const streak = this.piece(sceneRoot, this.sheet.streak, 180 + i * 14, 32, -dir * bw * 0.18, oy, {
+                scale: 0.6, opacity: 0, angle: (i - 1) * 5, color: tint
             });
             if (!streak) continue;
             streak.node.setScale(-dir * 0.6, 0.6, 1);
-            tween(streak.op).delay(0.02 * i).to(0.06, { opacity: 210 }).to(0.16, { opacity: 0 }).start();
-            tween(streak.node).delay(0.02 * i).by(0.22, { position: v3(-dir * 90, 0, 0) }, { easing: "quadOut" }).start();
+            tween(streak.op).delay(0.02 * i).to(0.06, { opacity: 180 }).to(0.16, { opacity: 0 }).start();
+            tween(streak.node).delay(0.02 * i).by(0.22, { position: v3(-dir * 70, 0, 0) }, { easing: "quadOut" }).start();
         }
 
         const sparkFrame = this.sheet.sparks || this.sheet.star;
         const sparkSpot = [[-0.32, 0.22], [0.3, 0.18], [-0.18, -0.2], [0.26, -0.16], [0, 0.32], [0.08, -0.28]];
         for (let i = 0; i < sparkSpot.length; i++) {
             const [nx, ny] = sparkSpot[i];
-            const spark = this.piece(root, sparkFrame, 90, 90, cx + nx * bw, artY + ny * bh, {
+            const spark = this.piece(sceneRoot, sparkFrame, 90, 90, nx * bw, ny * bh, {
                 scale: 0.2, opacity: 0, angle: i * 28, color: tint
             });
             if (!spark) continue;
@@ -458,99 +467,286 @@ export class BattleFx {
         }
 
         if (style === "charge" || style === "leap" || style === "dive") {
-            const slash = this.piece(root, this.sheet.slash, bw * 0.9, bh * 0.45, cx + dir * 20, artY, {
+            const slash = this.piece(sceneRoot, this.sheet.slash, bw * 0.9, bh * 0.28, dir * 12, 0, {
                 scale: 0.4, opacity: 0, angle: style === "leap" || style === "dive" ? -dir * 42 : dir * 8
             });
             if (slash) {
                 slash.node.setScale(dir * 0.4, 0.4, 1);
-                tween(slash.op).delay(look.inTime * 0.55).to(0.05, { opacity: 230 }).to(0.16, { opacity: 0 }).start();
-                tween(slash.node).delay(look.inTime * 0.55).to(0.14, { scale: v3(dir * 1.1, 0.85, 1) }, { easing: "quartOut" }).start();
-            }
-        }
-        if (style === "combo" || style === "peck") {
-            const ink = this.piece(root, this.sheet.ink || this.sheet.star, 160, 160, cx + dir * 48, artY + 12, {
-                scale: 0.3, opacity: 0, color: tint
-            });
-            if (ink) {
-                tween(ink.op).delay(0.08).to(0.06, { opacity: 200 }).to(0.18, { opacity: 0 }).start();
-                tween(ink.node).delay(0.08).to(0.2, { scale: v3(1.2, 1.2, 1) }, { easing: "quadOut" }).start();
-            }
-        }
-        if (style === "leap") {
-            const crack = this.piece(root, this.sheet.crack, bw * 0.7, 80, cx, artY - bh * 0.42, { scale: 0.4, opacity: 0 });
-            if (crack) {
-                tween(crack.op).delay(look.inTime).to(0.06, { opacity: 200 }).to(0.22, { opacity: 0 }).start();
-                tween(crack.node).delay(look.inTime).to(0.16, { scale: v3(1.1, 0.9, 1) }, { easing: "bounceOut" }).start();
+                tween(slash.op).delay(look.inTime * 0.55).to(0.05, { opacity: 200 }).to(0.16, { opacity: 0 }).start();
+                tween(slash.node).delay(look.inTime * 0.55).to(0.14, { scale: v3(dir * 1.05, 0.85, 1) }, { easing: "quartOut" }).start();
             }
         }
 
-        const bannerY = half ? artY - bh * 0.36 : -h * 0.34;
-        const banner = this.piece(root, this.sheet.banner, bw * 0.86, half ? 72 : 96, cx, bannerY - 30, { scale: 0.7, opacity: 0 });
-        if (banner) {
-            tween(banner.op).delay(0.1).to(0.1, { opacity: 255 }).delay(hold - 0.08).to(fadeOut, { opacity: 0 }).start();
-            tween(banner.node).delay(0.1).to(0.14, { position: v3(cx, bannerY, 0), scale: v3(1, 1, 1) }, { easing: "backOut" }).start();
-        }
+        const vertical = look.enter === "up" || look.enter === "down";
+        this.stampTitle(sceneRoot, title, look, {
+            x: vertical ? dir * bw * 0.08 : 0,
+            y: vertical ? bh * 0.02 : -bh * 0.06,
+            size: vertical ? 152 : 138,
+            dir
+        });
 
-        const name = new Node("Title");
-        name.layer = root.layer;
-        name.parent = root;
-        const label = name.addComponent(Label);
-        label.string = title;
-        label.fontSize = half ? (title.length > 7 ? 28 : 34) : (title.length > 7 ? 40 : 50);
-        label.lineHeight = half ? 42 : 60;
-        label.color = new Color(255, 244, 180);
-        label.enableOutline = true;
-        label.outlineColor = new Color(48, 18, 8);
-        label.outlineWidth = 4;
-        label.updateRenderData(true);
-        name.setPosition(cx, bannerY + 6, 0);
-        name.setScale(1.4, 1.4, 1);
-        const nameFade = name.addComponent(UIOpacity);
-        nameFade.opacity = 0;
-        tween(nameFade).delay(0.14).to(0.08, { opacity: 255 }).delay(hold - 0.1).to(fadeOut, { opacity: 0 }).start();
-        tween(name).delay(0.14).to(0.12, { scale: v3(1, 1, 1) }, { easing: "backOut" }).start();
-
-        tween(fade).to(0.08, { opacity: 255 }).delay(look.inTime + hold).to(fadeOut, { opacity: 0 }, { easing: "quadOut" })
-            .call(() => this.dropSplash()).start();
+        tween(fade).to(0.08, { opacity: 255 }).delay(look.inTime + hold + 0.12).to(fadeOut, { opacity: 0 }, { easing: "quadOut" })
+            .call(() => this.dropSplash("full")).start();
     }
 
-    private playHeroEnter(node: Node, look: SkillLook, destX: number, destY: number, dir: number, hold: number) {
+    /** 敌人绝招：贴在自己一侧的小贴纸，不铺底板、不遮战场。 */
+    private skillMiniBurst(style: StrikeStyle, title: string, fromRight: boolean) {
+        if (!this.cinema.isValid || this.closed) return;
+        this.layout();
+        const { w, h } = this.size();
+        const look = SKILL_LOOK[style];
+        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
+        const dir = fromRight ? 1 : -1;
+        const hero = this.sheet.skillMinis?.[style] || this.sheet.skills?.[style];
+        const hold = look.hold * 0.72;
+        const fadeOut = look.outTime;
+        const size = Math.min(w, h) * 0.4;
+        const cx = dir * w * 0.28;
+        const artY = h * 0.04;
+
+        const root = new Node("SkillMini");
+        root.layer = this.cinema.layer;
+        root.parent = this.cinema;
+        root.addComponent(UITransform).setContentSize(w, h);
+        const fade = root.addComponent(UIOpacity);
+        fade.opacity = 0;
+        this.dropSplash("half");
+        this.liveSplash.half = root;
+
+        const native = hero?.originalSize;
+        const artW = native && native.width > 0 ? native.width : 512;
+        const artH = native && native.height > 0 ? native.height : 512;
+        const fill = size / Math.max(artW, artH);
+        const spanX = w * 0.2;
+        const spanY = h * 0.12;
+        let startX = cx, startY = artY, startScale = fill * 0.88, startAngle = 0;
+        if (look.enter === "side") startX = cx + dir * spanX;
+        else if (look.enter === "up") startY = artY - spanY;
+        else if (look.enter === "down") startY = artY + spanY;
+        else if (look.enter === "zoom") startScale = fill * 1.28;
+        else if (look.enter === "pulse") startScale = fill * 1.14;
+        else if (look.enter === "spin") {
+            startX = cx + dir * spanX * 0.5;
+            startAngle = -dir * 50;
+        }
+        else if (look.enter === "feint") {
+            startX = cx - dir * spanX * 0.7;
+            startScale = fill * 0.8;
+        }
+
+        if (look.enter === "feint") {
+            const decoy = this.piece(root, hero, artW, artH, cx + dir * size * 0.35, artY, { scale: fill * 0.9, opacity: 0, color: tint });
+            if (decoy) {
+                tween(decoy.op).to(0.08, { opacity: 140 }).delay(0.08).to(0.12, { opacity: 0 }).start();
+                tween(decoy.node).to(0.16, { position: v3(cx + dir * 18, artY, 0) }, { easing: "quartOut" }).start();
+            }
+        }
+
+        for (let i = 0; i < Math.min(1, look.ghosts); i++) {
+            const ox = 22 * dir;
+            const ghost = this.piece(root, hero, artW, artH, startX + ox, startY, {
+                scale: startScale * 0.92, opacity: 0, color: tint, angle: startAngle
+            });
+            if (!ghost) continue;
+            tween(ghost.op).to(0.1, { opacity: 70 }).delay(0.1).to(0.16, { opacity: 0 }).start();
+            tween(ghost.node)
+                .to(look.inTime * 0.85, { position: v3(cx + ox, artY, 0), scale: v3(fill * 1.02, fill * 1.02, 1), angle: 0 }, { easing: look.inEase }).start();
+        }
+
+        const art = this.piece(root, hero, artW, artH, startX, startY, { scale: startScale, angle: startAngle });
+        if (art) this.playHeroEnter(art.node, look, cx, artY, dir, hold, fill);
+
+        for (let i = 0; i < 3; i++) {
+            const oy = (i - 1) * 22;
+            const streak = this.piece(root, this.sheet.streak, 140 + i * 12, 28, cx - dir * size * 0.22, artY + oy, {
+                scale: 0.55, opacity: 0, angle: (i - 1) * 6, color: tint
+            });
+            if (!streak) continue;
+            streak.node.setScale(-dir * 0.55, 0.55, 1);
+            tween(streak.op).delay(0.02 * i).to(0.06, { opacity: 180 }).to(0.16, { opacity: 0 }).start();
+            tween(streak.node).delay(0.02 * i).by(0.2, { position: v3(-dir * 50, 0, 0) }, { easing: "quadOut" }).start();
+        }
+
+        if (style === "charge" || style === "leap" || style === "dive") {
+            const slash = this.piece(root, this.sheet.slash, size * 1.15, size * 0.36, cx + dir * 8, artY, {
+                scale: 0.4, opacity: 0, angle: style === "leap" || style === "dive" ? -dir * 42 : dir * 8
+            });
+            if (slash) {
+                slash.node.setScale(dir * 0.4, 0.4, 1);
+                tween(slash.op).delay(look.inTime * 0.55).to(0.05, { opacity: 200 }).to(0.16, { opacity: 0 }).start();
+                tween(slash.node).delay(look.inTime * 0.55).to(0.14, { scale: v3(dir * 1.05, 0.85, 1) }, { easing: "quartOut" }).start();
+            }
+        }
+
+        const ring = this.piece(root, this.sheet.ring || this.sheet.charge, size * 0.9, size * 0.28, cx, artY - size * 0.28, {
+            scale: 0.35, color: tint, opacity: 0
+        });
+        if (ring) {
+            tween(ring.op).delay(0.06).to(0.08, { opacity: 160 }).to(0.28, { opacity: 0 }).start();
+            tween(ring.node).delay(0.06).to(0.36, { scale: v3(1.4, 1.05, 1) }, { easing: "quadOut" }).start();
+        }
+
+        const vertical = look.enter === "up" || look.enter === "down";
+        this.stampTitle(root, title, look, {
+            x: cx - dir * size * 0.08,
+            y: vertical ? artY + 8 : artY - size * 0.12,
+            size: vertical ? 96 : 88,
+            dir
+        });
+
+        tween(fade).to(0.08, { opacity: 255 }).delay(look.inTime + hold + 0.1).to(fadeOut, { opacity: 0 }, { easing: "quadOut" })
+            .call(() => this.dropSplash("half")).start();
+    }
+
+    /** 招式名逐字蹦出，沿上下或左右错落，字色跟着这一招的特效走。 */
+    private stampTitle(parent: Node, title: string, look: SkillLook, pose: { x: number; y: number; size: number; dir: number }) {
+        let prefix = "";
+        let name = title.replace(/\s+/g, "");
+        const cut = name.indexOf("·");
+        if (cut >= 0) {
+            prefix = name.slice(0, cut);
+            name = name.slice(cut + 1);
+        }
+        const chars = Array.from(name);
+        if (!chars.length) return;
+        const vertical = look.enter === "up" || look.enter === "down";
+        const size = pose.size;
+        const step = size * (vertical ? 1.32 : 1.26);
+        const n = chars.length;
+        const seed = look.enter.length * 13 + n * 7;
+        const mid = (n - 1) / 2;
+
+        if (prefix) {
+            const tagX = vertical ? pose.x : pose.x;
+            const tagY = vertical
+                ? pose.y + step * mid + size * 0.62
+                : pose.y + size * 0.82;
+            this.glyph(parent, prefix, Math.round(size * 0.34), tagX, tagY, look, 0, -pose.dir * 6, true, 0.28);
+        }
+
+        for (let i = 0; i < n; i++) {
+            const jitter = ((i * 37 + seed) % 9) - 4;
+            const tilt = ((i * 17 + seed * 3) % 11) - 5;
+            const bump = i === 0 ? 8 : i === n - 1 ? 4 : 0;
+            let x: number;
+            let y: number;
+            if (vertical) {
+                const along = look.enter === "down" ? (i - mid) * step : (mid - i) * step;
+                x = pose.x + jitter * 2.2 + (i % 2 === 0 ? -8 : 8);
+                y = pose.y + along;
+            }
+            else {
+                x = pose.x + (i - mid) * step;
+                y = pose.y + jitter * 3.2 + Math.sin(i * 1.2 + seed) * 10;
+            }
+            const tint = 0.34 + (i % 3) * 0.1;
+            this.glyph(parent, chars[i], size + bump, x, y, look, 0.06 + i * 0.07, tilt, false, tint);
+        }
+    }
+
+    private mixRgb(a: [number, number, number], t: number) {
+        return new Color(
+            Math.round(255 * (1 - t) + a[0] * t),
+            Math.round(248 * (1 - t) + a[1] * t),
+            Math.round(220 * (1 - t) + a[2] * t)
+        );
+    }
+
+    private glyph(
+        parent: Node,
+        text: string,
+        size: number,
+        x: number,
+        y: number,
+        look: SkillLook,
+        delay: number,
+        tilt: number,
+        tag: boolean,
+        tint: number
+    ) {
+        const node = new Node(tag ? "SkillTag" : "SkillGlyph");
+        node.layer = parent.layer;
+        node.parent = parent;
+        node.setPosition(x, y, 0);
+        node.angle = tilt;
+        node.setScale(1.55, 1.55, 1);
+        const label = node.addComponent(Label);
+        label.string = text;
+        label.fontSize = size;
+        label.lineHeight = size + 10;
+        label.overflow = Label.Overflow.NONE;
+        label.enableWrapText = false;
+        label.color = this.mixRgb(look.rgb, tag ? 0.22 : tint);
+        label.enableOutline = true;
+        label.outlineColor = new Color(
+            Math.round(look.rgb[0] * 0.28),
+            Math.round(look.rgb[1] * 0.14),
+            Math.round(look.rgb[2] * 0.1)
+        );
+        label.outlineWidth = Math.max(tag ? 3 : 6, Math.round(size * 0.075));
+        label.enableShadow = true;
+        label.shadowColor = new Color(0, 0, 0, 170);
+        label.shadowOffset = new Vec2(2, -3);
+        label.shadowBlur = 2;
+        const font = this.sheet.titleFont;
+        if (font) {
+            label.useSystemFont = false;
+            label.font = font;
+        }
+        else {
+            label.useSystemFont = true;
+            label.fontFamily = "华文琥珀";
+            label.isBold = true;
+        }
+        const box = Math.max(size * (tag ? text.length * 1.05 : 1.45), 28);
+        node.getComponent(UITransform)!.setContentSize(box, size * 1.4);
+        const op = node.addComponent(UIOpacity);
+        op.opacity = 0;
+        tween(op).delay(delay).to(0.05, { opacity: 255 }).start();
+        tween(node).delay(delay)
+            .to(0.12, { scale: v3(1.08, 1.08, 1) }, { easing: "backOut" })
+            .to(0.08, { scale: v3(1, 1, 1) }, { easing: "quadOut" })
+            .start();
+    }
+
+    private playHeroEnter(node: Node, look: SkillLook, destX: number, destY: number, dir: number, hold: number, fill = 1) {
         const motion = tween(node);
+        const s = (n: number) => v3(fill * n, fill * n, 1);
         if (look.enter === "zoom") {
-            motion.to(0.08, { scale: v3(0.9, 0.9, 1) }, { easing: "quadIn" })
-                .to(0.12, { scale: v3(1.12, 1.12, 1) }, { easing: "backOut" })
-                .to(0.08, { scale: v3(1, 1, 1) }, { easing: "quadOut" });
+            motion.to(0.08, { scale: s(0.9) }, { easing: "quadIn" })
+                .to(0.12, { scale: s(1.12) }, { easing: "backOut" })
+                .to(0.08, { scale: s(1) }, { easing: "quadOut" });
         }
         else if (look.enter === "pulse") {
-            motion.to(0.08, { position: v3(destX, destY, 0), scale: v3(1.2, 1.2, 1) }, { easing: "quadOut" })
-                .to(0.07, { scale: v3(0.9, 0.9, 1) }, { easing: "quadIn" })
-                .to(0.08, { scale: v3(1.16, 1.16, 1) }, { easing: "quadOut" })
-                .to(0.07, { scale: v3(0.94, 0.94, 1) }, { easing: "quadIn" })
-                .to(0.1, { scale: v3(1.04, 1.04, 1) }, { easing: "backOut" })
-                .to(0.06, { scale: v3(1, 1, 1) }, { easing: "quadOut" });
+            motion.to(0.08, { position: v3(destX, destY, 0), scale: s(1.2) }, { easing: "quadOut" })
+                .to(0.07, { scale: s(0.9) }, { easing: "quadIn" })
+                .to(0.08, { scale: s(1.16) }, { easing: "quadOut" })
+                .to(0.07, { scale: s(0.94) }, { easing: "quadIn" })
+                .to(0.1, { scale: s(1.04) }, { easing: "backOut" })
+                .to(0.06, { scale: s(1) }, { easing: "quadOut" });
         }
         else if (look.enter === "up") {
-            motion.to(look.inTime, { position: v3(destX, destY + 16, 0), scale: v3(1.08, 1.08, 1) }, { easing: "sineOut" })
-                .to(0.12, { position: v3(destX, destY, 0), scale: v3(1, 1, 1) }, { easing: "quadOut" })
+            motion.to(look.inTime, { position: v3(destX, destY + 16, 0), scale: s(1.08) }, { easing: "sineOut" })
+                .to(0.12, { position: v3(destX, destY, 0), scale: s(1) }, { easing: "quadOut" })
                 .by(hold, { position: v3(0, 10, 0) }, { easing: "sineInOut" });
         }
         else if (look.enter === "down") {
-            const squash = look.inEase === "cubicIn" ? v3(1.22, 0.72, 1) : v3(1.16, 0.8, 1);
+            const squash = look.inEase === "cubicIn" ? v3(fill * 1.22, fill * 0.72, 1) : v3(fill * 1.16, fill * 0.8, 1);
             motion.to(look.inTime, { position: v3(destX, destY, 0), scale: squash }, { easing: look.inEase })
-                .to(0.14, { scale: v3(1, 1, 1) }, { easing: look.inEase === "cubicIn" ? "elasticOut" : "bounceOut" });
+                .to(0.14, { scale: s(1) }, { easing: look.inEase === "cubicIn" ? "elasticOut" : "bounceOut" });
         }
         else if (look.enter === "side") {
-            motion.to(look.inTime, { position: v3(destX - dir * 36, destY, 0), scale: v3(1.18, 0.88, 1) }, { easing: "circIn" })
-                .to(0.14, { position: v3(destX, destY, 0), scale: v3(1, 1, 1) }, { easing: "cubicOut" });
+            motion.to(look.inTime, { position: v3(destX - dir * 36, destY, 0), scale: v3(fill * 1.18, fill * 0.88, 1) }, { easing: "circIn" })
+                .to(0.14, { position: v3(destX, destY, 0), scale: s(1) }, { easing: "cubicOut" });
         }
         else if (look.enter === "spin") {
-            motion.to(look.inTime, { position: v3(destX, destY, 0), angle: dir * 14, scale: v3(1.06, 1.06, 1) }, { easing: "cubicOut" })
-                .to(0.16, { angle: -dir * 8, scale: v3(1, 1, 1) }, { easing: "sineOut" })
+            motion.to(look.inTime, { position: v3(destX, destY, 0), angle: dir * 14, scale: s(1.06) }, { easing: "cubicOut" })
+                .to(0.16, { angle: -dir * 8, scale: s(1) }, { easing: "sineOut" })
                 .by(hold, { angle: dir * 10 }, { easing: "sineInOut" });
         }
         else {
-            motion.to(look.inTime, { position: v3(destX, destY, 0), scale: v3(1.08, 1.08, 1) }, { easing: "expoOut" })
-                .to(0.1, { scale: v3(1, 1, 1) }, { easing: "quadOut" });
+            motion.to(look.inTime, { position: v3(destX, destY, 0), scale: s(1.08) }, { easing: "expoOut" })
+                .to(0.1, { scale: s(1) }, { easing: "quadOut" });
         }
         motion.start();
     }
@@ -635,19 +831,22 @@ export class BattleFx {
         return { node, op };
     }
 
-    private dropSplash() {
-        if (!this.splash) return;
-        const node = this.splash;
-        this.splash = null;
+    private dropSplash(mode?: SplashMode) {
+        const modes: SplashMode[] = mode ? [mode] : ["full", "half"];
         const stop = (n: Node) => {
             Tween.stopAllByTarget(n);
             const op = n.getComponent(UIOpacity);
             if (op) Tween.stopAllByTarget(op);
             for (const child of n.children) stop(child);
         };
-        stop(node);
-        if (node.isValid) node.destroy();
-        this.showVeil();
+        for (const m of modes) {
+            const node = this.liveSplash[m];
+            if (!node) continue;
+            delete this.liveSplash[m];
+            stop(node);
+            if (node.isValid) node.destroy();
+        }
+        if (!this.liveSplash.full) this.showVeil();
     }
 
     private hideVeil() {
@@ -665,7 +864,7 @@ export class BattleFx {
     //#endregion
 
     private vignette(strength: number) {
-        if (!this.veil.isValid || this.splash) return;
+        if (!this.veil.isValid || this.liveSplash.full) return;
         this.layout();
         const { w, h } = this.size();
         const g = this.veilInk;
@@ -737,7 +936,7 @@ export class BattleFx {
 
     private size() {
         const box = this.root.getComponent(UITransform);
-        return { w: box?.width ?? 720, h: box?.height ?? 1280 };
+        return { w: box?.width || 720, h: box?.height || 1280 };
     }
 
     private toArena(worldX: number, worldY: number) {

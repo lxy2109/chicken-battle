@@ -31,7 +31,7 @@
     },
     "battle_skillCooldown": {
         "id": "battle_skillCooldown",
-        "value": 4.5,
+        "value": 12,
         "desc": "技能冷却（秒）",
         "min": 0.01
     },

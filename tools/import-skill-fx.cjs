@@ -1,6 +1,7 @@
 /**
  * 把全屏招式宽银幕贴图拷进 bundle，并写 sprite-frame .meta。
  * 竖屏 720x1280：29–36 主体鸡覆盖 skill_*，37–44 场景底板 skill_bg_*；
+ * 45–52 是敌人无底板小贴纸 skill_mini_*；
  * 9–12 是共用分层（光线 / 名条 / 光晕 / 火花）。
  */
 const fs = require("fs");
@@ -32,7 +33,15 @@ const MAP = [
     ["42.png", "skill_bg_charge", false],
     ["43.png", "skill_bg_tail", false],
     ["44.png", "skill_bg_combo", false],
-    ["41.png", "skill_bg_feint", false]
+    ["41.png", "skill_bg_feint", false],
+    ["45.png", "skill_mini_peck", true],
+    ["47.png", "skill_mini_jump", true],
+    ["46.png", "skill_mini_dive", true],
+    ["48.png", "skill_mini_leap", true],
+    ["49.png", "skill_mini_charge", true],
+    ["52.png", "skill_mini_tail", true],
+    ["50.png", "skill_mini_combo", true],
+    ["51.png", "skill_mini_feint", true]
 ];
 
 function pngSize(file) {

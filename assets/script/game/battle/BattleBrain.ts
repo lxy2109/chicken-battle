@@ -43,7 +43,7 @@ class Act extends Task {
  * 出招决策的行为树。
  *
  * 判据全部取自 core 的 AI_RULE，这里只负责编排优先级：
- * 从上往下试，回血最急，其次是技能（要冷却好，且满足收割、血厚、能打穿三者之一），
+ * 从上往下试，回血最急，其次冷却好了就放绝招，
  * 再往下按速度和血量差挑局势（铁壁型不用速度池），都不满足就走常规交手。
  *
  * 树本身不存跨次状态，每次 think 都从根重跑一遍，所以双方共用一棵没问题。
@@ -55,18 +55,7 @@ export class BattleBrain {
     constructor() {
         const root = new Selector([
             new Sequence([new Cond(AI_RULE.needHeal), new Act("heal", "heal")]),
-            new Sequence([
-                new Cond(AI_RULE.skillReady),
-                new Selector([
-                    new Cond(AI_RULE.foeDying),
-                    new Cond(AI_RULE.healthy),
-                    new Cond(AI_RULE.outgun),
-                    new Cond(AI_RULE.tricksterCast),
-                    new Cond(AI_RULE.aerialCast),
-                    new Cond(AI_RULE.berserkCast)
-                ]),
-                new Act("skill", "skill")
-            ]),
+            new Sequence([new Cond(AI_RULE.skillReady), new Act("skill", "skill")]),
             new Sequence([new Cond(AI_RULE.dash), new Act("attack", "fast")]),
             new Sequence([new Cond(AI_RULE.losing), new Act("attack", "losing")]),
             new Sequence([new Cond(AI_RULE.canPierce), new Act("attack", "pierce")]),

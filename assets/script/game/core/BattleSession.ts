@@ -50,7 +50,7 @@ function toLive(snap: FighterSnapshot, pace: number): LiveFighter {
         stats,
         atkCd: stats.firstStrike ? 0 : intervalOf(stats.spd) * pace * 0.5,
         healCd: 0,
-        skillCd: 0,
+        skillCd: gameNumber("battle_skillCooldown") * 0.5,
         lockUsed: false,
         busy: false,
         beats: 0,

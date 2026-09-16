@@ -1,5 +1,5 @@
 import { gameText, gameTextOr } from "../../core/GameConfig";
-import { JsonAsset, Label, Node, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { JsonAsset, Label, Node, Sprite, SpriteFrame, TTFFont, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -34,7 +34,7 @@ const E_HOME = new Vec3(160, -76, 0);
 const BAR_EASE = 8;
 const LOG_HOLD = 1.6;
 
-/** 战报里管招式叫什么。 */
+/** 绝招战报用的招式名，和全屏/半屏特效绑在一起。 */
 const STYLE_TEXT: Record<StrikeStyle, string> = {
     get peck() { return gameText("BattleViewComp_001"); },
     get jump() { return gameText("BattleViewComp_002"); },
@@ -44,6 +44,18 @@ const STYLE_TEXT: Record<StrikeStyle, string> = {
     get tail() { return gameText("BattleViewComp_006"); },
     get combo() { return gameText("BattleViewComp_007"); },
     get feint() { return gameText("BattleViewComp_008"); }
+};
+
+/** 普攻只报动作，不占用绝招名。 */
+const BASIC_TEXT: Record<StrikeStyle, string> = {
+    peck: "啄",
+    jump: "跳踢",
+    dive: "扑",
+    leap: "砸",
+    charge: "撞",
+    tail: "扫尾",
+    combo: "连啄",
+    feint: "晃身"
 };
 
 /** 各招式打中时的震屏力度，整只砸下来的自然要比啄一口重。 */
@@ -212,6 +224,14 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 return null;
             }
         }));
+        const skillMiniFrames = await Promise.all(skillKeys.map(async name => {
+            try {
+                return await this.load("bundle", `game/texture/fx/skill_mini_${name}/spriteFrame`, SpriteFrame);
+            }
+            catch {
+                return null;
+            }
+        }));
         const layerFrames = await Promise.all(layerKeys.map(async name => {
             try {
                 return await this.load("bundle", `game/texture/fx/${name}/spriteFrame`, SpriteFrame);
@@ -220,13 +240,22 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 return null;
             }
         }));
+        let titleFont: TTFFont | null = null;
+        try {
+            titleFont = await this.load("bundle", "game/font/skill_title", TTFFont);
+        }
+        catch {
+            titleFont = null;
+        }
         if (this.closed) return;
         if (arena) {
             const skills: Partial<Record<StrikeStyle, SpriteFrame>> = {};
             const skillBgs: Partial<Record<StrikeStyle, SpriteFrame>> = {};
+            const skillMinis: Partial<Record<StrikeStyle, SpriteFrame>> = {};
             skillKeys.forEach((key, i) => {
                 if (skillFrames[i]) skills[key] = skillFrames[i]!;
                 if (skillBgFrames[i]) skillBgs[key] = skillBgFrames[i]!;
+                if (skillMiniFrames[i]) skillMinis[key] = skillMiniFrames[i]!;
             });
             this.fx = new BattleFx(this.node, arena, {
                 slash: fxFrames[0] || undefined,
@@ -239,10 +268,12 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 charge: fxFrames[7] || undefined,
                 skills,
                 skillBgs,
+                skillMinis,
                 rays: layerFrames[0] || undefined,
                 flare: layerFrames[1] || undefined,
                 banner: layerFrames[2] || undefined,
-                sparks: layerFrames[3] || undefined
+                sparks: layerFrames[3] || undefined,
+                titleFont: titleFont || undefined
             });
             this.fx.wash(mood.veil, run.currentRoute().encounter === "final" || run.phase === "boss");
         }
@@ -379,7 +410,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         // 记下这一击用的招式，等伤害事件回来时按招式定震屏力度。
         this.styleOf[side] = style;
         this.skillOf[side] = skill;
-        this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : STYLE_TEXT[style]);
+        this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : BASIC_TEXT[style]);
         if (skill) {
             const title = gameText("BattleViewComp_017", STYLE_TEXT[style]);
             const mode = side === "enemy" ? "half" : "full";

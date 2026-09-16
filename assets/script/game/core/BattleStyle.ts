@@ -53,50 +53,50 @@ export const ARCHETYPE_POOLS: Record<FightStyle, Record<StylePool, StrikeStyle[]
     brawler: {
         heal: ["peck"],
         skill: ["charge", "leap", "combo"],
-        fast: ["charge", "combo", "jump"],
-        losing: ["charge", "dive", "peck"],
-        pierce: ["peck", "combo", "charge"],
-        hold: ["charge", "peck", "combo", "leap"]
+        fast: ["combo", "jump", "peck"],
+        losing: ["combo", "peck", "jump"],
+        pierce: ["peck", "combo", "jump"],
+        hold: ["peck", "combo", "jump", "tail"]
     },
     swift: {
         heal: ["peck"],
         skill: ["jump", "feint", "leap"],
         fast: ["jump", "feint", "combo"],
-        losing: ["feint", "jump", "dive"],
+        losing: ["feint", "jump", "peck"],
         pierce: ["combo", "feint", "jump"],
-        hold: ["jump", "feint", "combo", "dive"]
+        hold: ["jump", "feint", "combo", "peck"]
     },
     tank: {
         heal: ["peck"],
         skill: ["tail", "charge", "leap"],
-        fast: ["tail", "charge", "peck"],
-        losing: ["tail", "charge", "dive"],
-        pierce: ["tail", "peck", "charge"],
-        hold: ["tail", "charge", "peck", "leap"]
+        fast: ["tail", "peck", "jump"],
+        losing: ["tail", "peck", "jump"],
+        pierce: ["tail", "peck", "combo"],
+        hold: ["tail", "peck", "combo", "jump"]
     },
     aerial: {
         heal: ["peck"],
         skill: ["dive", "leap", "charge"],
-        fast: ["dive", "jump", "leap"],
-        losing: ["dive", "leap", "charge"],
-        pierce: ["dive", "jump", "peck"],
-        hold: ["dive", "leap", "jump", "feint"]
+        fast: ["jump", "combo", "feint"],
+        losing: ["jump", "peck", "combo"],
+        pierce: ["jump", "peck", "combo"],
+        hold: ["jump", "feint", "combo", "peck"]
     },
     trickster: {
         heal: ["peck"],
         skill: ["feint", "leap", "combo"],
         fast: ["feint", "jump", "combo"],
-        losing: ["feint", "dive", "jump"],
+        losing: ["feint", "jump", "peck"],
         pierce: ["feint", "combo", "peck"],
-        hold: ["feint", "combo", "jump", "dive"]
+        hold: ["feint", "combo", "jump", "peck"]
     },
     berserker: {
         heal: ["peck"],
         skill: ["leap", "dive", "charge"],
-        fast: ["combo", "charge", "jump"],
-        losing: ["dive", "charge", "leap"],
-        pierce: ["combo", "charge", "peck"],
-        hold: ["dive", "combo", "leap", "charge"]
+        fast: ["combo", "jump", "peck"],
+        losing: ["combo", "peck", "jump"],
+        pierce: ["combo", "peck", "jump"],
+        hold: ["combo", "peck", "jump", "feint"]
     },
     medic: {
         heal: ["peck"],

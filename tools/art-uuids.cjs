@@ -103,8 +103,18 @@ const FX = [
     "skill_bg_charge",
     "skill_bg_tail",
     "skill_bg_combo",
-    "skill_bg_feint"
+    "skill_bg_feint",
+    "skill_mini_peck",
+    "skill_mini_jump",
+    "skill_mini_dive",
+    "skill_mini_leap",
+    "skill_mini_charge",
+    "skill_mini_tail",
+    "skill_mini_combo",
+    "skill_mini_feint"
 ];
+
+const FONTS = ["skill_title"];
 
 const uuids = Object.assign(
     {},
@@ -114,12 +124,13 @@ const uuids = Object.assign(
     alloc("2004", NODES),
     alloc("2005", EQUIPS),
     alloc("3002", BGS),
-    alloc("4004", FX)
+    alloc("4004", FX),
+    alloc("5005", FONTS)
 );
 
 module.exports = uuids;
 
-module.exports.groups = { CHICKEN, UI_SLICED, UI_PLAIN, ICONS, NODES, EQUIPS, BGS, FX };
+module.exports.groups = { CHICKEN, UI_SLICED, UI_PLAIN, ICONS, NODES, EQUIPS, BGS, FX, FONTS };
 
 module.exports.frame = function frame(uuid) {
     return uuid + "@f9941";

@@ -84,12 +84,12 @@ const STYLE_POOL = {
     skill: ["leap", "charge", "dive"],
     /** 比对面快，靠出手快占便宜 */
     fast: ["jump", "combo", "feint"],
-    /** 打不过又落后，只能搏命往前撞 */
-    losing: ["charge", "dive", "jump"],
+    /** 打不过又落后，只能搏命往前撞。冲撞/下砸留给绝招。 */
+    losing: ["jump", "combo", "peck"],
     /** 攻能穿防，贴上去阴 */
     pierce: ["peck", "combo", "tail"],
     /** 势均力敌时的常规交手，这一支触发得最多，动作也给得最杂 */
-    hold: ["dive", "jump", "tail", "feint"]
+    hold: ["peck", "jump", "tail", "feint"]
 } satisfies Record<string, StrikeStyle[]>;
 
 /** 在局势对应的动作池里按出手序号取一个，同一局势连着触发也不会重样。 */
@@ -105,19 +105,15 @@ export function act(kind: BattleActionKind, pool: StylePool, self: AiFighter): B
 
 /**
  * 按双方当前数值决策，不掷骰。
- * 残血回血 > 收割/压场技能 > 普攻（快就抢手 / 劣势搏命 / 攻能穿防就贴身）。
+ * 残血回血 > 冷却好了就放绝招 > 普攻（快就抢手 / 劣势搏命 / 攻能穿防就贴身）。
+ * 绝招频率只靠冷却，不再用血量门槛把同一招降成没特效的普攻。
  *
  * 这是不带引擎依赖的默认实现，无界面验证直接用它；
  * 游戏跑起来时由 battle/BattleBrain 的行为树接管，判据同源，结论一致。
  */
 export function decide(self: AiFighter, foe: AiFighter): BattleDecision {
     if (AI_RULE.needHeal(self, foe)) return act("heal", "heal", self);
-    if (AI_RULE.skillReady(self, foe)
-        && (AI_RULE.foeDying(self, foe) || AI_RULE.healthy(self, foe) || AI_RULE.outgun(self, foe)
-            || AI_RULE.tricksterCast(self, foe) || AI_RULE.aerialCast(self, foe)
-            || AI_RULE.berserkCast(self, foe))) {
-        return act("skill", "skill", self);
-    }
+    if (AI_RULE.skillReady(self, foe)) return act("skill", "skill", self);
     if (AI_RULE.dash(self, foe)) return act("attack", "fast", self);
     if (AI_RULE.losing(self, foe)) return act("attack", "losing", self);
     if (AI_RULE.canPierce(self, foe)) return act("attack", "pierce", self);
