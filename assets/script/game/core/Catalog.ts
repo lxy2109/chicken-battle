@@ -26,7 +26,7 @@ export const TEX = {
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
-    /** 立绘序列帧（待机 idle + 8 个出招），整张 1024×64、16 帧。敌人用 illustration 名，套装用 set_<id>。 */
+    /** 立绘序列帧（待机 idle + 8 个出招），整张 1024×1024、4×4、每格 256。敌人用 illustration 名，套装用 set_<id>。 */
     strikeAnim: (key: string, style: string) => `game/texture/anim/${key}/${style}/spriteFrame`,
     /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>.gif。 */
     suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`,

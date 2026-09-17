@@ -5,8 +5,8 @@ import { StrikeStyle } from "../core/Types";
 
 const { ccclass } = _decorator;
 
-/** 与 gen-strike-sheets.cjs 保持一致：整张 1024×64，横切 16 格。 */
-export const STRIKE_SHEET = { width: 1024, height: 64, frames: 16, cell: 64, sample: 24 };
+/** 与 import-strike-gen.cjs 一致：整张 1024×1024，4×4 格，每格 256。 */
+export const STRIKE_SHEET = { width: 1024, height: 1024, frames: 16, cell: 256, cols: 4, sample: 24 };
 const IDLE_SAMPLE = 10;
 const IDLE = "idle";
 
@@ -16,8 +16,8 @@ const frameCache = new Map<string, SpriteFrame[]>();
 const clipCache = new Map<string, AnimationClip>();
 
 /**
- * 立绘鸡的序列帧。从 1024×64 的动作条切 16 帧，交给 cc.Animation 的 clip 播。
- * 待机循环 idle 条，出招播对应 clip，结束后回到 idle。
+ * 立绘鸡的序列帧。从 1024×1024 的 4×4 动作表切 16 帧，交给 cc.Animation 的 clip 播。
+ * 待机循环 idle，出招播对应 clip，结束后回到 idle。
  */
 @ccclass("StrikeSheetPlayer")
 export class StrikeSheetPlayer extends Component {
@@ -133,10 +133,18 @@ export class StrikeSheetPlayer extends Component {
             if (!sheet?.texture) return null;
             const tex = sheet.texture as Texture2D;
             const frames: SpriteFrame[] = [];
+            const square = tex.width === tex.height;
+            const cols = square ? STRIKE_SHEET.cols : STRIKE_SHEET.frames;
+            const cell = square ? Math.floor(tex.width / STRIKE_SHEET.cols) : tex.height;
             for (let i = 0; i < STRIKE_SHEET.frames; i++) {
                 const frame = new SpriteFrame();
                 frame.packable = false;
-                frame.reset({ texture: tex, rect: new Rect(i * STRIKE_SHEET.cell, 0, STRIKE_SHEET.cell, STRIKE_SHEET.cell) });
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                frame.reset({
+                    texture: tex,
+                    rect: new Rect(col * cell, row * cell, cell, cell)
+                });
                 frames.push(frame);
             }
             frameCache.set(key, frames);

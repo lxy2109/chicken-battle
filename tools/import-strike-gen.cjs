@@ -1,5 +1,6 @@
 /**
- * 把生图的 4×4 或横向条整理成 1024×64、16 帧动作条。
+ * 把生图的 4×4 或横向条整理成 1024×1024、16 帧（每格 256×256）。
+ * 生图本身就是 1024 的 4×4，不再压成 64，战斗里才不会糊。
  *
  * 用法:
  *   node tools/import-strike-gen.cjs <src.png> <charKey> <style>
@@ -15,9 +16,11 @@ const { knockWhiteViaMagenta } = require("./knock-alpha.cjs");
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "assets/bundle/game/texture/anim");
 const SHEET_W = 1024;
-const SHEET_H = 64;
+const SHEET_H = 1024;
 const FRAMES = 16;
-const CELL = 64;
+const COLS = 4;
+const CELL = 256;
+const PAD = 12;
 
 function uuidFor(seed) {
     const h = crypto.createHash("md5").update("chicken-strike:" + seed).digest("hex");
@@ -134,7 +137,7 @@ function emptyCell() {
 function fitCell(img) {
     const trimmed = png.trim(img, 1) || img;
     if (!trimmed.width || !trimmed.height) return emptyCell();
-    const pad = 3;
+    const pad = PAD;
     const inner = CELL - pad * 2;
     const scale = Math.min(inner / trimmed.width, inner / trimmed.height, 1);
     const w = Math.max(1, Math.round(trimmed.width * scale));
@@ -176,9 +179,12 @@ function compose(cells) {
     const sheet = { width: SHEET_W, height: SHEET_H, data: Buffer.alloc(SHEET_W * SHEET_H * 4) };
     cells.slice(0, FRAMES).forEach((cell, i) => {
         const fitted = fitCell(cell);
-        const x0 = i * CELL;
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        const x0 = col * CELL;
+        const y0 = row * CELL;
         for (let y = 0; y < CELL; y++) {
-            fitted.data.copy(sheet.data, (y * SHEET_W + x0) * 4, y * CELL * 4, (y + 1) * CELL * 4);
+            fitted.data.copy(sheet.data, ((y0 + y) * SHEET_W + x0) * 4, y * CELL * 4, (y + 1) * CELL * 4);
         }
     });
     return sheet;
