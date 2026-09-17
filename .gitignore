@@ -23,6 +23,7 @@ outputs/
 # NPM
 #//////////////////////////
 # node_modules/
+tools/node_modules/
 
 #//////////////////////////
 # VSCode
