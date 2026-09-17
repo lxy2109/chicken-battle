@@ -120,6 +120,10 @@ class Builder {
         });
     }
 
+    /**
+     * AlignFlags: TOP=1 MID=2 BOT=4 LEFT=8 CENTER=16 RIGHT=32。
+     * 四角/顶底贴边写在预制体上，adaptView 运行时不再改这些 Widget。
+     */
     widget(nodeId, flags = 45, inset = {}) {
         this.addComp(nodeId, null, {
             type: "cc.Widget",
@@ -127,7 +131,7 @@ class Builder {
                 _alignFlags: flags, _target: null,
                 _left: inset.left || 0, _right: inset.right || 0,
                 _top: inset.top || 0, _bottom: inset.bottom || 0,
-                _horizontalCenter: 0, _verticalCenter: 0,
+                _horizontalCenter: inset.horizontalCenter || 0, _verticalCenter: 0,
                 _isAbsLeft: true, _isAbsRight: true, _isAbsTop: true, _isAbsBottom: true,
                 _isAbsHorizontalCenter: true, _isAbsVerticalCenter: true,
                 _originalWidth: inset.w || 720, _originalHeight: inset.h || 1280,
@@ -211,8 +215,10 @@ class Builder {
                 _resizeMode: 0, _layoutType: opt.type == null ? 2 : opt.type,
                 _cellSize: size(opt.cellW || 310, opt.cellH || 120),
                 _startAxis: 0,
-                _paddingLeft: opt.pad ?? 6, _paddingRight: opt.pad ?? 6,
-                _paddingTop: opt.pad ?? 6, _paddingBottom: opt.pad ?? 6,
+                _paddingLeft: opt.padLeft ?? opt.pad ?? 6,
+                _paddingRight: opt.padRight ?? opt.pad ?? 6,
+                _paddingTop: opt.padTop ?? opt.pad ?? 6,
+                _paddingBottom: opt.padBottom ?? opt.pad ?? 6,
                 _spacingX: opt.gapX == null ? 12 : opt.gapX,
                 _spacingY: opt.gapY == null ? 12 : opt.gapY,
                 _verticalDirection: 1, _horizontalDirection: 0,
@@ -346,6 +352,21 @@ function iconNode(b, parent, name, frame, x, y, s) {
     const id = b.node({ name, parent, x, y, w: s, h: s });
     b.sprite(id, [255, 255, 255, 255], 0, frame);
     return id;
+}
+
+/**
+ * 把已有节点按 720 中心坐标钉到父节点边上。
+ * flags 同 cc.Widget.AlignFlags：顶左 9、顶右 33、底中 20、四边拉伸 45。
+ */
+function pin(b, nodeId, flags, box) {
+    b.widget(nodeId, flags, {
+        left: 360 + box.x - box.w / 2,
+        right: 360 - box.x - box.w / 2,
+        top: 640 - box.y - box.h / 2,
+        bottom: 640 + box.y - box.h / 2,
+        w: box.w,
+        h: box.h
+    });
 }
 
 /** Internal combat coordinates stay 720x1280; the project uses the Figma 1080x1920 canvas. */
@@ -569,36 +590,71 @@ function makePrebattle() {
 /** 双方在场地里的落点，和 BattleViewComp 的 P_HOME / E_HOME 一致。 */
 const BATTLE_HOME = { player: [-160, -76], enemy: [160, -76] };
 
+/** Widget.AlignFlags：顶左 / 顶右 / 四边拉伸 / 底中。 */
+const W_TL = 9, W_TR = 33, W_FILL = 45, W_BC = 20;
+const BATTLE_SKILLS = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"];
+const SKILL_BTN = 100;
+const SKILL_COLS = 4;
+const SKILL_GAP_X = 18;
+const SKILL_GAP_Y = 16;
+const SKILL_PAD_Y = 16;
+const SKILL_PAD_X = (720 - SKILL_COLS * SKILL_BTN - (SKILL_COLS - 1) * SKILL_GAP_X) / 2;
+const SKILL_BAR_H = SKILL_PAD_Y * 2 + 2 * SKILL_BTN + SKILL_GAP_Y;
+const SKILL_BAR_BOTTOM = 16;
+
 function makeBattle() {
     const b = new Builder("battle");
     const root = panel(b, "battle", SF.bg_arena_figma);
     for (const side of ["Player", "Enemy"]) {
         const left = side === "Player";
+        const pinFlags = left ? W_TL : W_TR;
         // 己方血条在上名字在下，敌方名字在上血条在下；头像跟着血条走，名字收在两行血条中间。
         const barY = left ? 89 : 210;
         const nameY = left ? 158 : 174;
         const r = layoutBox(left ? 149 : 579, barY, 362, 66);
         const bar = b.node({ name: "Bar" + side, parent: root, ...r });
+        pin(b, bar, pinFlags, r);
         b.sprite(bar, [90, 90, 90, 255], 0, F['ui/figma_hp']);
         const fill = b.node({ name: "Bar" + side + "Fill", parent: bar, w: r.w, h: r.h });
         b.sprite(fill, [255, 255, 255, 255], 3, F['ui/figma_hp'], 1);
         textNode(b, bar, "Lab" + side + "Hp", "0/0", 0, 0, { font: 17, w: 210, h: 30, color: INK.cream, outline: true });
-        const avatarY = left ? 43 : 164;
-        const portraitY = left ? 61 : 182;
-        figmaImage(b, root, side + "AvatarFrame", 'ui/figma_avatar', [left ? 44 : 889, avatarY, 157, 164]);
-        const portrait = placeNode(b, root, side + "Portrait", left ? 57 : 902, portraitY, 124, 126);
+        const avatarBox = [left ? 44 : 889, left ? 43 : 164, 157, 164];
+        const avatar = figmaImage(b, root, side + "AvatarFrame", 'ui/figma_avatar', avatarBox);
+        pin(b, avatar, pinFlags, layoutBox(...avatarBox));
+        const portraitBox = [left ? 57 : 902, left ? 61 : 182, 124, 126];
+        const portrait = placeNode(b, root, side + "Portrait", ...portraitBox);
+        pin(b, portrait, pinFlags, layoutBox(...portraitBox));
         b.addComp(portrait, null, { type: "cc.Mask", fields: { _type: 1, _segments: 64 } });
-        placeText(b, root, "Lab" + side + "Name", "", left ? 149 : 579, nameY, 362, 36, {
+        const nameBox = [left ? 149 : 579, nameY, 362, 36];
+        const name = placeText(b, root, "Lab" + side + "Name", "", ...nameBox, {
             font: 16, color: INK.cream, outline: true, align: left ? 0 : 2
         });
+        pin(b, name, pinFlags, layoutBox(...nameBox));
     }
     const arena = b.node({ name: "Arena", parent: root, w: 720, h: 1280 });
+    pin(b, arena, W_FILL, { x: 0, y: 0, w: 720, h: 1280 });
     b.node({ name: "PlayerSlot", parent: arena, x: BATTLE_HOME.player[0], y: BATTLE_HOME.player[1], w: 40, h: 40 });
     b.node({ name: "EnemySlot", parent: arena, x: BATTLE_HOME.enemy[0], y: BATTLE_HOME.enemy[1], w: 40, h: 40 });
-    placeText(b, root, "LabLog", "", 75, 1550, 930, 100, { font: 28, color: INK.cream, outline: true, outlineWidth: 3 });
+    // 战报抬到两排招式按钮上方，避免压住底部 SkillBar。
+    placeText(b, root, "LabLog", "", 75, 1380, 930, 100, { font: 28, color: INK.cream, outline: true, outlineWidth: 3 });
     const danmaku = b.node({ name: "DanmakuLayer", parent: root, y: 405, w: 720, h: 160 });
     b.addComp(danmaku, null, { type: "cc.Mask", fields: { _type: 0 } });
     b.node({ name: "FxLayer", parent: root, w: 720, h: 1280 });
+    // 主动招式栏：预制体里居中靠下，Widget 钉底；按钮 100×100 分两排。
+    const skillY = -640 + SKILL_BAR_BOTTOM + SKILL_BAR_H / 2;
+    const skillBar = b.node({ name: "SkillBar", parent: root, x: 0, y: skillY, w: 720, h: SKILL_BAR_H });
+    b.widget(skillBar, W_BC, { bottom: SKILL_BAR_BOTTOM, w: 720, h: SKILL_BAR_H });
+    b.addComp(skillBar, null, { type: "cc.BlockInputEvents" });
+    const grid = b.node({ name: "SkillGrid", parent: skillBar, w: 720, h: SKILL_BAR_H });
+    b.layout(grid, {
+        type: 3, cols: SKILL_COLS, cellW: SKILL_BTN, cellH: SKILL_BTN,
+        gapX: SKILL_GAP_X, gapY: SKILL_GAP_Y,
+        padLeft: SKILL_PAD_X, padRight: SKILL_PAD_X, padTop: SKILL_PAD_Y, padBottom: SKILL_PAD_Y
+    });
+    for (const style of BATTLE_SKILLS) {
+        const btn = b.node({ name: "SkillBtn_" + style, parent: grid, w: SKILL_BTN, h: SKILL_BTN });
+        b.button(btn);
+    }
     writePrefab("assets/bundle/gui/battle/battle.prefab", b.finish(root));
 }
 

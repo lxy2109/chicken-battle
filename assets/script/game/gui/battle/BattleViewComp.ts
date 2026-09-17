@@ -17,6 +17,7 @@ import { BattleDanmaku } from "./BattleDanmaku";
 import { BattleFx } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
+import { BattleSkillBar } from "./BattleSkillBar";
 import { SIGNATURE_LABEL, STYLE_LABEL, stageMood, styleRhythm } from "../../core/BattleStyle";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../core/Types";
 import { spawnChicken } from "../ChickenBinder";
@@ -99,6 +100,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private impact?: BattleImpact;
     private screenEffects?: BattleScreenEffects;
     private fx?: BattleFx;
+    private skillBar?: BattleSkillBar;
     private skillOf: Record<BattleSide, boolean> = { player: false, enemy: false };
     private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
@@ -179,7 +181,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         const brain = new BattleBrain();
         this.session = new BattleSession(
             me, foe, run.rng().int(1, 999999), run.phase === "boss",
-            (self, opponent) => brain.think(self, opponent)
+            (self, opponent) => brain.think(self, opponent),
+            { playerManualSkills: true }
         );
         this.anim = this.node.getComponent(BattleAnimator) || this.node.addComponent(BattleAnimator);
         const json = await this.load("bundle", "game/animator/chicken_battle", JsonAsset);
@@ -247,6 +250,11 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             this.fx.paint(mood.dust);
             this.fx.wash(mood.veil, encounter === "final" || run.phase === "boss");
         }
+        this.skillBar = new BattleSkillBar(this, this.node);
+        await this.skillBar.mount(style => this.onCastSkill(style));
+        if (this.closed) return;
+        this.skillBar.tick(this.session);
+        this.skillBar.raise();
         await this.playIntro();
         if (this.closed) return;
         this.playerActor?.stance();
@@ -284,6 +292,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private onTick = (dt: number) => {
         if (this.closed || !this.running) return;
         for (const ev of this.session.tick(dt)) this.dispatch(ev);
+        this.skillBar?.tick(this.session);
         this.easeBars(dt);
         if (this.playerActor && this.enemyActor && this.playerNode && this.enemyNode) {
             const front = this.playerActor.home.y < this.enemyActor.home.y ? this.playerNode : this.enemyNode;
@@ -367,6 +376,12 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         else if (ev.type === "end") {
             void this.finish(ev.win);
         }
+    }
+
+    private onCastSkill(style: StrikeStyle) {
+        if (this.closed || !this.running) return;
+        for (const ev of this.session.requestSkill(style)) this.dispatch(ev);
+        this.skillBar?.tick(this.session);
     }
 
     /** 一次出招的完整演出。命中判定交给碰撞，结果回给逻辑层结算。 */
@@ -571,6 +586,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     reset() {
         this.closed = true;
+        this.skillBar?.clear();
         this.fx?.clear();
         this.screenEffects?.clear();
         this.impact?.clear();
