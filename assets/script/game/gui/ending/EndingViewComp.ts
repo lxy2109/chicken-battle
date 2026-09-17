@@ -98,19 +98,27 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
         await new Promise<void>(resolve => {
             let settled = false;
             let holding = false;
+            // 每个 scheduleOnce 必须用不同函数引用。引擎对同一回调只会保留第一次调度，
+            // 先前把 90s 兜底和 2s 停留都绑在 finish 上，结果会空等到 90s 才进黑屏。
             const finish = () => {
                 if (settled) return;
                 settled = true;
-                this.unschedule(finish);
-                this.unschedule(holdLastFrame);
+                this.unschedule(onHoldTimeout);
+                this.unschedule(onSafetyTimeout);
+                this.unschedule(onDurationHold);
                 resolve();
             };
+            const onHoldTimeout = () => finish();
+            const onSafetyTimeout = () => finish();
             const holdLastFrame = () => {
                 if (settled || holding) return;
                 holding = true;
+                this.unschedule(onDurationHold);
+                this.unschedule(onSafetyTimeout);
                 freezeLastFrame(player);
-                this.scheduleOnce(finish, LAST_FRAME_HOLD);
+                this.scheduleOnce(onHoldTimeout, LAST_FRAME_HOLD);
             };
+            const onDurationHold = () => holdLastFrame();
             this.videoDone = finish;
             node.on(VideoPlayer.EventType.COMPLETED, holdLastFrame, this);
             node.on(VideoPlayer.EventType.ERROR, finish, this);
@@ -118,7 +126,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
                 adapt.refresh();
                 const duration = player.duration;
                 if (duration > 0 && Number.isFinite(duration)) {
-                    this.scheduleOnce(holdLastFrame, duration);
+                    this.scheduleOnce(onDurationHold, duration);
                 }
             }, this);
             player.play();
@@ -127,7 +135,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
                 player.play();
             }, 1);
             this.scheduleOnce(() => adapt.refresh(), 0);
-            this.scheduleOnce(finish, 90);
+            this.scheduleOnce(onSafetyTimeout, 90);
         });
         this.stopEndingVideo();
     }
