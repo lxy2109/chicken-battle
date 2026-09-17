@@ -22,6 +22,8 @@ const HOME_BTN = "BtnHome";
 const HOME_LAB = "BtnHomeLab";
 /** 结局片源像素尺寸，Cover 适配按这个基线放大铺满视口。 */
 const VIDEO_SIZE = { width: 406, height: 720 };
+/** 播完后停在最后一帧的秒数，再切黑屏领奖。 */
+const LAST_FRAME_HOLD = 2;
 
 @ccclass("EndingViewComp")
 @executionOrder(-100)
@@ -95,20 +97,28 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
 
         await new Promise<void>(resolve => {
             let settled = false;
+            let holding = false;
             const finish = () => {
                 if (settled) return;
                 settled = true;
                 this.unschedule(finish);
+                this.unschedule(holdLastFrame);
                 resolve();
             };
+            const holdLastFrame = () => {
+                if (settled || holding) return;
+                holding = true;
+                freezeLastFrame(player);
+                this.scheduleOnce(finish, LAST_FRAME_HOLD);
+            };
             this.videoDone = finish;
-            node.on(VideoPlayer.EventType.COMPLETED, finish, this);
+            node.on(VideoPlayer.EventType.COMPLETED, holdLastFrame, this);
             node.on(VideoPlayer.EventType.ERROR, finish, this);
             node.on(VideoPlayer.EventType.META_LOADED, () => {
                 adapt.refresh();
                 const duration = player.duration;
                 if (duration > 0 && Number.isFinite(duration)) {
-                    this.scheduleOnce(finish, duration + 1);
+                    this.scheduleOnce(holdLastFrame, duration);
                 }
             }, this);
             player.play();
@@ -220,6 +230,21 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
         this.finished = true;
         this.stopEndingVideo();
         this.node.destroy();
+    }
+}
+
+function freezeLastFrame(player: VideoPlayer) {
+    if (!isValid(player)) return;
+    const duration = player.duration;
+    const tail = duration > 0 && Number.isFinite(duration) ? Math.max(0, duration - 0.04) : player.currentTime;
+    try { player.pause(); } catch { /* 部分平台 ended 后 pause 会抛 */ }
+    try { player.currentTime = tail; } catch { /* 部分平台不允许回拨 */ }
+    const video = player.nativeVideo;
+    if (video) {
+        try { video.pause(); } catch { /* ignore */ }
+        if (video.duration > 0) {
+            try { video.currentTime = Math.max(0, video.duration - 0.04); } catch { /* ignore */ }
+        }
     }
 }
 
