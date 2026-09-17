@@ -698,11 +698,11 @@ function makeChicken() {
     // Positions copied from the hand-tuned chicken.prefab. Don't regenerate over editor tweaks.
     const parts = [
         ["WingBack", F["chicken/后翅膀"], 59.536, -18, 50, 91],
-        ["LegR", F["chicken/后腿"], -22, -166, 71.5, 91],
-        ["LegL", F["chicken/前腿"], 53.925, -166, 68, 91.5],
-        ["Neck", F["chicken/脖子"], 2, 82, 88, 183.5],
+        ["LegR", F["chicken/后腿"], 50.41, -166, 71.5, 91],
+        ["LegL", F["chicken/前腿"], -19.878, -174.355, 68, 91.5],
         ["Body", F["chicken/身体"], 0, -52, 138.5, 189.5],
-        ["Head", F["chicken/头"], 27.058, 193.328, 104, 128],
+        ["Neck", F["chicken/脖子"], 25.515, 85.698, 88, 183.5],
+        ["Head", F["chicken/头"], 50.573, 197.026, 104, 128],
         ["Wing", F["chicken/前翅膀"], -46, -28, 72, 119.5]
     ];
     for (const [name, frame, x, y, w, h] of parts) {
