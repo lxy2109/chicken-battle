@@ -26,7 +26,7 @@ export const TEX = {
     mapNode: (name: string) => `game/texture/map/${name}/spriteFrame`,
     ui: (name: string) => `game/texture/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/texture/equip/set_${setId}/spriteFrame`,
-    /** 立绘序列帧（待机 idle + 8 个出招），整张 1024×1024、4×4、每格 256。敌人用 illustration 名，套装用 set_<id>。 */
+    /** 立绘序列帧。小怪只打 idle+peck，精英/Boss/套装才有 8 个出招。敌人用 illustration 名，套装用 set_<id>。 */
     strikeAnim: (key: string, style: string) => `game/texture/anim/${key}/${style}/spriteFrame`,
     /** 结算套装胜利 GIF，文件放到 bundle/game/equip_win_gif/set_<套装id>.gif。 */
     suitGif: (setId: string) => `game/equip_win_gif/set_${setId}`,
@@ -35,6 +35,11 @@ export const TEX = {
 };
 
 /** 每张地图对应 `gui/map/map_${id}` 预制体，背景和落点都做在预制体上。 */
+/** 杂色鸡 / warmup 立绘：包体只带待机和啄击，其它招式播 peck。 */
+export function isMinionAnim(key: string) {
+    return key.startsWith("warmup_") || /^s\d+_warmup$/.test(key);
+}
+
 export function mapPrefab(id: number) {
     return `gui/map/map_${id}`;
 }

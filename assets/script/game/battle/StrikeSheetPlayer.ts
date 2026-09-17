@@ -1,6 +1,6 @@
 import { Animation, AnimationClip, Component, Rect, Size, Sprite, SpriteFrame, Texture2D, UITransform, _decorator } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
-import { TEX } from "../core/Catalog";
+import { isMinionAnim, TEX } from "../core/Catalog";
 import { StrikeStyle } from "../core/Types";
 
 const { ccclass } = _decorator;
@@ -38,7 +38,8 @@ export class StrikeSheetPlayer extends Component {
 
     async warmup() {
         if (!this.sheetKey) return;
-        await Promise.all([this.framesOf(IDLE), ...STYLES.map(style => this.framesOf(style))]);
+        const styles = isMinionAnim(this.sheetKey) ? ["peck" as StrikeStyle] : STYLES;
+        await Promise.all([this.framesOf(IDLE), ...styles.map(style => this.framesOf(style))]);
         if (!this._busy) await this.startIdle();
     }
 
@@ -87,7 +88,8 @@ export class StrikeSheetPlayer extends Component {
             return;
         }
         this.captureStill(sprite);
-        const frames = await this.framesOf(style);
+        const clipStyle = this.sheetStyle(style);
+        const frames = await this.framesOf(clipStyle);
         if (!frames || !this.node.isValid || !this._busy) {
             if (!frames) {
                 this._busy = false;
@@ -95,7 +97,7 @@ export class StrikeSheetPlayer extends Component {
             }
             return;
         }
-        const clip = this.clipOf(style, frames, false);
+        const clip = this.clipOf(clipStyle, frames, false);
         const anim = this.ensureAnim();
         if (!anim) {
             this._busy = false;
@@ -109,8 +111,8 @@ export class StrikeSheetPlayer extends Component {
             void this.startIdle();
         });
         this.applyCellSize();
-        if (!anim.getState(style)) anim.addClip(clip, style);
-        anim.play(style);
+        if (!anim.getState(clipStyle)) anim.addClip(clip, clipStyle);
+        anim.play(clipStyle);
     }
 
     private clipOf(name: string, frames: SpriteFrame[], loop: boolean) {
@@ -122,6 +124,12 @@ export class StrikeSheetPlayer extends Component {
         clip.wrapMode = loop ? AnimationClip.WrapMode.Loop : AnimationClip.WrapMode.Normal;
         clipCache.set(key, clip);
         return clip;
+    }
+
+    /** 小怪包里只有 peck，其它招式都播这一张。 */
+    private sheetStyle(style: StrikeStyle | typeof IDLE) {
+        if (style === IDLE) return IDLE;
+        return isMinionAnim(this.sheetKey) ? "peck" : style;
     }
 
     private async framesOf(style: string) {
