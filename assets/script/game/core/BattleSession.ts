@@ -1,4 +1,8 @@
-import { dodgeChance, inferFightStyle, STYLE_OPENING, styleDamageMul, stylePierce, styleStagger } from "./BattleStyle";
+import {
+    dodgeChance, inferFightStyle, PLAYER_SKILLS, STYLE_OPENING,
+    isPlayerSkill, skillAttackValue, skillCooldownOf, skillPowerMul,
+    styleDamageMul, stylePierce, styleStagger
+} from "./BattleStyle";
 import { gameNumber, gameText } from "./GameConfig";
 import { AiFighter, BattleDecision, decide } from "./BattleAI";
 import { Rng } from "./Rng";
@@ -10,6 +14,11 @@ import {
 
 /** 出招决策的来源，默认是 BattleAI.decide，运行时换成行为树。 */
 export type Decider = (self: AiFighter, foe: AiFighter) => BattleDecision;
+
+/** 对战页打开时打开手动绝招：玩家普攻仍自动，全部带特效的招都要点按钮。 */
+export interface BattleSessionOpts {
+    playerManualSkills?: boolean;
+}
 
 const SIDES: BattleSide[] = ["player", "enemy"];
 /**
@@ -29,6 +38,8 @@ interface LiveFighter {
     atkCd: number;
     healCd: number;
     skillCd: number;
+    /** 玩家主动绝招的独立冷却，按真实秒走，不跟战斗时长缩放。 */
+    skillCds?: Partial<Record<StrikeStyle, number>>;
     lockUsed: boolean;
     /** 演出层正在播这一方的动作，期间不再出新招 */
     busy: boolean;
@@ -86,9 +97,9 @@ function hpRatio(f: LiveFighter) {
  * 打得动的一方 7.8 进位成 8 几乎无损，打不动的一方 1.2 恒定截成 1，白丢两成输出。
  * 这里按小数部分的概率进位，长期期望值和配表算出来的一致。
  */
-function dmgOf(atk: number, def: number, skill: boolean, crit: boolean, scale: number, rng: Rng, pierce = 0): number {
+function dmgOf(atk: number, def: number, skillMul: number, crit: boolean, scale: number, rng: Rng, pierce = 0): number {
     const raw = Math.max(1, atk - def * (1 - Math.max(0, Math.min(0.8, pierce))));
-    const exact = raw * (skill ? gameNumber("battle_skillMultiplier") : 1) * (crit ? gameNumber("battle_critMultiplier") : 1) * scale;
+    const exact = raw * skillMul * (crit ? gameNumber("battle_critMultiplier") : 1) * scale;
     const base = Math.floor(exact);
     return Math.max(1, base + (rng.chance(exact - base) ? 1 : 0));
 }
@@ -130,15 +141,18 @@ export class BattleSession {
     /** 最近一次绝招还占着立绘，对面这段时间改打普攻。 */
     private skillGate = 0;
     private skillSide: BattleSide | null = null;
+    private playerManualSkills = false;
+    private queuedSkill: StrikeStyle | null = null;
 
     /**
      * decider 留成口子是为了让 battle 层的行为树接管出招决策：
      * 行为树在 db://oops-framework 下，core 直接引用它就没法脱离编辑器跑验证了。
      * 不传就用 BattleAI 的默认实现，两者判据同源，结论一致。
      */
-    constructor(player: FighterSnapshot, enemy: FighterSnapshot, seed: number, boss: boolean, decider?: Decider) {
+    constructor(player: FighterSnapshot, enemy: FighterSnapshot, seed: number, boss: boolean, decider?: Decider, opts?: BattleSessionOpts) {
         this.decider = decider || decide;
         this.boss = boss;
+        this.playerManualSkills = !!opts?.playerManualSkills;
         const reference = gameNumber("battle_referenceSeconds");
         this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
@@ -146,6 +160,10 @@ export class BattleSession {
         this.dmgScale = gameNumber("battle_damageScale") * (boss ? gameNumber("battle_bossDamage") : 1);
         this.player = toLive(player, this.pace, SKILL_START.player);
         this.enemy = toLive(enemy, this.pace, SKILL_START.enemy);
+        if (this.playerManualSkills) {
+            this.player.skillCds = {};
+            for (const style of PLAYER_SKILLS) this.player.skillCds[style] = 0;
+        }
         this.rng = new Rng(seed);
         this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : [gameText("BattleSession_001")]) });
         this.events.push({ type: "taunt", side: "enemy", text: this.rng.pick(enemy.taunts.length ? enemy.taunts : [gameText("BattleSession_002")]) });
@@ -183,6 +201,33 @@ export class BattleSession {
         return this.pending[side] != null;
     }
 
+    /** 玩家主动绝招剩余冷却，单位真实秒。 */
+    skillRemain(style: StrikeStyle): number {
+        return Math.max(0, this.player.skillCds?.[style] ?? 0);
+    }
+
+    skillReady(style: StrikeStyle): boolean {
+        return this.playerManualSkills && this.phase === "combat" && this.skillRemain(style) <= 0;
+    }
+
+    previewSkillAtk(style: StrikeStyle): number {
+        return skillAttackValue(this.player.stats.atk, style);
+    }
+
+    /**
+     * 对战页点招式。冷却好了且自己没在播动作就立刻放；
+     * 正在出招或对面绝招立绘还占着时先排队，下一拍再放。
+     */
+    requestSkill(style: StrikeStyle): BattleEvent[] {
+        if (!this.playerManualSkills || this.phase !== "combat") return [];
+        if (!isPlayerSkill(style)) return [];
+        if (this.skillRemain(style) > 0) return [];
+        this.queuedSkill = style;
+        const out = this.flushPlayerSkill();
+        this.events.push(...out);
+        return out;
+    }
+
     context(side: BattleSide) {
         const self = this.live(side);
         const foe = this.live(side === "player" ? "enemy" : "player");
@@ -197,6 +242,11 @@ export class BattleSession {
         const out: BattleEvent[] = [];
         if (this.phase !== "combat" || dt <= 0) return out;
         this.skillGate = Math.max(0, this.skillGate - dt);
+        if (this.playerManualSkills && this.player.skillCds) {
+            for (const style of PLAYER_SKILLS) {
+                this.player.skillCds[style] = Math.max(0, (this.player.skillCds[style] || 0) - dt);
+            }
+        }
         dt /= this.durationScale;
 
         for (const side of SIDES) {
@@ -205,35 +255,20 @@ export class BattleSession {
             actor.skillCd = Math.max(0, actor.skillCd - dt);
             if (actor.busy) continue;
 
+            if (side === "player" && this.playerManualSkills) {
+                const skillEvs = this.flushPlayerSkill();
+                if (skillEvs.length) {
+                    out.push(...skillEvs);
+                    continue;
+                }
+            }
+
             actor.atkCd -= dt;
             if (actor.atkCd > 0) continue;
 
             const foe: BattleSide = side === "player" ? "enemy" : "player";
             const d = this.chooseAction(side, actor, foe);
-            actor.counterReady = false;
-            const style: StrikeStyle = actor.beats === 0 && d.kind !== "heal"
-                ? STYLE_OPENING[actor.fightStyle] : d.style;
-            actor.beats += 1;
-            out.push({ type: "action", side, kind: d.kind, style });
-
-            if (d.kind === "heal") {
-                const amount = Math.min(actor.stats.maxHp - actor.stats.hp,
-                    Math.round(actor.stats.healPerTurn * (1 + (actor.stats.healBonus || 0))));
-                actor.stats.hp = Math.min(actor.stats.maxHp, actor.stats.hp + amount);
-                actor.healCd = gameNumber("battle_healCooldown");
-                actor.atkCd = this.interval(actor);
-                out.push({ type: "heal", side, amount, remain: actor.stats.hp });
-            }
-            else {
-                if (d.kind === "skill") {
-                    actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
-                    if (actor.fightStyle === "tank") actor.guard = true;
-                    this.skillGate = SKILL_EXCLUSIVE;
-                    this.skillSide = side;
-                }
-                actor.busy = true;
-                this.pending[side] = { to: foe, skill: d.kind === "skill", style };
-            }
+            out.push(...this.launch(side, d));
         }
 
         this.events.push(...out);
@@ -332,7 +367,10 @@ export class BattleSession {
             scale *= 0.8;
             victim.guard = false;
         }
-        const dmg = dmgOf(actor.stats.atk, victim.stats.def, p.skill, crit, scale, this.rng, stylePierce(p.style));
+        const skillMul = p.skill
+            ? (side === "player" && this.playerManualSkills ? skillPowerMul(p.style) : gameNumber("battle_skillMultiplier"))
+            : 1;
+        const dmg = dmgOf(actor.stats.atk, victim.stats.def, skillMul, crit, scale, this.rng, stylePierce(p.style));
         actor.streak += 1;
         const result = applyDamage(victim, dmg);
         const stagger = gameNumber("battle_hitStagger") * this.pace
@@ -394,8 +432,12 @@ export class BattleSession {
     /**
      * 出招：冷却好了本来会立刻放绝招，但对面立绘还在时改打普攻，CD 留给下一拍。
      * 同一帧双方都好了，玩家先处理，所以自己的特效优先。
+     * 对战页打开手动绝招后，玩家这一支永远走普攻/回血，绝招只走 requestSkill。
      */
     private chooseAction(side: BattleSide, actor: LiveFighter, foe: BattleSide): BattleDecision {
+        if (side === "player" && this.playerManualSkills && !actor.counterReady) {
+            return this.fallbackAttack(actor, foe, "peck");
+        }
         let d = actor.counterReady
             ? { kind: "skill" as const, style: pickCounterStyle(actor) }
             : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
@@ -405,6 +447,53 @@ export class BattleSession {
         if (d.kind !== "skill" || !this.skillOccupied(side, foe)) return d;
         if (actor.counterReady) return { kind: "attack", style: d.style };
         return this.fallbackAttack(actor, foe, d.style);
+    }
+
+    private flushPlayerSkill(): BattleEvent[] {
+        const style = this.queuedSkill;
+        if (!style || this.phase !== "combat") return [];
+        const actor = this.player;
+        if (actor.busy) return [];
+        if (this.skillRemain(style) > 0) {
+            this.queuedSkill = null;
+            return [];
+        }
+        if (this.skillOccupied("player", "enemy")) return [];
+        this.queuedSkill = null;
+        return this.launch("player", { kind: "skill", style });
+    }
+
+    private launch(side: BattleSide, d: BattleDecision): BattleEvent[] {
+        const actor = this.live(side);
+        const foe: BattleSide = side === "player" ? "enemy" : "player";
+        actor.counterReady = false;
+        const style: StrikeStyle = actor.beats === 0 && d.kind === "attack"
+            ? STYLE_OPENING[actor.fightStyle] : d.style;
+        actor.beats += 1;
+        const out: BattleEvent[] = [{ type: "action", side, kind: d.kind, style }];
+        if (d.kind === "heal") {
+            const amount = Math.min(actor.stats.maxHp - actor.stats.hp,
+                Math.round(actor.stats.healPerTurn * (1 + (actor.stats.healBonus || 0))));
+            actor.stats.hp = Math.min(actor.stats.maxHp, actor.stats.hp + amount);
+            actor.healCd = gameNumber("battle_healCooldown");
+            actor.atkCd = this.interval(actor);
+            out.push({ type: "heal", side, amount, remain: actor.stats.hp });
+            return out;
+        }
+        if (d.kind === "skill") {
+            if (side === "player" && this.playerManualSkills && actor.skillCds) {
+                actor.skillCds[style] = skillCooldownOf(style) * (actor.enraged ? 0.55 : 1);
+            }
+            else {
+                actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
+            }
+            if (actor.fightStyle === "tank") actor.guard = true;
+            this.skillGate = SKILL_EXCLUSIVE;
+            this.skillSide = side;
+        }
+        actor.busy = true;
+        this.pending[side] = { to: foe, skill: d.kind === "skill", style };
+        return out;
     }
 
     private fallbackAttack(actor: LiveFighter, foe: BattleSide, style: StrikeStyle): BattleDecision {
@@ -427,7 +516,7 @@ export class BattleSession {
             crit: f.stats.crit,
             healPerTurn: f.stats.healPerTurn,
             healCd: f.healCd,
-            skillCd: f.skillCd,
+            skillCd: f === this.player && this.playerManualSkills ? 1 : f.skillCd,
             beat: f.beats,
             style: f.fightStyle,
             signature: f.signature

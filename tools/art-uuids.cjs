@@ -48,7 +48,15 @@ const ICONS = [
     "icon_down",
     "icon_dice",
     "icon_star",
-    "icon_feather"
+    "icon_feather",
+    "icon_skill_combo",
+    "icon_skill_charge",
+    "icon_skill_tail",
+    "icon_skill_leap",
+    "icon_skill_peck",
+    "icon_skill_jump",
+    "icon_skill_dive",
+    "icon_skill_feint"
 ];
 
 const NODES = ["node_stage", "node_lock", "node_shop", "node_chest", "node_boss", "node_dot"];

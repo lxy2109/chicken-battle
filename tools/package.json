@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "exceljs": "^4.4.0",
+    "gifsicle": "^7.0.1",
     "jszip": "^3.10.1"
   }
 }

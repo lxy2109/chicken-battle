@@ -5,7 +5,7 @@ import { AiFighter, decideAction, decide } from "../assets/script/game/core/Batt
 import { BattleSession } from "../assets/script/game/core/BattleSession";
 import { DanmakuPool } from "../assets/script/game/core/Danmaku";
 import { Rng } from "../assets/script/game/core/Rng";
-import { enemyCombatProfile, stageMood, STYLE_OPENING } from "../assets/script/game/core/BattleStyle";
+import { enemyCombatProfile, PLAYER_SKILLS, skillAttackValue, skillCooldownOf, stageMood, STYLE_OPENING } from "../assets/script/game/core/BattleStyle";
 import { getItems, getRoute, getSets } from "../assets/script/game/core/Catalog";
 import { bindTables } from "../assets/script/game/core/Config";
 import { buildStats, combatPower, setPrice } from "../assets/script/game/core/EquipMath";
@@ -1159,6 +1159,62 @@ function run() {
             if (text === "鸡你太美") meme++;
         }
         assert(meme / 5000 > 0.77 && meme / 5000 < 0.83, "坤坤80%主题弹幕，允许重复");
+    });
+
+    ok("玩家主动招式按各自冷却放，不会自动放绝招", () => {
+        const run = new RunState(21);
+        run.confirmAppearance(defaultAppearance());
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 20, def: 0, spd: 8, crit: 0, hp: 900, maxHp: 900 };
+        e.stats = { ...e.stats, atk: 8, def: 0, spd: 4, crit: 0, hp: 900, maxHp: 900 };
+        const battle = new BattleSession(p, e, 21, false, () => ({ kind: "attack", style: "peck" }), { playerManualSkills: true });
+        battle.beginCombat();
+        assert(PLAYER_SKILLS.length === 8, "八个特效招式都应能主动点");
+        for (const style of PLAYER_SKILLS) {
+            assert(skillCooldownOf(style) > 0 && battle.previewSkillAtk(style) > 0, `${style} 应有独立冷却和攻击`);
+        }
+        assert(battle.previewSkillAtk("leap") > battle.previewSkillAtk("combo"), "天外飞鸡攻击数值应高于连珠神啄");
+        assert(skillCooldownOf("leap") > skillCooldownOf("combo"), "天外飞鸡冷却应更长");
+        assert(skillAttackValue(20, "leap") === 44, "20 攻的天外飞鸡应标 44");
+
+        let playerSkills = 0;
+        const drain = () => {
+            if (battle.striking("player")) battle.resolveStrike("player", true);
+            if (battle.striking("enemy")) battle.resolveStrike("enemy", true);
+        };
+        for (let i = 0; i < 80 && !battle.done; i++) {
+            for (const ev of battle.tick(0.05)) {
+                if (ev.type === "action" && ev.side === "player" && ev.kind === "skill") playerSkills += 1;
+            }
+            drain();
+        }
+        assert(playerSkills === 0, `没点按钮不该放绝招，实际 ${playerSkills}`);
+        assert(battle.requestSkill("peck").some(ev => ev.type === "action" && ev.style === "peck"), "鸡啄米也应能点");
+        drain();
+        assert(battle.requestSkill("feint").some(ev => ev.type === "action" && ev.style === "feint"), "金蝉脱壳也应能点");
+        drain();
+
+        const combo = battle.requestSkill("combo");
+        assert(combo.some(ev => ev.type === "action" && ev.kind === "skill" && ev.style === "combo"), "点连珠神啄应立刻放");
+        drain();
+        assert(battle.requestSkill("combo").length === 0, "刚放完应在冷却");
+        assert(battle.skillRemain("combo") > 4.5, "连珠神啄冷却应接近满值");
+
+        const leap = battle.requestSkill("leap");
+        assert(leap.some(ev => ev.type === "action" && ev.style === "leap"), "另一招冷却独立，天外飞鸡应能放");
+        drain();
+        assert(battle.skillRemain("leap") > battle.skillRemain("combo"), "天外飞鸡剩余冷却应更长");
+
+        let t = 0;
+        while (battle.skillRemain("combo") > 0 && t < 8 && !battle.done) {
+            battle.tick(0.05);
+            drain();
+            t += 0.05;
+        }
+        assert(battle.skillRemain("combo") <= 0, "连珠神啄短冷却应先转好");
+        assert(battle.skillRemain("leap") > 0, "天外飞鸡此时还应在冷却");
+        const again = battle.requestSkill("combo");
+        assert(again.some(ev => ev.type === "action" && ev.style === "combo"), "短冷却转好后应能再放");
     });
 
     ok("哈鸡米、新一鸡、坤坤有专属对战曲", () => {

@@ -257,6 +257,53 @@ export function styleDamageMul(style: StrikeStyle, skill: boolean, signature?: S
     return mul;
 }
 
+/**
+ * 全部带特效的绝招。普攻仍自动打，这八招都要点按钮才放，冷却和攻击各自独立。
+ * 短冷却低伤、长冷却高伤，按钮上标的攻击就是 atk × powerMul。
+ */
+export const PLAYER_SKILLS: readonly StrikeStyle[] = [
+    "peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"
+];
+
+export const SKILL_KIT: Record<StrikeStyle, { cooldown: number; powerMul: number }> = {
+    peck: { cooldown: 6, powerMul: 1.45 },
+    jump: { cooldown: 7, powerMul: 1.55 },
+    dive: { cooldown: 9, powerMul: 1.85 },
+    leap: { cooldown: 12, powerMul: 2.2 },
+    charge: { cooldown: 8, powerMul: 1.7 },
+    tail: { cooldown: 7, powerMul: 1.6 },
+    combo: { cooldown: 5, powerMul: 1.4 },
+    feint: { cooldown: 6.5, powerMul: 1.5 }
+};
+
+export const SKILL_ICON: Record<StrikeStyle, string> = {
+    peck: "skill_peck",
+    jump: "skill_jump",
+    dive: "skill_dive",
+    leap: "skill_leap",
+    charge: "skill_charge",
+    tail: "skill_tail",
+    combo: "skill_combo",
+    feint: "skill_feint"
+};
+
+export function isPlayerSkill(style: StrikeStyle): boolean {
+    return (PLAYER_SKILLS as readonly StrikeStyle[]).includes(style);
+}
+
+export function skillCooldownOf(style: StrikeStyle): number {
+    return SKILL_KIT[style].cooldown;
+}
+
+export function skillPowerMul(style: StrikeStyle): number {
+    return SKILL_KIT[style].powerMul;
+}
+
+/** 招式按钮上展示的攻击数值，跟玩家当前攻击力和该招倍率走。 */
+export function skillAttackValue(atk: number, style: StrikeStyle): number {
+    return Math.max(1, Math.round(Math.max(0, atk) * skillPowerMul(style)));
+}
+
 export function stylePierce(style: StrikeStyle): number {
     if (style === "leap") return 0.22;
     if (style === "dive") return 0.15;
