@@ -5,9 +5,10 @@ import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { GameUIBase } from "../../shared/GameUIBase";
 import { ChickenRun } from "../../run/ChickenRun";
-import { TEX, compareSets, getSets } from "../../domain/Catalog";
+import { TEX, compareSets, getSets, setById } from "../../domain/Catalog";
 import { combatPower, ownedSetCount } from "../../domain/EquipMath";
 import { spawnChicken } from "../shared/ChickenBinder";
+import { tipEquipSet } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
@@ -92,8 +93,12 @@ export class CharacterViewComp extends GameUIBase<ChickenRun> {
         setNodeActive(this, "BtnPageNext", this.page < pages - 1);
         setNodeActive(this, "LabEmpty", entries.length === 0);
         setLabel(this, "LabEmpty", gameText("CharacterViewComp_011"));
-        const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus2Count"))
-            .map(set => `${set.name}：${set.desc2}${ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus4Count") ? "；" + set.desc4 : ""}`).join("\n");
+        // 套装整套穿戴，展示整套效果，不再分两件/四件档文案。
+        const bonuses = getSets().filter(set => ownedSetCount(run.equippedIds, set.id) >= gameNumber("set_bonus4Count"))
+            .map(set => {
+                const effects = [set.desc2, set.desc4].filter(Boolean);
+                return effects.length ? `${set.name}：${effects.join("；")}` : set.name;
+            }).join("\n");
         setNodeActive(this, "LabSets", !!bonuses);
         setLabel(this, "LabSets", bonuses ? gameText("CharacterViewComp_008", bonuses) : "");
         this.fitBottomPanel();
@@ -213,7 +218,10 @@ export class CharacterViewComp extends GameUIBase<ChickenRun> {
     private async equip(id: string) {
         if (this.equipping) return;
         const run = this.ent.run;
+        const pieces = setById(id).pieceIds;
+        const wasEquipped = pieces.every(pid => run.equippedIds.includes(pid));
         if (!run.equipSet(id)) return;
+        tipEquipSet(id, !wasEquipped);
         this.equipping = true;
         try {
             const me = run.playerFighter();

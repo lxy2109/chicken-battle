@@ -8,6 +8,7 @@ import { ChickenRun } from "../../run/ChickenRun";
 import { PREFAB_PATH, TEX } from "../../domain/Catalog";
 import { levelOf } from "../../domain/PartUpgrade";
 import { PART_TEXT, RewardOption } from "../../domain/Types";
+import { tipGain } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setSpriteColor } from "../shared/UiUtil";
 
@@ -137,10 +138,12 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
     private async onConfirm() {
         if (!this.selectedId || this.confirming) return;
         this.confirming = true;
+        const picked = this.ent.run.upgrades.find(opt => opt.id === this.selectedId);
         if (!this.ent.run.pickReward(this.selectedId)) {
             this.confirming = false;
             return;
         }
+        if (picked) tipGain(picked.title, picked.desc);
         await this.next();
     }
 

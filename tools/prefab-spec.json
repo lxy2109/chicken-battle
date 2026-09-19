@@ -35,6 +35,7 @@
     "db://assets/bundle/game/prefab/fx/ambient/fx_ambient_ash.prefab",
     "db://assets/bundle/game/prefab/fx/ambient/fx_ambient_mist.prefab",
     "db://assets/bundle/game/prefab/ui/taunt_bubble.prefab",
+    "db://assets/bundle/game/prefab/ui/game_tip.prefab",
     "db://assets/bundle/game/prefab/ui/shop_item.prefab",
     "db://assets/bundle/game/prefab/ui/shop_set_item.prefab",
     "db://assets/bundle/game/prefab/ui/reward_card.prefab",

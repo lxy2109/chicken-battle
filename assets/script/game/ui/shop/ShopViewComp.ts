@@ -7,6 +7,7 @@ import { GameUIBase } from "../../shared/GameUIBase";
 import { ChickenRun } from "../../run/ChickenRun";
 import { PREFAB_PATH, TEX, compareSets, getSets } from "../../domain/Catalog";
 import { combatPower, ownedSetCount } from "../../domain/EquipMath";
+import { tipBoughtSet } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { revealUI, bindClick, bindNodeClick, clearChildren, hexColor, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
@@ -249,7 +250,8 @@ export class ShopViewComp extends GameUIBase<ChickenRun> {
     }
 
     private async buySet(id: string) {
-        this.ent.run.buySet(id);
+        if (!this.ent.run.buySet(id)) return;
+        tipBoughtSet(id);
         await this.refresh();
     }
 

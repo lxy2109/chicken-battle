@@ -40,6 +40,7 @@ const TARGETS = [
     "assets/bundle/game/prefab/ui/shop_item.prefab",
     "assets/bundle/game/prefab/ui/reward_card.prefab",
     "assets/bundle/game/prefab/ui/taunt_bubble.prefab",
+    "assets/bundle/game/prefab/ui/game_tip.prefab",
     "assets/bundle/game/prefab/fx/combat/fx_hit.prefab",
     "assets/bundle/game/prefab/fx/combat/fx_skill.prefab",
     "assets/bundle/game/prefab/fx/combat/fx_heal.prefab",

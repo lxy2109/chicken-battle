@@ -649,85 +649,85 @@
     {
       "key": "b2maxHp",
       "type": "int",
-      "label": "2件生命",
+      "label": "套装效果1 生命",
       "required": false
     },
     {
       "key": "b2atk",
       "type": "int",
-      "label": "2件攻击",
+      "label": "套装效果1 攻击",
       "required": false
     },
     {
       "key": "b2def",
       "type": "int",
-      "label": "2件防御",
+      "label": "套装效果1 防御",
       "required": false
     },
     {
       "key": "b2spd",
       "type": "int",
-      "label": "2件速度",
+      "label": "套装效果1 速度",
       "required": false
     },
     {
       "key": "b2crit",
       "type": "float",
-      "label": "2件暴击",
+      "label": "套装效果1 暴击",
       "required": false
     },
     {
       "key": "b2healPerTurn",
       "type": "int",
-      "label": "2件回血",
+      "label": "套装效果1 回血",
       "required": false
     },
     {
       "key": "b4maxHp",
       "type": "int",
-      "label": "4件生命",
+      "label": "套装效果2 生命",
       "required": false
     },
     {
       "key": "b4atk",
       "type": "int",
-      "label": "4件攻击",
+      "label": "套装效果2 攻击",
       "required": false
     },
     {
       "key": "b4def",
       "type": "int",
-      "label": "4件防御",
+      "label": "套装效果2 防御",
       "required": false
     },
     {
       "key": "b4spd",
       "type": "int",
-      "label": "4件速度",
+      "label": "套装效果2 速度",
       "required": false
     },
     {
       "key": "b4crit",
       "type": "float",
-      "label": "4件暴击",
+      "label": "套装效果2 暴击",
       "required": false
     },
     {
       "key": "b4healPerTurn",
       "type": "int",
-      "label": "4件回血",
+      "label": "套装效果2 回血",
       "required": false
     },
     {
       "key": "b4revive",
       "type": "int",
-      "label": "4件复活",
+      "label": "套装效果2 复活",
       "required": false
     },
     {
       "key": "b4lockHp",
       "type": "int",
-      "label": "4件锁血",
+      "label": "套装效果2 锁血",
       "required": false
     },
     {
@@ -739,13 +739,13 @@
     {
       "key": "desc2",
       "type": "string",
-      "label": "两件套描述",
+      "label": "套装效果描述1",
       "required": false
     },
     {
       "key": "desc4",
       "type": "string",
-      "label": "四件套描述",
+      "label": "套装效果描述2",
       "required": false
     },
     {
@@ -763,37 +763,37 @@
     {
       "key": "b4retainGrowth",
       "type": "int",
-      "label": "4件 战败保留一项成长",
+      "label": "套装效果2 战败保留一项成长",
       "required": false
     },
     {
       "key": "b4firstStrike",
       "type": "int",
-      "label": "4件 先手能力",
+      "label": "套装效果2 先手能力",
       "required": false
     },
     {
       "key": "b4streakBonus",
       "type": "float",
-      "label": "4件 连续命中加成",
+      "label": "套装效果2 连续命中加成",
       "required": false
     },
     {
       "key": "b2healBonus",
       "type": "float",
-      "label": "2件 回血加成",
+      "label": "套装效果1 回血加成",
       "required": false
     },
     {
       "key": "b2goldBonus",
       "type": "float",
-      "label": "2件 金币加成",
+      "label": "套装效果1 金币加成",
       "required": false
     },
     {
       "key": "b4shopDiscount",
       "type": "float",
-      "label": "4件 商店折扣减免",
+      "label": "套装效果2 商店折扣减免",
       "required": false
     }
   ],

@@ -16,6 +16,8 @@ export const PREFAB_PATH = {
     /** 全屏氛围粒子。 */
     fxAmbient: (kind: string) => `game/prefab/fx/ambient/fx_ambient_${kind}`,
     taunt: "game/prefab/ui/taunt_bubble",
+    /** 通用飘字 tips（木牌 + 文案），由 GameTip.showTip 调用。 */
+    gameTip: "game/prefab/ui/game_tip",
     shopItem: "game/prefab/ui/shop_item",
     shopSetItem: "game/prefab/ui/shop_set_item",
     rewardCard: "game/prefab/ui/reward_card",

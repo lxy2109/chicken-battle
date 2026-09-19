@@ -179,14 +179,14 @@
     "set_bonus2Count": {
         "id": "set_bonus2Count",
         "value": 2,
-        "desc": "第一档套装加成所需件数",
+        "desc": "套装效果1 生效所需件数（兼容字段，整套出售时穿齐仍会叠加上）",
         "min": 1,
         "max": 4
     },
     "set_bonus4Count": {
         "id": "set_bonus4Count",
         "value": 4,
-        "desc": "第二档套装加成所需件数",
+        "desc": "整套加成生效所需件数",
         "min": 1,
         "max": 4
     },

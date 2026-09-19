@@ -790,6 +790,25 @@ function makeTauntBubble() {
     writePrefab("assets/bundle/game/prefab/ui/taunt_bubble.prefab", b.finish(root));
 }
 
+/**
+ * 通用飘字 tips：木牌底 + 居中文案。
+ * 运行时由 GameTip 克隆 item，不要在业务界面里手搓节点。
+ */
+function makeGameTip() {
+    const b = new Builder("game_tip");
+    // 根节点只当模板容器；真正显示的是 item。
+    const root = b.node({ name: "game_tip", w: 560, h: 96 });
+    const item = b.node({ name: "item", parent: root, w: 560, h: 96 });
+    b.opacity(item, 255);
+    b.sprite(item, [255, 255, 255, 255], 1, SF.banner_wood);
+    textNode(b, item, "LabContent", "提示", 0, 0, {
+        font: 28, w: 500, h: 72, color: INK.cream, outline: true, overflow: 3, wrap: true
+    });
+    const rel = "assets/bundle/game/prefab/ui/game_tip.prefab";
+    writePrefab(rel, b.finish(root));
+    writePrefabMeta(rel, "game_tip", "a1b2c3d4-6020-4000-8000-000000000001");
+}
+
 /** 套装条目：左图标与大字说明，整张卡片点击查看购买介绍。 */
 function makeShopSetItem() {
     makeShelfItem('shop_set_item', 120, 94);
@@ -1125,6 +1144,8 @@ if (!ONLY) {
     // 战斗飘字/命中/彩带/氛围改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
     makeShopItem();
     makeShopSetItem();
+    makeGameTip();
     writeWhitePng();
 }
+emit("game_tip", makeGameTip);
 console.log(ONLY ? `prefab generated: ${ONLY}` : "prefabs generated");
