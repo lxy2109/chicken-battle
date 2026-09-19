@@ -431,7 +431,7 @@ function gifNativeUrl(bundleName: string, path: string): string | null {
     const base = clean.split("/").pop() || "";
     const info = bundle.getInfoWithPath(clean)
         || bundle.getInfoWithPath(path)
-        || (bundle.getDirWithPath("game/equip_win_gif") || []).find(item => {
+        || (bundle.getDirWithPath("game/media/suit_gif") || []).find(item => {
             const name = (item.path || "").split("/").pop() || "";
             return name === base || name.startsWith(`${base}.`);
         });

@@ -14,7 +14,7 @@ function sourceFile(file = DEFAULT_SOURCE) {
 }
 
 function exporter() {
-    try { return require(path.join(ROOT, "tools/config-export.cjs")); }
+    try { return require(path.join(ROOT, "tools/config/config-export.cjs")); }
     catch (error) {
         if (error.code === "MODULE_NOT_FOUND") throw new Error("导表依赖未安装，请在项目 tools 目录运行 npm ci，然后重试。");
         throw error;
@@ -22,7 +22,7 @@ function exporter() {
 }
 
 function preview(tables) {
-    const schema = require(path.join(ROOT, "tools/config-schema.json"));
+    const schema = require(path.join(ROOT, "tools/config/config-schema.json"));
     return Object.entries(schema).map(([name, fields]) => {
         const table = tables[name];
         const rows = name === "Danmaku"
@@ -87,7 +87,7 @@ async function editWorkbook(file, draft) {
     try {
         const source = sourceFile(file);
         exporter();
-        const editor = require(path.join(ROOT, "tools/config-workbook.cjs"));
+        const editor = require(path.join(ROOT, "tools/config/config-workbook.cjs"));
         const result = draft ? await editor.save(source, draft.revision, draft.sheets) : await editor.load(source);
         return { ok: true, source, ...result, message: draft ? "Excel 已保存。点击导出并刷新资源后，重新预览游戏生效。" : "已加载全部记录，可直接编辑。" };
     } catch (error) { return { ok: false, message: error.message || String(error) }; }

@@ -1,0 +1,17 @@
+{
+  "mode": "built-in image_gen",
+  "prompts": [
+    {
+      "asset": "feather",
+      "prompt": "Use case: stylized-concept. Asset type: production 2D Cocos mobile cartoon chicken fighting game particle texture, square PNG with genuine transparent alpha background. Primary request: ONE single chicken feather, vertical with pointed tip at top and short quill at bottom, gently curved full soft feather vanes with 3 or 4 small irregular notches, clear central shaft. Neutral warm WHITE and very pale gray shading so it can be tinted to any chicken color at runtime. Dark warm brown contour. Occupy central 45% width and 80% height. Style: hand-drawn Chinese countryside humorous chicken battle game, chunky organic ink outlines, simple softly graded cel shading, warm saturated palette, slightly irregular hand ink shapes, readable at 24-80 pixels. Isolated sprite only, no scene, no chicken, no text, no frame, no checkerboard pattern, no ground shadow, no glow, no background color. Clean antialiased transparent edges, generous empty transparent padding. Not realistic, not 3D."
+    },
+    {
+      "asset": "blood_drop",
+      "prompt": "Use case: stylized-concept. Asset type: production 2D Cocos mobile cartoon chicken fighting game particle texture, square PNG with genuine transparent alpha background. Primary request: ONE single cartoon red blood droplet particle, elongated teardrop, pointed tip up and round bottom, crimson shadow edge and tiny warm pink highlight. Thick dark burgundy outline. Occupy central 40% width and 65% height. No other droplets. Style: hand-drawn Chinese countryside humorous chicken battle game, chunky organic ink outlines, simple softly graded cel shading, warm saturated palette, slightly irregular hand ink shapes, readable at 24-80 pixels. Isolated sprite only, no scene, no chicken, no text, no frame, no checkerboard pattern, no ground shadow, no glow, no background color. Clean antialiased transparent edges, generous empty transparent padding. Not realistic, not 3D."
+    },
+    {
+      "asset": "blood_splash",
+      "prompt": "Use case: stylized-concept. Asset type: production 2D Cocos mobile cartoon chicken fighting game particle texture, square PNG with genuine transparent alpha background. Primary request: ONE compact directional cartoon red blood splash impact sprite, broad rounded lobe at left, 3 tapered lobes spraying to right and 3 small detached red droplets close to main splash. Bright red with deep crimson shadow and small warm pink accent. Thick dark burgundy outline. Occupy central 80% width and 50% height. Stylized funny comic impact, no gore or body parts. Style: hand-drawn Chinese countryside humorous chicken battle game, chunky organic ink outlines, simple softly graded cel shading, warm saturated palette, slightly irregular hand ink shapes, readable at 24-80 pixels. Isolated sprite only, no scene, no chicken, no text, no frame, no checkerboard pattern, no ground shadow, no glow, no background color. Clean antialiased transparent edges, generous empty transparent padding. Not realistic, not 3D."
+    }
+  ]
+}

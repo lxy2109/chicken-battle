@@ -1,0 +1,1006 @@
+{
+  "Danmaku": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "group",
+      "type": "string",
+      "label": "弹幕分组ID",
+      "required": true
+    },
+    {
+      "key": "text",
+      "type": "string",
+      "label": "显示文本",
+      "required": true
+    }
+  ],
+  "Enemy": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "名字",
+      "required": true
+    },
+    {
+      "key": "maxHp",
+      "type": "int",
+      "label": "生命",
+      "required": true
+    },
+    {
+      "key": "atk",
+      "type": "int",
+      "label": "攻击",
+      "required": true
+    },
+    {
+      "key": "def",
+      "type": "int",
+      "label": "防御",
+      "required": true
+    },
+    {
+      "key": "spd",
+      "type": "int",
+      "label": "速度",
+      "required": true
+    },
+    {
+      "key": "crit",
+      "type": "float",
+      "label": "暴击",
+      "required": true
+    },
+    {
+      "key": "revive",
+      "type": "int",
+      "label": "复活",
+      "required": true
+    },
+    {
+      "key": "healPerTurn",
+      "type": "int",
+      "label": "每回合回血",
+      "required": true
+    },
+    {
+      "key": "lockHp",
+      "type": "int",
+      "label": "锁血",
+      "required": true
+    },
+    {
+      "key": "face",
+      "type": "string",
+      "label": "表情",
+      "required": true
+    },
+    {
+      "key": "comb",
+      "type": "string",
+      "label": "鸡冠色",
+      "required": true
+    },
+    {
+      "key": "head",
+      "type": "string",
+      "label": "头色",
+      "required": true
+    },
+    {
+      "key": "body",
+      "type": "string",
+      "label": "身色",
+      "required": true
+    },
+    {
+      "key": "wing",
+      "type": "string",
+      "label": "翅色",
+      "required": true
+    },
+    {
+      "key": "tail",
+      "type": "string",
+      "label": "尾色",
+      "required": true
+    },
+    {
+      "key": "leg",
+      "type": "string",
+      "label": "腿色",
+      "required": true
+    },
+    {
+      "key": "targetBattleSeconds",
+      "type": "float",
+      "label": "目标战斗时长（秒）",
+      "required": true
+    },
+    {
+      "key": "danmakuGroup",
+      "type": "string",
+      "label": "弹幕分组",
+      "required": true
+    },
+    {
+      "key": "combo",
+      "type": "int",
+      "label": "连击",
+      "required": true
+    },
+    {
+      "key": "neck",
+      "type": "string",
+      "label": "脖子颜色",
+      "required": true
+    },
+    {
+      "key": "illustration",
+      "type": "string",
+      "label": "立绘资源ID",
+      "required": true
+    },
+    {
+      "key": "tauntGroup",
+      "label": "台词组ID",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "Item": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "名字",
+      "required": true
+    },
+    {
+      "key": "desc",
+      "type": "string",
+      "label": "描述",
+      "required": true
+    },
+    {
+      "key": "slot",
+      "type": "string",
+      "label": "部位",
+      "required": true
+    },
+    {
+      "key": "setId",
+      "type": "string",
+      "label": "套装id",
+      "required": true
+    },
+    {
+      "key": "price",
+      "type": "int",
+      "label": "价格",
+      "required": true
+    },
+    {
+      "key": "isSkin",
+      "type": "int",
+      "label": "外观件",
+      "required": false
+    },
+    {
+      "key": "special",
+      "type": "string",
+      "label": "特殊",
+      "required": false
+    },
+    {
+      "key": "maxHp",
+      "type": "int",
+      "label": "生命",
+      "required": false
+    },
+    {
+      "key": "atk",
+      "type": "int",
+      "label": "攻击",
+      "required": false
+    },
+    {
+      "key": "def",
+      "type": "int",
+      "label": "防御",
+      "required": false
+    },
+    {
+      "key": "spd",
+      "type": "int",
+      "label": "速度",
+      "required": false
+    },
+    {
+      "key": "crit",
+      "type": "float",
+      "label": "暴击",
+      "required": false
+    },
+    {
+      "key": "revive",
+      "type": "int",
+      "label": "复活",
+      "required": false
+    },
+    {
+      "key": "healPerTurn",
+      "type": "int",
+      "label": "回血",
+      "required": false
+    },
+    {
+      "key": "lockHp",
+      "type": "int",
+      "label": "锁血",
+      "required": false
+    },
+    {
+      "key": "skinFace",
+      "type": "string",
+      "label": "改表情",
+      "required": false
+    },
+    {
+      "key": "skinColor",
+      "type": "string",
+      "label": "改颜色",
+      "required": false
+    },
+    {
+      "key": "icon",
+      "type": "string",
+      "label": "图标资源ID",
+      "required": false
+    }
+  ],
+  "Language": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "zh",
+      "type": "string",
+      "label": "简体中文",
+      "required": true
+    },
+    {
+      "key": "en",
+      "type": "string",
+      "label": "英文（预留）",
+      "required": true
+    }
+  ],
+  "Part": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "type",
+      "type": "string",
+      "label": "类型 color/face",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "显示名",
+      "required": true
+    },
+    {
+      "key": "value",
+      "type": "string",
+      "label": "颜色或表情ID",
+      "required": true
+    },
+    {
+      "key": "order",
+      "type": "int",
+      "label": "排序",
+      "required": true
+    }
+  ],
+  "Player": [
+    {
+      "key": "id",
+      "type": "int",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "玩家名",
+      "required": true
+    },
+    {
+      "key": "maxHp",
+      "type": "int",
+      "label": "生命",
+      "required": true
+    },
+    {
+      "key": "atk",
+      "type": "int",
+      "label": "攻击",
+      "required": true
+    },
+    {
+      "key": "def",
+      "type": "int",
+      "label": "防御",
+      "required": true
+    },
+    {
+      "key": "spd",
+      "type": "int",
+      "label": "速度",
+      "required": true
+    },
+    {
+      "key": "crit",
+      "type": "float",
+      "label": "暴击",
+      "required": true
+    },
+    {
+      "key": "randomNames",
+      "type": "any",
+      "label": "随机名称池（JSON数组）",
+      "required": true
+    },
+    {
+      "key": "combo",
+      "type": "int",
+      "label": "连击",
+      "required": true
+    },
+    {
+      "key": "colorComb",
+      "type": "string",
+      "label": "初始鸡冠颜色",
+      "required": true
+    },
+    {
+      "key": "colorHead",
+      "type": "string",
+      "label": "初始头颜色",
+      "required": true
+    },
+    {
+      "key": "colorNeck",
+      "type": "string",
+      "label": "初始脖子颜色",
+      "required": true
+    },
+    {
+      "key": "colorBody",
+      "type": "string",
+      "label": "初始躯干颜色",
+      "required": true
+    },
+    {
+      "key": "colorWing",
+      "type": "string",
+      "label": "初始翅膀颜色",
+      "required": true
+    },
+    {
+      "key": "colorTail",
+      "type": "string",
+      "label": "初始尾巴颜色",
+      "required": true
+    },
+    {
+      "key": "colorLeg",
+      "type": "string",
+      "label": "初始腿颜色",
+      "required": true
+    },
+    {
+      "key": "face",
+      "type": "string",
+      "label": "face",
+      "required": true
+    },
+    {
+      "key": "initialGold",
+      "type": "int",
+      "label": "初始金币",
+      "required": true
+    },
+    {
+      "key": "revive",
+      "type": "int",
+      "label": "基础复活次数",
+      "required": true
+    },
+    {
+      "key": "healPerTurn",
+      "type": "int",
+      "label": "基础回血量",
+      "required": true
+    },
+    {
+      "key": "lockHp",
+      "type": "bool",
+      "label": "基础锁血能力",
+      "required": true
+    },
+    {
+      "key": "tauntGroup",
+      "label": "台词组ID",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "Reward": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "title",
+      "type": "string",
+      "label": "标题",
+      "required": true
+    },
+    {
+      "key": "desc",
+      "type": "string",
+      "label": "描述",
+      "required": true
+    },
+    {
+      "key": "part",
+      "type": "string",
+      "label": "强化部位（空=纯buff）",
+      "required": true
+    },
+    {
+      "key": "goldPerStage",
+      "type": "int",
+      "label": "每节点金币",
+      "required": true
+    },
+    {
+      "key": "maxHp",
+      "type": "int",
+      "label": "生命",
+      "required": true
+    },
+    {
+      "key": "atk",
+      "type": "int",
+      "label": "攻击",
+      "required": true
+    },
+    {
+      "key": "def",
+      "type": "int",
+      "label": "防御",
+      "required": true
+    },
+    {
+      "key": "spd",
+      "type": "int",
+      "label": "速度",
+      "required": true
+    },
+    {
+      "key": "combo",
+      "type": "int",
+      "label": "连击",
+      "required": false
+    },
+    {
+      "key": "crit",
+      "type": "float",
+      "label": "暴击",
+      "required": true
+    },
+    {
+      "key": "revive",
+      "type": "int",
+      "label": "复活",
+      "required": true
+    },
+    {
+      "key": "healPerTurn",
+      "type": "int",
+      "label": "回血",
+      "required": true
+    },
+    {
+      "key": "maxLevel",
+      "type": "int",
+      "label": "放大上限",
+      "required": true
+    },
+    {
+      "key": "scalePerLevel",
+      "type": "float",
+      "label": "每级放大",
+      "required": true
+    },
+    {
+      "key": "weight",
+      "type": "int",
+      "label": "出现权重",
+      "required": true
+    }
+  ],
+  "Route": [
+    {
+      "key": "id",
+      "type": "int",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "mapId",
+      "type": "int",
+      "label": "地图编号",
+      "required": true
+    },
+    {
+      "key": "kind",
+      "type": "string",
+      "label": "节点类型",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "节点名",
+      "required": true
+    },
+    {
+      "key": "enemyId",
+      "type": "string",
+      "label": "敌人id",
+      "required": true
+    },
+    {
+      "key": "goldWin",
+      "type": "int",
+      "label": "胜利金币",
+      "required": true
+    },
+    {
+      "key": "goldLose",
+      "type": "int",
+      "label": "失败金币",
+      "required": true
+    },
+    {
+      "key": "encounter",
+      "type": "string",
+      "label": "比赛类型 warmup/official/final",
+      "required": true
+    },
+    {
+      "key": "shopAfter",
+      "type": "bool",
+      "label": "战后打开商店",
+      "required": false
+    },
+    {
+      "key": "storyId",
+      "label": "剧情覆盖ID（空=地图剧情）",
+      "type": "string",
+      "required": false
+    }
+  ],
+  "Set": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "套装名",
+      "required": true
+    },
+    {
+      "key": "pieceIds",
+      "type": "any",
+      "label": "散件id列表（JSON数组）",
+      "required": true
+    },
+    {
+      "key": "discount",
+      "type": "float",
+      "label": "折扣",
+      "required": true
+    },
+    {
+      "key": "b2maxHp",
+      "type": "int",
+      "label": "2件生命",
+      "required": false
+    },
+    {
+      "key": "b2atk",
+      "type": "int",
+      "label": "2件攻击",
+      "required": false
+    },
+    {
+      "key": "b2def",
+      "type": "int",
+      "label": "2件防御",
+      "required": false
+    },
+    {
+      "key": "b2spd",
+      "type": "int",
+      "label": "2件速度",
+      "required": false
+    },
+    {
+      "key": "b2crit",
+      "type": "float",
+      "label": "2件暴击",
+      "required": false
+    },
+    {
+      "key": "b2healPerTurn",
+      "type": "int",
+      "label": "2件回血",
+      "required": false
+    },
+    {
+      "key": "b4maxHp",
+      "type": "int",
+      "label": "4件生命",
+      "required": false
+    },
+    {
+      "key": "b4atk",
+      "type": "int",
+      "label": "4件攻击",
+      "required": false
+    },
+    {
+      "key": "b4def",
+      "type": "int",
+      "label": "4件防御",
+      "required": false
+    },
+    {
+      "key": "b4spd",
+      "type": "int",
+      "label": "4件速度",
+      "required": false
+    },
+    {
+      "key": "b4crit",
+      "type": "float",
+      "label": "4件暴击",
+      "required": false
+    },
+    {
+      "key": "b4healPerTurn",
+      "type": "int",
+      "label": "4件回血",
+      "required": false
+    },
+    {
+      "key": "b4revive",
+      "type": "int",
+      "label": "4件复活",
+      "required": false
+    },
+    {
+      "key": "b4lockHp",
+      "type": "int",
+      "label": "4件锁血",
+      "required": false
+    },
+    {
+      "key": "legacy",
+      "type": "bool",
+      "label": "旧版装备（不出售）",
+      "required": false
+    },
+    {
+      "key": "desc2",
+      "type": "string",
+      "label": "两件套描述",
+      "required": false
+    },
+    {
+      "key": "desc4",
+      "type": "string",
+      "label": "四件套描述",
+      "required": false
+    },
+    {
+      "key": "unlockMap",
+      "type": "int",
+      "label": "解锁地图ID",
+      "required": false
+    },
+    {
+      "key": "rewardOnly",
+      "type": "bool",
+      "label": "仅奖励获得",
+      "required": false
+    },
+    {
+      "key": "b4retainGrowth",
+      "type": "int",
+      "label": "4件 战败保留一项成长",
+      "required": false
+    },
+    {
+      "key": "b4firstStrike",
+      "type": "int",
+      "label": "4件 先手能力",
+      "required": false
+    },
+    {
+      "key": "b4streakBonus",
+      "type": "float",
+      "label": "4件 连续命中加成",
+      "required": false
+    },
+    {
+      "key": "b2healBonus",
+      "type": "float",
+      "label": "2件 回血加成",
+      "required": false
+    },
+    {
+      "key": "b2goldBonus",
+      "type": "float",
+      "label": "2件 金币加成",
+      "required": false
+    },
+    {
+      "key": "b4shopDiscount",
+      "type": "float",
+      "label": "4件 商店折扣减免",
+      "required": false
+    }
+  ],
+  "Stage": [
+    {
+      "key": "id",
+      "type": "int",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "关卡名",
+      "required": true
+    },
+    {
+      "key": "warmupEnemyId",
+      "type": "string",
+      "label": "热身敌人id",
+      "required": true
+    },
+    {
+      "key": "officialEnemyId",
+      "type": "string",
+      "label": "正式敌人id",
+      "required": true
+    },
+    {
+      "key": "warmupGoldWin",
+      "type": "int",
+      "label": "热身胜金币",
+      "required": true
+    },
+    {
+      "key": "warmupGoldLose",
+      "type": "int",
+      "label": "热身败金币",
+      "required": true
+    },
+    {
+      "key": "officialGoldWin",
+      "type": "int",
+      "label": "正式胜金币",
+      "required": true
+    },
+    {
+      "key": "hintWarmup",
+      "type": "string",
+      "label": "热身提示",
+      "required": true
+    },
+    {
+      "key": "hintOfficial",
+      "type": "string",
+      "label": "正式提示",
+      "required": true
+    }
+  ],
+  "Map": [
+    {
+      "key": "id",
+      "type": "int",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "name",
+      "type": "string",
+      "label": "地图名称",
+      "required": true
+    },
+    {
+      "key": "storyId",
+      "label": "地图剧情ID",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "UiText": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "text",
+      "type": "string",
+      "label": "显示文本",
+      "required": true
+    }
+  ],
+  "GameRule": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "value",
+      "type": "float",
+      "label": "数值",
+      "required": true
+    },
+    {
+      "key": "desc",
+      "type": "string",
+      "label": "用途及单位",
+      "required": true
+    },
+    {
+      "key": "min",
+      "type": "float",
+      "label": "最小值",
+      "required": true
+    },
+    {
+      "key": "max",
+      "type": "float",
+      "label": "最大值",
+      "required": false
+    }
+  ],
+  "DanmakuRule": [
+    {
+      "key": "id",
+      "type": "string",
+      "label": "编号",
+      "required": true
+    },
+    {
+      "key": "group",
+      "type": "string",
+      "label": "弹幕分组ID",
+      "required": true
+    },
+    {
+      "key": "repeat",
+      "type": "bool",
+      "label": "允许重复",
+      "required": true
+    },
+    {
+      "key": "commonChance",
+      "type": "float",
+      "label": "正式赛通用弹幕概率",
+      "required": true
+    },
+    {
+      "key": "featuredText",
+      "type": "string",
+      "label": "Boss高频弹幕",
+      "required": true
+    },
+    {
+      "key": "featuredChance",
+      "type": "float",
+      "label": "高频弹幕概率",
+      "required": true
+    },
+    {
+      "key": "recentCount",
+      "type": "int",
+      "label": "最近去重条数",
+      "required": true
+    }
+  ],
+  "Story": [
+    {
+      "key": "id",
+      "label": "剧情ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "text",
+      "label": "剧情正文",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "Taunt": [
+    {
+      "key": "id",
+      "label": "台词ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "group",
+      "label": "台词组ID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "key": "order",
+      "label": "组内顺序",
+      "type": "int",
+      "required": true
+    },
+    {
+      "key": "text",
+      "label": "台词正文",
+      "type": "string",
+      "required": true
+    }
+  ]
+}

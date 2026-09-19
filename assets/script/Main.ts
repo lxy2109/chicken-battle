@@ -5,13 +5,13 @@
  * @LastEditTime: 2022-08-05 18:25:56
  */
 import { _decorator, ResolutionPolicy, screen, view } from 'cc';
-import { oops } from '../../extensions/oops-plugin-framework/assets/core/Oops';
-import { Root } from '../../extensions/oops-plugin-framework/assets/core/Root';
-import { ecs } from '../../extensions/oops-plugin-framework/assets/libs/ecs/ECS';
-import { ChickenRun } from './game/chicken/ChickenRun';
-import { smc } from './game/common/SingletonModuleComp';
-import { UIConfigData } from './game/common/config/GameUIConfig';
-import { Initialize } from './game/initialize/Initialize';
+import { oops } from 'db://oops-framework/core/Oops';
+import { Root } from 'db://oops-framework/core/Root';
+import { ecs } from 'db://oops-framework/libs/ecs/ECS';
+import { ChickenRun } from './game/run/ChickenRun';
+import { smc } from './game/shared/SingletonModuleComp';
+import { UIConfigData } from './game/shared/config/GameUIConfig';
+import { Initialize } from './game/bootstrap/Initialize';
 
 const { ccclass } = _decorator;
 

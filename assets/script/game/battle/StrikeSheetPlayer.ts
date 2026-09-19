@@ -1,7 +1,7 @@
 import { Animation, AnimationClip, Component, Rect, Size, Sprite, SpriteFrame, Texture2D, UITransform, _decorator } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
-import { isMinionAnim, TEX } from "../core/Catalog";
-import { StrikeStyle } from "../core/Types";
+import { isMinionAnim, TEX } from "../domain/Catalog";
+import { StrikeStyle } from "../domain/Types";
 
 const { ccclass } = _decorator;
 

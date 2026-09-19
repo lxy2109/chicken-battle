@@ -1,0 +1,449 @@
+{
+  "uiKeys": [
+    "battle/BarPlayer/LabPlayerHp",
+    "battle/BarEnemy/LabEnemyHp",
+    "character/LabGold",
+    "character/LabPower",
+    "character/BtnPagePrev/BtnPagePrevLab",
+    "character/BtnPageNext/BtnPageNextLab",
+    "character/SetTray/LabEmpty",
+    "character/BtnHideAppearance/BtnHideAppearanceLab",
+    "customize/CustomizePanel/NameInput/LabNamePlaceholder",
+    "customize/CustomizePanel/BtnRandomName/BtnRandomNameLab",
+    "customize/StartPanel/BtnStart/BtnStartLab",
+    "customize/StartPanel/BtnClearSave/BtnClearSaveLab",
+    "customize/StartPanel/LabSaveHint",
+    "customize/ClearSaveModal/LabClearTitle",
+    "customize/ClearSaveModal/LabClearDesc",
+    "customize/ClearSaveModal/BtnCancelClear/BtnCancelClearLab",
+    "customize/ClearSaveModal/BtnConfirmClear/BtnConfirmClearLab",
+    "ending/LabHeaderBg/LabHeader",
+    "ending/Burst/LabTitle",
+    "ending/GainCard/LabGold",
+    "ending/BtnCharacter/BtnCharacterLab",
+    "ending/BtnRestart/BtnRestartLab",
+    "loading/pro_progress/lab_prompt",
+    "loading/pro_progress/lab_progress",
+    "map/LabTitle",
+    "map/BtnHome/BtnHomeLab",
+    "map/LabGold",
+    "map/BtnStage1/LabStageNum1",
+    "map/BtnStage2/LabStageNum2",
+    "map/BtnStage3/LabStageNum3",
+    "map/BtnStage4/LabStageNum4",
+    "map/BtnStage5/LabStageNum5",
+    "map/LabShopName",
+    "map/LabBossName",
+    "map/BtnChallenge/BtnChallengeLab",
+    "prebattle/LabTitle",
+    "prebattle/PlayerPanel/LabPlayerPower",
+    "prebattle/PlayerPanel/LabPlayerHp",
+    "prebattle/PlayerPanel/LabPlayerAtk",
+    "prebattle/PlayerPanel/LabPlayerSpd",
+    "prebattle/PlayerPanel/LabPlayerCombo",
+    "prebattle/PlayerPanel/LabPlayerCrit",
+    "prebattle/EnemyPanel/LabEnemyPower",
+    "prebattle/EnemyPanel/LabEnemyHp",
+    "prebattle/EnemyPanel/LabEnemyAtk",
+    "prebattle/EnemyPanel/LabEnemySpd",
+    "prebattle/EnemyPanel/LabEnemyCombo",
+    "prebattle/EnemyPanel/LabEnemyCrit",
+    "prebattle/BtnFight/BtnFightLab",
+    "result/LabDesc",
+    "result/LabGold",
+    "result/BtnNext/BtnNextLab",
+    "reward/LabTitle",
+    "reward/LabHint",
+    "reward/BtnConfirm/BtnConfirmLab",
+    "shop/LabGold",
+    "shop/BtnLeave/BtnLeaveLab",
+    "shop/PurchaseModal/LabPurchaseTitle",
+    "shop/PurchaseModal/BtnCancelBuy/BtnCancelBuyLab",
+    "shop/PurchaseModal/BtnConfirmBuy/BtnConfirmBuyLab"
+  ],
+  "rules": {
+    "battle_baseInterval": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_speedReference": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_minInterval": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_damageScale": {
+      "min": 0.001,
+      "max": null,
+      "integer": false
+    },
+    "battle_healCooldown": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_skillCooldown": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_hitStagger": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "battle_bossPace": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_bossDamage": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_skillMultiplier": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_critMultiplier": {
+      "min": 1,
+      "max": null,
+      "integer": false
+    },
+    "battle_reviveRatio": {
+      "min": 0.01,
+      "max": 1,
+      "integer": false
+    },
+    "battle_streakCap": {
+      "min": 0,
+      "max": null,
+      "integer": true
+    },
+    "battle_referenceSeconds": {
+      "min": 0.1,
+      "max": null,
+      "integer": false
+    },
+    "ai_healRatio": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "ai_finishRatio": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "ai_healthyRatio": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "ai_attackAdvantage": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "ai_speedAdvantage": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "power_hits": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "power_heals": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "power_dpsWeight": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "power_lockRatio": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "power_comboWeight": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "player_nameLength": {
+      "min": 1,
+      "max": 40,
+      "integer": true
+    },
+    "reward_choices": {
+      "min": 1,
+      "max": 3,
+      "integer": true
+    },
+    "audio_musicVolume": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "audio_effectVolume": {
+      "min": 0,
+      "max": 1,
+      "integer": false
+    },
+    "set_bonus2Count": {
+      "min": 1,
+      "max": 4,
+      "integer": true
+    },
+    "set_bonus4Count": {
+      "min": 1,
+      "max": 4,
+      "integer": true
+    },
+    "danmaku_firstDelay": {
+      "min": 0,
+      "max": null,
+      "integer": false
+    },
+    "danmaku_warmupLimit": {
+      "min": 0,
+      "max": null,
+      "integer": true
+    },
+    "danmaku_officialLimit": {
+      "min": 0,
+      "max": null,
+      "integer": true
+    },
+    "danmaku_bossLimit": {
+      "min": 0,
+      "max": null,
+      "integer": true
+    },
+    "danmaku_travelSeconds": {
+      "min": 0.1,
+      "max": null,
+      "integer": false
+    },
+    "danmaku_lowHpInterval": {
+      "min": 0.1,
+      "max": null,
+      "integer": false
+    },
+    "danmaku_interval": {
+      "min": 0.1,
+      "max": null,
+      "integer": false
+    }
+  },
+  "textParams": {
+    "role_level_up": [],
+    "role_attack": [],
+    "BattleViewComp_001": [],
+    "BattleViewComp_002": [],
+    "BattleViewComp_003": [],
+    "BattleViewComp_004": [],
+    "BattleViewComp_005": [],
+    "BattleViewComp_006": [],
+    "BattleViewComp_007": [],
+    "BattleViewComp_008": [],
+    "BattleViewComp_009": [],
+    "BattleViewComp_010": [],
+    "BattleViewComp_011": [],
+    "BattleViewComp_012": [],
+    "BattleViewComp_013": [],
+    "BattleViewComp_014": [],
+    "BattleViewComp_015": [],
+    "BattleViewComp_016": [],
+    "BattleViewComp_017": [
+      "{0}"
+    ],
+    "BattleViewComp_018": [
+      "{0}"
+    ],
+    "BattleViewComp_019": [],
+    "BattleViewComp_020": [],
+    "BattleViewComp_021": [],
+    "BattleViewComp_022": [],
+    "BattleViewComp_023": [],
+    "CharacterViewComp_001": [],
+    "CharacterViewComp_002": [],
+    "CharacterViewComp_003": [],
+    "CharacterViewComp_004": [],
+    "CharacterViewComp_005": [
+      "{0}",
+      "{1}",
+      "{2}"
+    ],
+    "CharacterViewComp_006": [],
+    "CharacterViewComp_007": [],
+    "CharacterViewComp_008": [
+      "{0}"
+    ],
+    "CharacterViewComp_009": [],
+    "CharacterViewComp_010": [],
+    "CharacterViewComp_011": [],
+    "CharacterViewComp_012": [],
+    "CharacterViewComp_013": [],
+    "CharacterViewComp_014": [],
+    "CharacterViewComp_015": [],
+    "CharacterViewComp_016": [],
+    "CharacterViewComp_017": [],
+    "CustomizeViewComp_001": [],
+    "CustomizeViewComp_002": [],
+    "CustomizeViewComp_003": [],
+    "CustomizeViewComp_004": [],
+    "CustomizeViewComp_005": [],
+    "CustomizeViewComp_006": [],
+    "CustomizeViewComp_007": [],
+    "CustomizeViewComp_008": [],
+    "CustomizeViewComp_009": [],
+    "CustomizeViewComp_010": [
+      "{0}"
+    ],
+    "EndingViewComp_001": [],
+    "MapViewComp_001": [
+      "{0}"
+    ],
+    "MapViewComp_002": [],
+    "MapViewComp_003": [],
+    "MapViewComp_004": [],
+    "MapViewComp_005": [],
+    "MapViewComp_006": [],
+    "MapViewComp_007": [],
+    "MapViewComp_008": [],
+    "MapViewComp_009": [],
+    "MapViewComp_010": [
+      "{0}"
+    ],
+    "MapViewComp_011": [],
+    "PreBattleViewComp_001": [],
+    "PreBattleViewComp_002": [],
+    "PreBattleViewComp_003": [],
+    "PreBattleViewComp_004": [],
+    "PreBattleViewComp_005": [],
+    "PreBattleViewComp_006": [
+      "{0}"
+    ],
+    "PreBattleViewComp_007": [
+      "{0}"
+    ],
+    "PreBattleViewComp_008": [
+      "{0}"
+    ],
+    "PreBattleViewComp_009": [],
+    "PreBattleViewComp_010": [],
+    "ResultViewComp_001": [],
+    "ResultViewComp_002": [],
+    "ResultViewComp_003": [],
+    "ResultViewComp_004": [],
+    "ResultViewComp_005": [],
+    "ResultViewComp_006": [],
+    "ResultViewComp_007": [],
+    "ResultViewComp_008": [],
+    "ResultViewComp_009": [],
+    "ResultViewComp_010": [],
+    "ResultViewComp_011": [
+      "{0}"
+    ],
+    "ResultViewComp_012": [],
+    "ResultViewComp_013": [],
+    "ResultViewComp_014": [],
+    "ResultViewComp_015": [
+      "{0}",
+      "{1}"
+    ],
+    "ResultViewComp_016": [],
+    "ResultViewComp_017": [],
+    "ResultViewComp_018": [],
+    "RewardViewComp_001": [
+      "{0}",
+      "{1}"
+    ],
+    "RewardViewComp_002": [],
+    "RewardViewComp_003": [],
+    "RewardViewComp_004": [],
+    "RewardViewComp_005": [
+      "{0}"
+    ],
+    "RewardViewComp_006": [],
+    "ShopViewComp_001": [],
+    "ShopViewComp_002": [],
+    "ShopViewComp_003": [],
+    "ShopViewComp_004": [],
+    "ShopViewComp_005": [
+      "{0}"
+    ],
+    "ShopViewComp_006": [
+      "{0}",
+      "{1}",
+      "{2}"
+    ],
+    "ShopViewComp_007": [],
+    "ShopViewComp_008": [
+      "{0}"
+    ],
+    "ShopViewComp_009": [],
+    "ShopViewComp_010": [],
+    "ShopViewComp_011": [],
+    "ShopViewComp_012": [],
+    "ShopViewComp_013": [
+      "{0}",
+      "{1}"
+    ],
+    "ShopViewComp_014": [],
+    "ShopViewComp_015": [],
+    "RunState_001": [
+      "{0}"
+    ],
+    "RunState_002": [],
+    "RunState_003": [],
+    "RunState_004": [],
+    "RunState_005": [
+      "{0}"
+    ],
+    "RunState_006": [],
+    "RunState_007": [
+      "{0}",
+      "{1}"
+    ],
+    "EquipMath_001": [
+      "{0}",
+      "{1}",
+      "{2}",
+      "{3}",
+      "{4}"
+    ],
+    "BattleSession_001": [],
+    "BattleSession_002": [],
+    "Types_001": [],
+    "Types_002": [],
+    "Types_003": [],
+    "Types_004": [],
+    "Types_005": [],
+    "Types_006": [],
+    "Types_007": [],
+    "Types_008": [],
+    "Types_009": [],
+    "Types_010": [],
+    "Types_011": [],
+    "Types_012": [],
+    "Types_013": [],
+    "RunModelComp_001": [],
+    "loading_resources": [],
+    "loading_failed": [],
+    "loading_character": []
+  }
+}

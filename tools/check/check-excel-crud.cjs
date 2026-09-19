@@ -1,0 +1,106 @@
+const assert = require('assert/strict');
+const fs = require('fs');
+const path = require('path');
+const api = require('../config/config-export.cjs');
+const editor = require('../config/config-workbook.cjs');
+const root = path.resolve(__dirname, '../..');
+const directory = fs.mkdtempSync(path.join(root, 'temp/excel-crud-'));
+const file = path.join(directory, 'test.xlsx');
+const source = path.join(root, 'excel/斗鸡配置.xlsx');
+const sourceBytes = fs.readFileSync(source);
+const clone = data => JSON.parse(JSON.stringify(data));
+(async () => {
+    fs.copyFileSync(source, file);
+    let initial = await editor.load(file);
+    assert.equal(initial.sheets.find(s => s.name === 'Danmaku').rows.length, 185);
+    const before = await api.readXlsx(file);
+    const draft = clone(initial.sheets);
+    const enemy = draft.find(s => s.name === 'Enemy');
+    const target = enemy.rows.find(r => r.values.id === 'kun_boss');
+    target.values.targetBattleSeconds = '52';
+    const lines = draft.find(s => s.name === 'Danmaku');
+    const last = lines.rows.at(-1);
+    last.values.text = '末页编辑 <script>数据不是脚本</script>';
+    const removed = lines.rows.splice(1, 1)[0];
+    lines.rows.push({ origin: null, formulas: [], values: { id: 'crud_test', group: 'common', text: '新增测试' } });
+    const saved = await editor.save(file, initial.revision, draft);
+    assert.notEqual(saved.revision, initial.revision);
+    const reloaded = await editor.load(file);
+    const after = await api.readXlsx(file);
+    assert.equal(after.Enemy.kun_boss.targetBattleSeconds, 52);
+    const resultLines = reloaded.sheets.find(s => s.name === 'Danmaku').rows;
+    assert(resultLines.some(r => r.values.id === 'crud_test'));
+    assert(!resultLines.some(r => r.values.id === removed.values.id));
+    assert.equal(resultLines.find(r => r.values.id === last.values.id).values.text, last.values.text);
+    for (const name of Object.keys(before).filter(n => !['Enemy', 'Danmaku'].includes(n))) assert.deepEqual(after[name], before[name]);
+    const oldWb = await api.loadWorkbook(source), newWb = await api.loadWorkbook(file);
+    for (const name of ['说明', '字典']) assert.deepEqual(newWb.getWorksheet(name).getSheetValues(), oldWb.getWorksheet(name).getSheetValues());
+    assert.deepEqual(newWb.getWorksheet('Enemy').getCell('A1').style, oldWb.getWorksheet('Enemy').getCell('A1').style);
+    assert.deepEqual(newWb.getWorksheet('Enemy').views, oldWb.getWorksheet('Enemy').views);
+    console.log('PASS 全量读取、末页编辑、增加/删除/保存重载、真实ID、其他表/说明/表头样式/冻结保留');
+    const intact = fs.readFileSync(file);
+    for (const mutate of [
+        s => { s.find(x => x.name === 'Enemy').rows[0].values.targetBattleSeconds = '0'; },
+        s => { const r = s.find(x => x.name === 'Enemy').rows; r[1].values.id = r[0].values.id; },
+        s => { s.find(x => x.name === 'Enemy').rows = []; }
+    ]) {
+        const bad = clone(reloaded.sheets); mutate(bad);
+        await assert.rejects(editor.save(file, reloaded.revision, bad));
+        assert.deepEqual(fs.readFileSync(file), intact);
+    }
+    fs.appendFileSync(file, 'external');
+    await assert.rejects(editor.save(file, reloaded.revision, reloaded.sheets), /外部修改/);
+    assert.deepEqual(fs.readFileSync(file), Buffer.concat([intact, Buffer.from('external')]));
+    fs.writeFileSync(file, intact);
+    const wb = await api.loadWorkbook(file);
+    const language = wb.getWorksheet('Language');
+    const enCol = language.getRow(2).values.indexOf('en');
+    language.getCell(6, enCol).value = { formula: '"cached"', result: 'cached' };
+    await wb.xlsx.writeFile(file);
+    initial = await editor.load(file);
+    const formulaRow = initial.sheets.find(s => s.name === 'Language').rows.find(r => r.origin === 6);
+    assert(formulaRow.formulas.includes('en'));
+    await editor.save(file, initial.revision, initial.sheets);
+    assert.deepEqual((await api.loadWorkbook(file)).getWorksheet('Language').getCell(6, enCol).value, { formula: '"cached"', result: 'cached' });
+    initial = await editor.load(file);
+    const badFormula = clone(initial.sheets);
+    badFormula.find(s => s.name === 'Language').rows.find(r => r.origin === 6).values.en = 'changed';
+    await assert.rejects(editor.save(file, initial.revision, badFormula), /公式/);
+    const lockedBytes = fs.readFileSync(file), rename = fs.renameSync;
+    fs.renameSync = () => { throw new Error('模拟文件被 Excel 占用'); };
+    try { await assert.rejects(editor.save(file, initial.revision, initial.sheets), /占用/); }
+    finally { fs.renameSync = rename; }
+    assert.deepEqual(fs.readFileSync(file), lockedBytes);
+    assert(!fs.readdirSync(directory).some(name => name.endsWith('.tmp.xlsx')));
+    const invalidWb = await api.loadWorkbook(file);
+    const enemyWs = invalidWb.getWorksheet('Enemy');
+    enemyWs.getCell(6, enemyWs.getRow(2).values.indexOf('targetBattleSeconds')).value = 0;
+    await invalidWb.xlsx.writeFile(file);
+    const repair = await editor.load(file);
+    assert(repair.warning.includes('目标战斗时长'));
+    repair.sheets.find(s => s.name === 'Enemy').rows.find(r => r.origin === 6).values.targetBattleSeconds = '25';
+    assert.equal((await editor.save(file, repair.revision, repair.sheets)).warning, '');
+    assert.deepEqual(fs.readFileSync(source), sourceBytes);
+    console.log('PASS 无效时长/重复ID/引用破坏不落盘、外部修改冲突、公式保留和只读、源工作簿未改变');
+    const headerFile = path.join(directory, 'header.xlsx');
+    fs.copyFileSync(source, headerFile);
+    const extra = await api.loadWorkbook(headerFile);
+    extra.getWorksheet('Map').getCell(2, 4).value = 'background';
+    extra.getWorksheet('Map').getCell(3, 4).value = 'string';
+    await extra.xlsx.writeFile(headerFile);
+    await assert.rejects(editor.load(headerFile), /多余 background/);
+    fs.copyFileSync(source, headerFile);
+    const wrongType = await api.loadWorkbook(headerFile);
+    wrongType.getWorksheet('Map').getCell(3, 1).value = 'string';
+    await wrongType.xlsx.writeFile(headerFile);
+    await assert.rejects(editor.load(headerFile), /id 类型应为 int/);
+    fs.copyFileSync(source, headerFile);
+    const leftover = await api.loadWorkbook(headerFile);
+    leftover.getWorksheet('Map').getCell(1, 4).value = '残留列';
+    leftover.getWorksheet('Map').getCell(2, 4).value = '';
+    leftover.getWorksheet('Map').getCell(4, 4).value = 'server_no';
+    leftover.getWorksheet('Map').getCell(5, 4).value = 'client';
+    await leftover.xlsx.writeFile(headerFile);
+    assert.equal((await editor.load(headerFile)).sheets.find(s => s.name === 'Map').columns.length, 3);
+    console.log('PASS Map 多余列/类型错误明确报错，空残留列不阻断加载');
+})().catch(error => { console.error(error); process.exitCode = 1; });

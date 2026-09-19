@@ -19,6 +19,12 @@ extensions/*.local-backup/
 
 # 本地验证与导出中间产物
 outputs/
+art-src/
+
+# 工具调试产物
+tools/**/mcp-*.json
+tools/**/mcp-*.txt
+*.local-backup/
 #//////////////////////////
 # NPM
 #//////////////////////////

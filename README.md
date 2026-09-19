@@ -80,36 +80,43 @@ customize ──▶ map ──▶ prebattle ──▶ battle ──▶ result �
 
 ## 目录结构
 
+更完整的约定见 [docs/architecture/directory-structure.md](docs/architecture/directory-structure.md)。
+
 ```
 assets/
-  bundle/
-    config/game/          配表 json（Player Stage Route Enemy Item Set Part Reward Language）
-    game/prefab/          玩法内预制体（鸡、特效、卡片），由脚本生成
-    game/texture/         美术素材：chicken 部位 / ui 控件 / icon / equip / map / bg
-    gui/<screen>/         各界面预制体，由脚本生成
-  script/game/
-    core/                 纯逻辑，不引用 cc，可以直接用 node 跑
-      Types.ts              数据结构与战斗事件定义
-      Config.ts             配表缓存
-      Catalog.ts            配表读取与资源路径
-      RunState.ts           整局流程状态机
-      EquipMath.ts          装备/套装/属性/战力计算
-      BattleSession.ts      战斗内核，吃双方快照吐事件序列
-      BattleAI.ts           行为决策
-      PartUpgrade.ts        部位强化：等级换属性与体型
-      RewardGen.ts / Rng.ts 三选一摇牌与固定种子随机
-    battle/               战斗演出：ChickenActor 部位动画、BattleAnimator、BattleBrain 行为树
-    gui/                  各界面 ViewComp，Nav.ts 管跳转，UiUtil.ts 是取节点/绑事件的封装
-    chicken/              ECS 实体 ChickenRun，持有 RunState
-tools/                    生成与校验脚本
-extensions/               编辑器插件源码
+  bundle/                         # 唯一业务 Asset Bundle（包名 bundle）
+    common/                       # 框架弹窗皮肤（路径勿改）
+    config/game/                  # 配表 JSON
+    gui/<screen>/                 # 界面预制体
+    game/
+      prefab/actor|ui|fx|skill/   # 鸡、UI 卡片、特效、绝招
+      image/                      # 所有位图父目录
+        actor|anim|bg|ui|icon|map|equip/  # 普通贴图
+        texture/common|stamp|skill/       # 仅特效贴图
+      media/video|suit_gif/       # 结局视频、套装 GIF
+      effect/                     # feather-gradient 等
+      audio/ font/ animator/
+  script/
+    Main.ts
+    gif/                          # GIF 工具
+    game/
+      domain/                     # 纯逻辑（原 core），可 node 验证
+      battle/                     # 战斗演出运行时
+      ui/                         # 界面（shared/ + 各屏）
+      run/                        # 一局 ECS 实体
+      bootstrap/                  # 启动与加载
+      shared/                     # smc、GameUIBase、Alert 配置
+tools/
+  check|config|gen|import|art|prefab|misc/
+  *.cjs                           # 根目录兼容入口
+extensions/                       # 编辑器插件
 ```
 
-`core/` 里的代码刻意不引用 `cc`，所以战斗和数值逻辑可以脱离编辑器用 node 直接验证。
+`domain/` 里的代码刻意不引用 `cc`，所以战斗和数值逻辑可以脱离编辑器用 node 直接验证。
 
 ## 配表
 
-配表是 `assets/bundle/config/game/*.json`，启动时由 `core/LoadTables.ts` 灌进 `Config.ts` 的缓存，之后统一走 `Catalog.ts` 读。
+配表是 `assets/bundle/config/game/*.json`，启动时由 `domain/LoadTables.ts` 灌进 `Config.ts` 的缓存，之后统一走 `Catalog.ts` 读。
 
 | 表 | 内容 |
 | --- | --- |
@@ -166,7 +173,7 @@ node tools/gen-prefabs.cjs                                               # 重�
 
 `run-verify.cjs` 跑的是 `tools/verify-mvp.ts` 里的流程断言，覆盖固定路线、商店货架、部位强化和战斗内核。`core/` 不引用 `cc` 就是为了它能脱离编辑器跑。
 
-它做两件额外的事：项目不直接装 typescript，所以借插件那份来编译；行为树在 `db://oops-framework` 下，node 不认这个协议头，所以编译时靠 `tools/tsconfig.verify.json` 里的 paths 映射把它一起编进来，执行前再劫持 `require` 把 `db://` 指向编译产物。
+它做两件额外的事：项目不直接装 typescript，所以借插件那份来编译；行为树在 `db://oops-framework` 下，node 不认这个协议头，所以编译时靠 `tools/check/tsconfig.verify.json` 里的 paths 映射把它一起编进来，执行前再劫持 `require` 把 `db://` 指向编译产物。
 
 `check-pace.cjs` 量的是只看胜负发现不了的两件事。一是招式分布：数值一场里几乎不变，招式若跟判据一一绑死，通场就只有一个动作。二是演出预算：逻辑层出招期间挂着 `busy` 不出新招，「起手到打着」这段动画一旦长过最快出手间隔 0.55 秒，演出就会顶住节奏，把速度堆上去的收益吃掉。它里面那张动画时长表是手抄 `ChickenActor` 的，**改了那边的时长要跟着改这里**。
 

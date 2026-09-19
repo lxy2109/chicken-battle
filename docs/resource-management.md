@@ -1,22 +1,25 @@
 # 资源维护
 
-启动页只预加载 `gui/customize/customize` 和 `game/prefab/chicken`。地图、战斗、商店、装备等资源继续走各界面现有的加载入口，不要在启动页恢复 `loadDir("game")`。
+启动页只预加载 `gui/customize/customize` 和 `game/prefab/actor/chicken`。地图、战斗、商店、装备等资源继续走各界面现有的加载入口，不要在启动页恢复 `loadDir("game")`。
 
 默认游戏资源包开启运行期内存缓存：资源首次成功加载后保留一份引用，再次进入界面时由 Cocos 资源缓存复用。界面节点仍正常销毁，避免残留战斗状态、动画和事件监听；缓存保留预制体、贴图、图集依赖等资源。关闭游戏会释放进程内存，缓存不写入存档。显式调用 `removeBundle` 或 `releaseDir("", bundleName)` 会卸载整个包及其缓存。
 
 ## 图片
 
-导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图；不会改动预制体的显示尺寸。全屏不透明背景（`texture/bg` 与 `fx/skill_bg_*`）保存为 JPEG 质量 85，其余贴图做 PNG 无损编码优化。
+导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图；不会改动预制体的显示尺寸。全屏不透明背景（`game/image/bg` 与 `game/image/texture/skill` 下的 `skill_bg_*`）保存为 JPEG 质量 85，其余贴图做 PNG 无损编码优化。
+
+**目录语义：所有位图统一放在 `game/image/` 下（标识「这是图片」）。其中 `game/image/texture/` 只放特效贴图（common/stamp/skill）；角色/UI/背景等走 `actor`、`ui`、`bg` 等子目录。**
 
 | 目录 | 图片尺寸上限 | 静态图集单页上限 |
 | --- | --- | --- |
-| bg | 720×1280 | 不合图；JPEG |
-| fx 中 skill_bg_* | 720×1280 | 不合图；JPEG |
-| chicken | 384×576 | 1024×1024 |
-| icon | 160×160 | 512×512 |
-| map | 256×256 | 1024×1024 |
-| ui | 768×1024 | 2048×2048 |
-| equip | 256×256 | 1024×1024 |
+| `game/image/bg` | 720×1280 | 不合图；JPEG |
+| `game/image/texture/skill` 中 skill_bg_* | 720×1280 | 不合图；JPEG |
+| `game/image/actor` / `game/image/anim` | 384×576 | 1024×1024 |
+| `game/image/icon` | 160×160 | 512×512 |
+| `game/image/map` | 256×256 | 1024×1024 |
+| `game/image/ui` | 768×1024 | 2048×2048 |
+| `game/image/equip` | 256×256 | 1024×1024 |
+| `game/image/texture`（其余 FX） | 720×1280 | 按需 |
 
 缩图会同步更新 SpriteFrame 裁切数据和九宫格边距。原文件备份及体积报告保存在忽略目录 `outputs/texture-optimization/`；不要把备份放回 `assets` 中，否则也会参与导入和打包。
 

@@ -1,8 +1,8 @@
 import { BehaviorTree, Selector, Sequence, Task } from "db://oops-framework/libs/behavior-tree";
 import {
     AI_RULE, AiFighter, AiRule, BattleDecision, StylePool, act
-} from "../core/BattleAI";
-import { BattleActionKind } from "../core/Types";
+} from "../domain/BattleAI";
+import { BattleActionKind } from "../domain/Types";
 
 const FALLBACK: BattleDecision = { kind: "attack", style: "dive" };
 

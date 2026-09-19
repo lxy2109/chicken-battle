@@ -1,6 +1,6 @@
 import { Color, Node, Sprite, Tween, UIOpacity, UITransform, tween, v3, Vec3 } from "cc";
-import { ArenaMood, StyleRhythm, styleRhythm } from "../core/BattleStyle";
-import { FightStyle, StrikeStyle } from "../core/Types";
+import { ArenaMood, StyleRhythm, styleRhythm } from "../domain/BattleStyle";
+import { FightStyle, StrikeStyle } from "../domain/Types";
 import { StrikeSheetPlayer } from "./StrikeSheetPlayer";
 
 /** 冲刺残影同时最多留几张，多了就像拖影糊成一片。 */
