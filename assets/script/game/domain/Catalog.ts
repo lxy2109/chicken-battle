@@ -13,8 +13,6 @@ export const PREFAB_PATH = {
     fxClash: "game/prefab/fx/combat/fx_clash",
     /** 结算彩带（ParticleSystem2D）。 */
     fxRibbon: "game/prefab/fx/ribbon/fx_ribbon",
-    /** 残血火焰边框（ParticleSystem2D）。 */
-    fxFlameBorder: "game/prefab/fx/border/fx_flame_border",
     /** 全屏氛围粒子。 */
     fxAmbient: (kind: string) => `game/prefab/fx/ambient/fx_ambient_${kind}`,
     taunt: "game/prefab/ui/taunt_bubble",

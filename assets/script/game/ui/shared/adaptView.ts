@@ -28,6 +28,8 @@ export function adaptView(root: Node): void {
         const kids = root.children.filter(child => child !== rootBg && child !== content);
         for (const child of kids) child.setParent(content, false);
         if (!content.parent) root.addChild(content);
+        // 根 scale 收回 1 后，底图 Cover 必须按新的父级 worldScale 重算，
+        // 否则会沿用 1.5 父级下算出的偏小 scale，上下露底（地图/上一页透出来）。
         root.setScale(1, 1, 1);
     }
 
@@ -52,6 +54,10 @@ export function adaptView(root: Node): void {
 
     const startPanel = findNode(root, "StartPanel");
     if (startPanel) ensureCoverBackground(startPanel);
+
+    // Widget 拉满画布后再刷一次 Cover，视口尺寸才是最终值。
+    refreshCoverBackground(root);
+    if (startPanel) refreshCoverBackground(startPanel);
 }
 
 function coverBgName(host: Node): string {
@@ -120,6 +126,12 @@ function ensureCoverBackground(host: Node): Node | null {
     if (!bg.getComponent(UIBgAdaptation)) bg.addComponent(UIBgAdaptation);
     bg.setSiblingIndex(0);
     return bg;
+}
+
+function refreshCoverBackground(host: Node): void {
+    const bg = findCoverBg(host);
+    if (!bg?.isValid) return;
+    bg.getComponent(UIBgAdaptation)?.refresh();
 }
 
 function findNode(root: Node, name: string): Node | null {

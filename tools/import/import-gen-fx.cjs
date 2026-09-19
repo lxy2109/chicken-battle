@@ -255,35 +255,45 @@ function processKeyed(name, tw, th, fill = 0.9) {
 }
 
 /**
- * 羽毛可染色：保留描边与纹理，仅把中高亮略提白便于乘 startColor。
- * 不做激进白剪影，避免 48px 缩下去成麻点。
+ * 羽毛可染色底板：深描边压实，羽面近白灰阶便于 × 鸡翅膀色。
+ * 高分辨率输出，不做 cleanScaled（会啃掉羽脉/缺口）。
  */
 function processFeatherTintable(srcName, tw, th) {
   let img = loadGen(srcName);
   const { width: w, height: h, data } = img;
   for (let i = 0; i < w * h; i++) {
     const o = i * 4;
-    if (data[o + 3] < 8) continue;
-    const r = data[o], g = data[o + 1], b = data[o + 2];
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    // 深描边压实
-    if (lum < 70) {
-      data[o] = Math.min(r, 55);
-      data[o + 1] = Math.min(g, 40);
-      data[o + 2] = Math.min(b, 30);
+    const a = data[o + 3];
+    if (a < 10) {
+      data.fill(0, o, o + 4);
       continue;
     }
-    // 亮部轻微提白，保留色相
-    if (lum > 140) {
-      const t = Math.min(1, (lum - 140) / 100);
-      data[o] = Math.min(255, Math.round(r + (255 - r) * t * 0.55));
-      data[o + 1] = Math.min(255, Math.round(g + (255 - g) * t * 0.55));
-      data[o + 2] = Math.min(255, Math.round(b + (255 - b) * t * 0.55));
+    const r = data[o], g = data[o + 1], b = data[o + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const mx = Math.max(r, g, b);
+    const mn = Math.min(r, g, b);
+    const sat = mx - mn;
+    // 描边 / 羽轴：偏深棕，乘色后轮廓仍清楚
+    const outline = lum < 100 || (r > g + 8 && r > b + 8 && lum < 155 && sat > 12);
+    if (outline) {
+      const k = Math.max(0.45, Math.min(1, lum / 110));
+      data[o] = Math.round(48 * k);
+      data[o + 1] = Math.round(32 * k);
+      data[o + 2] = Math.round(20 * k);
+      data[o + 3] = Math.max(a, 230);
+      continue;
     }
+    // 羽面灰阶：暗脉 ~170、亮面 ~252，染色后仍有体积感
+    const shade = Math.max(0, Math.min(1, (lum - 95) / 140));
+    const v = Math.round(170 + shade * 82);
+    data[o] = v;
+    data[o + 1] = v;
+    data[o + 2] = Math.min(255, v - 1);
+    data[o + 3] = a < 28 ? 0 : Math.max(a, 210);
   }
   let trimmed = png.trim(img, 2) || img;
-  trimmed = pad(trimmed, 4);
-  return centerOnAlpha(trimmed, tw, th, 0.9);
+  trimmed = pad(trimmed, 8);
+  return centerOnAlpha(trimmed, tw, th, 0.94);
 }
 
 fs.mkdirSync(OUT_P, { recursive: true });
@@ -298,7 +308,8 @@ write(OUT_P, "particle_blood_splash", processKeyed("particle_blood_splash", 72, 
 write(OUT_P, "particle_star", processKeyed("particle_star", 48, 48, 0.88));
 write(OUT_P, "particle_glow", processKeyed("particle_glow", 56, 56, 0.88));
 write(OUT_P, "particle_slash", processKeyed("particle_slash", 128, 96, 0.92));
-write(OUT_P, "particle_feather", processFeatherTintable("particle_feather", 56, 56));
+// 羽毛单独抬分辨率：粒子 128、落地 stamp 160，羽脉在局内才不糊
+write(OUT_P, "particle_feather", processFeatherTintable("particle_feather", 128, 128));
 write(OUT_P, "particle_confetti", processKeyed("particle_confetti", 32, 28, 0.88));
 write(OUT_P, "particle_heal", processKeyed("particle_heal", 40, 40, 0.88));
 write(OUT_P, "particle_smoke", processKeyed("particle_smoke", 48, 48, 0.86));
@@ -313,6 +324,6 @@ write(STAMP, "ground_crack", processKeyed("ground_crack", 128, 128, 0.9));
 write(STAMP, "ink_burst", processKeyed("ink_burst", 128, 128, 0.88));
 write(STAMP, "charge_ring", processKeyed("charge_ring", 128, 128, 0.9));
 write(STAMP, "cartoon_blood_splash", processKeyed("cartoon_blood_splash", 96, 56, 0.9));
-write(STAMP, "cartoon_feather", processFeatherTintable("particle_feather", 64, 64));
+write(STAMP, "cartoon_feather", processFeatherTintable("particle_feather", 160, 160));
 
 console.log("import-gen-fx done (keyed cartoon) ->", OUT_P, STAMP);

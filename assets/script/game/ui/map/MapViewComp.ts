@@ -37,6 +37,8 @@ const MAP_FEET: Record<string, [number, number]> = {
 @gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map_1" })
 export class MapViewComp extends GameUIBase<ChickenRun> {
     private switchingMap = false;
+    /** 离开本图（进战/商店/角色等）进行中，防止连点二次 goScreen 触发界面重复关闭。 */
+    private navigating = false;
     /** 双图对切进行中：新图 start 不抢弹解锁提示，由切图结束再提示。 */
     private static transitioning = false;
 
@@ -82,7 +84,7 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         if (avatar?.isValid) avatar.setPosition(33.6, -128.6, 0);
         await this.fillRoute();
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
-        bindClick(this, "BtnHome", () => goScreen(this, "customize"));
+        bindClick(this, "BtnHome", () => void this.onHome());
         const skip = run.canSkipClearedBattles();
         setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : skip ? gameTextOr("MapViewComp_012", "一键跳过") : gameText("MapViewComp_003"));
         bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : skip ? this.onSkipCleared() : this.onBattleNode(run.routeNode));
@@ -139,14 +141,16 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
     }
 
     private async onBattleNode(id: number) {
-        if (this.switchingMap) return;
+        if (this.switchingMap || this.navigating) return;
         const run = this.ent.run;
         if (run.nextMap) {
             this.warn(gameText("MapViewComp_006"));
             return;
         }
         if (run.currentRoute().encounter === "final" && run.claimedGoldNodes.includes(run.routeNode)) {
-            await goScreen(this, "ending");
+            this.navigating = true;
+            try { await goScreen(this, "ending"); }
+            finally { this.navigating = false; }
             return;
         }
         if (id !== run.routeNode) {
@@ -158,21 +162,33 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             this.warn(gameText("MapViewComp_009"));
             return;
         }
-        run.enterFight();
-        if (run.screen === "prebattle") await goScreen(this);
+        this.navigating = true;
+        try {
+            run.enterFight();
+            if (run.screen === "prebattle") await goScreen(this);
+        } finally {
+            this.navigating = false;
+        }
     }
 
     private async onSkipCleared() {
-        if (this.switchingMap) return;
+        if (this.switchingMap || this.navigating) return;
         if (!this.ent.run.skipClearedBattles()) return;
-        if (this.ent.run.screen === "result") await goScreen(this);
+        if (this.ent.run.screen !== "result") return;
+        this.navigating = true;
+        try { await goScreen(this); }
+        finally { this.navigating = false; }
     }
 
     private async onShop() {
-        if (this.switchingMap) return;
-        const run = this.ent.run;
-        run.openShop();
-        await goScreen(this, "shop");
+        if (this.switchingMap || this.navigating) return;
+        this.navigating = true;
+        try {
+            this.ent.run.openShop();
+            await goScreen(this, "shop");
+        } finally {
+            this.navigating = false;
+        }
     }
 
     private warn(text: string) {
@@ -186,8 +202,17 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
     };
 
     private async onCharacter() {
-        if (this.switchingMap) return;
-        await goScreen(this, "character");
+        if (this.switchingMap || this.navigating) return;
+        this.navigating = true;
+        try { await goScreen(this, "character"); }
+        finally { this.navigating = false; }
+    }
+
+    private async onHome() {
+        if (this.switchingMap || this.navigating) return;
+        this.navigating = true;
+        try { await goScreen(this, "customize"); }
+        finally { this.navigating = false; }
     }
 
     /** 抵达新地图时弹出带图标的绝招解锁面板（奶油底板 + 深色字，对齐商店确认弹窗）。 */
@@ -201,7 +226,7 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
     private async onNextMap() {
         const run = this.ent.run;
         const next = run.nextMap;
-        if (!next || this.switchingMap) return;
+        if (!next || this.switchingMap || this.navigating) return;
         this.switchingMap = true;
         MapViewComp.transitioning = true;
         const ent = this.ent;

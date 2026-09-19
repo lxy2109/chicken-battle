@@ -33,8 +33,6 @@ export interface BattleFxSheet {
     crack?: SpriteFrame;
     ink?: SpriteFrame;
     charge?: SpriteFrame;
-    /** 残血火焰边框预制体（内含 ParticleSystem2D）。 */
-    flameBorder?: Prefab;
     /** 全屏氛围粒子预制体（每种一个）。 */
     ambientPrefabs?: Partial<Record<AmbientKind, Prefab>>;
     skillPrefabs?: Partial<Record<StrikeStyle, Prefab>>;
@@ -79,10 +77,6 @@ export function strikeFxColor(style: StrikeStyle): Color {
  * 战斗电影感：斩痕、冲击波、残影、绝招场上爆发。
  * 绝招不再播全屏/半屏立绘，反馈压在鸡与场地粒子上；招名由界面飘字 + 喊招音效承担。
  */
-/** 敌人血量低于此比例时亮起火焰边框。 */
-const FLAME_HP = 0.28;
-/** 极低压血时火焰更高、更亮。 */
-const FLAME_CRIT_HP = 0.12;
 /** 同时在场的粒子爆发上限。 */
 const BURST_CAP = 28;
 
@@ -93,11 +87,6 @@ export class BattleFx {
     private veil: Node;
     private veilInk: Graphics;
     private veilFade: UIOpacity;
-    private flame: Node;
-    private flameFade: UIOpacity;
-    private flameRoot: Node | null = null;
-    private flameEmitters: ParticleSlot[] = [];
-    private flamePlaying = false;
     private arenaFx: Node;
     private punching = 0;
     private closed = false;
@@ -106,8 +95,6 @@ export class BattleFx {
     private cinema: Node;
     private veilHold = 0;
     private dust: [number, number, number] = [255, 220, 140];
-    private flameTime = 0;
-    private flameLevel = 0;
     private ambients: AmbientSpec[] = [];
     private ambientSlots: Array<ParticleSlot & { kind: AmbientKind; weight: number }> = [];
 
@@ -123,12 +110,6 @@ export class BattleFx {
         this.veilInk = this.veil.addComponent(Graphics);
         this.veilFade = this.veil.addComponent(UIOpacity);
         this.veilFade.opacity = 0;
-
-        // 火焰边框：预制体 + ParticleSystem2D
-        this.flame = this.makeLayer("FlameEdge", root, 1);
-        this.flameFade = this.flame.addComponent(UIOpacity);
-        this.flameFade.opacity = 0;
-        this.mountFlameBorder();
 
         this.arenaFx = new Node("ArenaCinematics");
         this.arenaFx.layer = arena.layer;
@@ -162,9 +143,7 @@ export class BattleFx {
             grow: 1.5, squash: 0.78, color: tint
         });
         if (style === "jump" || style === "leap" || style === "dive") {
-            this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 30, 86, 30, 0.16, {
-                grow: 1.65, squash: 0.48, color: new Color(this.dust[0], this.dust[1], this.dust[2])
-            });
+            this.dustAt(local.x, local.y - 30, 0.7);
         }
         if (style === "charge" || style === "combo" || style === "peck" || style === "tail") {
             this.streaksAt(local.x, local.y, -dir, style === "charge" ? 4 : 2);
@@ -203,7 +182,7 @@ export class BattleFx {
         this.ambience(heavy ? ["rain", "mist"] : ["mist"]);
     }
 
-    /** 氛围由 ParticleSystem2D 自模拟；旧全屏立绘盖屏时曾压发射率，现始终全开。 */
+    /** 氛围由 ParticleSystem2D 自模拟。 */
     tickAmbient(_dt: number) {
         if (!this.veil.isValid || !this.ambientSlots.length) return;
         for (const slot of this.ambientSlots) {
@@ -231,18 +210,17 @@ export class BattleFx {
         this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y + 8, 110, 110, 0.32, {
             grow: 1.9, squash: 0.7, color: tint
         });
-        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 28, 130, 42, 0.26, {
-            grow: 2.15, squash: 0.46, color: hot
-        });
         this.stamp(this.arenaFx, this.sheet.focus, local.x, local.y + 14, 190, 190, 0.3, {
             grow: 1.45, color: new Color(look.rgb[0], look.rgb[1], look.rgb[2], 230)
         });
         this.stamp(this.arenaFx, this.sheet.star, local.x, local.y + 22, 100, 100, 0.22, {
             grow: 1.4, color: tint, angle: (Math.random() - 0.5) * 36
         });
-        // 第二圈稍晚炸开，蓄力有“压弹簧”层次。
-        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 22, 72, 26, 0.2, {
-            grow: 2.5, squash: 0.4, color: hot, delay: 0.1
+        // 脚底扬尘代替冲击环，避免场上飘半透明圆圈
+        this.dustAt(local.x, local.y - 28, 0.95);
+        this.dustAt(local.x, local.y - 22, 0.7, 0.1);
+        this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y + 4, 72, 72, 0.2, {
+            grow: 2.2, squash: 0.75, color: hot, delay: 0.1
         });
     }
 
@@ -267,9 +245,7 @@ export class BattleFx {
             grow: 1.65, color: tint
         });
         if (style === "leap" || style === "dive" || style === "jump") {
-            this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 32, 110, 36, 0.18, {
-                grow: 1.9, squash: 0.44, color: new Color(this.dust[0], this.dust[1], this.dust[2])
-            });
+            this.dustAt(local.x, local.y - 32, 0.9);
         }
         if (style === "combo" || style === "peck") {
             this.streaksAt(local.x + dir * 8, local.y + 18, -dir, 3);
@@ -310,10 +286,8 @@ export class BattleFx {
         const look = SKILL_LOOK[style];
         const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
         this.slashAt(p.x, p.y, direction, style, heavy || crit || skill);
-        this.shockAt(p.x, p.y - 36, crit ? 1.45 : skill ? 1.4 : heavy ? 1.1 : 0.7);
-        this.stamp(this.arenaFx, this.sheet.ring, p.x, p.y - 42, skill ? 96 : 78, skill ? 32 : 26, 0.18, {
-            grow: skill ? 2.0 : 1.7, squash: 0.45, color: skill ? tint : new Color(this.dust[0], this.dust[1], this.dust[2])
-        });
+        // 脚底扬尘（不用 shock_ring，避免场上飘一堆半透明圆圈）
+        this.dustAt(p.x, p.y - 42, crit || skill ? 1.15 : heavy ? 0.9 : 0.55);
         if (crit) {
             this.punch(0.1, 0.28);
             this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 180, 180, 0.24, { grow: 1.3, angle: (Math.random() - 0.5) * 40 });
@@ -322,7 +296,7 @@ export class BattleFx {
             if (skill) this.streaksAt(p.x, p.y + 6, direction, 4);
         }
         else if (skill) {
-            // 绝招命中是主反馈：更长顿帧、双冲击波、招式色焦点。
+            // 绝招命中是主反馈：更长顿帧、星芒焦点，不再叠冲击环。
             this.punch(0.08, 0.26);
             this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 170, 170, 0.26, {
                 grow: 1.38, angle: (Math.random() - 0.5) * 50, color: tint
@@ -334,8 +308,7 @@ export class BattleFx {
                 grow: 1.3, color: tint
             });
             this.cracksAt(p.x, p.y - 48, direction, 4);
-            this.shockAt(p.x, p.y - 36, 1.05, 0.04);
-            this.shockAt(p.x, p.y - 28, 0.7, 0.1);
+            this.dustAt(p.x, p.y - 36, 1.2, 0.04);
             this.streaksAt(p.x - direction * 10, p.y + 4, direction, 5);
         }
         else if (heavy) {
@@ -353,8 +326,7 @@ export class BattleFx {
         const p = this.toArena(worldX, worldY);
         this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 16, 220, 220, 0.26, { grow: 1.35 });
         this.stamp(this.arenaFx, this.sheet.ink, p.x, p.y, 180, 180, 0.24, { grow: 1.3, angle: 25 });
-        this.shockAt(p.x, p.y - 40, 1.6);
-        this.shockAt(p.x, p.y - 40, 1.05, 0.06);
+        this.dustAt(p.x, p.y - 40, 1.35);
         this.cracksAt(p.x, p.y - 48, 1, 3);
         this.cracksAt(p.x, p.y - 48, -1, 3);
     }
@@ -380,38 +352,8 @@ export class BattleFx {
         const p = actor?.node.worldPosition;
         if (p) {
             const local = this.toArena(p.x, p.y);
-            this.shockAt(local.x, local.y - 36, 1.8);
+            this.dustAt(local.x, local.y - 36, 1.4);
             this.stamp(this.arenaFx, this.sheet.star, local.x, local.y + 20, 200, 200, 0.28, { grow: 1.4, color: new Color(255, 90, 70) });
-        }
-    }
-
-    /**
-     * 敌人残血时的火焰边框（预制体 ParticleSystem2D）。
-     * ratio 为当前敌人 hp/maxHp；全屏绝招盖住时压暗，避免和立绘抢边。
-     */
-    tickFlame(enemyHpRatio: number, dt: number) {
-        if (!this.flame.isValid || !this.flameFade.isValid) return;
-        this.flameTime += dt;
-        const alive = enemyHpRatio > 0;
-        const low = alive && enemyHpRatio <= FLAME_HP;
-        const crit = alive && enemyHpRatio <= FLAME_CRIT_HP;
-        const want = !low ? 0 : crit ? 1 : 0.55 + (1 - enemyHpRatio / FLAME_HP) * 0.35;
-        const k = Math.min(1, dt * 4.5);
-        this.flameLevel += (want - this.flameLevel) * k;
-        if (this.flameLevel < 0.02) {
-            this.flameFade.opacity = 0;
-            this.setFlamePlaying(false);
-            if (this.flameLevel < 0.005) this.flameLevel = 0;
-            return;
-        }
-        this.layout();
-        const pulse = 0.88 + 0.12 * Math.sin(this.flameTime * (crit ? 9.5 : 6.2));
-        this.flameFade.opacity = Math.round(Math.min(255, 255 * this.flameLevel * pulse));
-        this.setFlamePlaying(true);
-        const rateMul = 0.45 + this.flameLevel * 0.85 + (crit ? 0.25 : 0);
-        for (const e of this.flameEmitters) {
-            if (!e.ps.isValid) continue;
-            e.ps.emissionRate = e.baseRate * rateMul;
         }
     }
 
@@ -437,10 +379,7 @@ export class BattleFx {
         this.root.off(Node.EventType.NODE_DESTROYED, this.clear, this);
         this.dropSplash();
         this.clearAmbientSlots();
-        this.setFlamePlaying(false);
-        this.flameEmitters.length = 0;
-        this.flameRoot = null;
-        for (const n of [this.overlay, this.veil, this.flame, this.arenaFx, this.cinema]) {
+        for (const n of [this.overlay, this.veil, this.arenaFx, this.cinema]) {
             if (n?.isValid) {
                 Tween.stopAllByTarget(n);
                 const op = n.getComponent(UIOpacity);
@@ -472,16 +411,20 @@ export class BattleFx {
         });
     }
 
-    private shockAt(x: number, y: number, power: number, delay = 0) {
-        const s = 90 * power;
-        this.burst(this.arenaFx, this.sheet.ring, x, y, s, s * 0.42, 0.24 * Math.max(0.6, power), {
+    /** 脚底短扬尘：用 ink/尘色小粒子，不再播 shock_ring 半透明圆圈。 */
+    private dustAt(x: number, y: number, power: number, delay = 0) {
+        const frame = this.sheet.ink || this.sheet.star;
+        if (!frame) return;
+        const s = 48 + 36 * power;
+        this.burst(this.arenaFx, frame, x, y, s, s * 0.55, 0.2 * Math.max(0.7, power), {
             delay,
-            count: power > 1.1 ? 5 : 3,
+            count: power > 1 ? 4 : 2,
             angle: 90,
-            angleVar: 180,
-            speed: 22 + power * 32,
-            grow: 1.9,
-            color: new Color(this.dust[0], this.dust[1], this.dust[2], 230)
+            angleVar: 70,
+            speed: 18 + power * 22,
+            grow: 1.35,
+            gravityY: -10,
+            color: new Color(this.dust[0], this.dust[1], this.dust[2], 200)
         });
     }
 
@@ -881,84 +824,6 @@ export class BattleFx {
         this.veilFade.opacity = this.veilHold;
     }
 
-    /** 挂载残血火焰边框预制体，收集各边 ParticleSystem2D。 */
-    private mountFlameBorder() {
-        const prefab = this.sheet.flameBorder;
-        if (!prefab || !this.flame.isValid) return;
-        const root = instantiate(prefab);
-        root.layer = this.flame.layer;
-        root.parent = this.flame;
-        root.setPosition(0, 0, 0);
-        this.flameRoot = root;
-        this.flameEmitters = [];
-        for (const child of root.children) {
-            child.layer = this.flame.layer;
-            const ps = child.getComponent(ParticleSystem2D);
-            if (!ps) continue;
-            ps.playOnLoad = false;
-            ps.stopSystem();
-            this.flameEmitters.push({
-                name: child.name,
-                node: child,
-                ps,
-                baseRate: Math.max(1, ps.emissionRate)
-            });
-        }
-        this.layoutFlameBorder();
-    }
-
-    private setFlamePlaying(on: boolean) {
-        if (on === this.flamePlaying) return;
-        this.flamePlaying = on;
-        for (const e of this.flameEmitters) {
-            if (!e.ps.isValid) continue;
-            if (on) e.ps.resetSystem();
-            else e.ps.stopSystem();
-        }
-    }
-
-    /**
-     * 按屏幕尺寸把四边/四角发射器贴到画布外缘，火舌朝场内。
-     */
-    private layoutFlameBorder() {
-        if (!this.flameEmitters.length) return;
-        const { w, h } = this.size();
-        // 贴屏幕外缘，火舌朝场内；内层与外层同边，不往场内平移
-        const inset = Math.max(8, Math.min(18, Math.round(Math.min(w, h) * 0.014)));
-        const halfW = w * 0.5 - inset;
-        const halfH = h * 0.5 - inset;
-        const edgeSpanX = Math.max(40, halfW - 12);
-        const edgeSpanY = Math.max(40, halfH - 12);
-        const place = (name: string, x: number, y: number, px: number, py: number) => {
-            const e = this.flameEmitters.find(s => s.name === name);
-            if (!e?.node.isValid) return;
-            e.node.setPosition(x, y, 0);
-            e.ps.posVar = new Vec2(px, py);
-        };
-        place("EdgeBottom", 0, -halfH, edgeSpanX, 6);
-        place("EdgeTop", 0, halfH, edgeSpanX, 6);
-        place("EdgeLeft", -halfW, 0, 6, edgeSpanY);
-        place("EdgeRight", halfW, 0, 6, edgeSpanY);
-        // 第二层仍贴同一边缘，只收一点 span，形成更密火墙
-        place("InnerBottom", 0, -halfH, edgeSpanX * 0.92, 5);
-        place("InnerTop", 0, halfH, edgeSpanX * 0.92, 5);
-        place("InnerLeft", -halfW, 0, 5, edgeSpanY * 0.92);
-        place("InnerRight", halfW, 0, 5, edgeSpanY * 0.92);
-        place("CornerBL", -halfW, -halfH, 10, 10);
-        place("CornerBR", halfW, -halfH, 10, 10);
-        place("CornerTL", -halfW, halfH, 10, 10);
-        place("CornerTR", halfW, halfH, 10, 10);
-        place("SparkBL", -halfW, -halfH, 12, 12);
-        place("SparkBR", halfW, -halfH, 12, 12);
-        place("SparkTL", -halfW, halfH, 12, 12);
-        place("SparkTR", halfW, halfH, 12, 12);
-        // 底部余烬沿底边
-        place("EmberRing", 0, -halfH + 18, edgeSpanX, 14);
-        if (this.flameRoot?.isValid) {
-            this.flameRoot.getComponent(UITransform)?.setContentSize(w, h);
-        }
-    }
-
     private mountAmbientPrefabs() {
         if (!this.veil.isValid) return;
         const map = this.sheet.ambientPrefabs || {};
@@ -1072,13 +937,12 @@ export class BattleFx {
         const w = box.width, h = box.height;
         const x = (0.5 - box.anchorX) * w;
         const y = (0.5 - box.anchorY) * h;
-        for (const n of [this.veil, this.flame, this.overlay, this.cinema]) {
+        for (const n of [this.veil, this.overlay, this.cinema]) {
             if (!n.isValid) continue;
             n.getComponent(UITransform)!.setContentSize(w, h);
             n.setPosition(x, y, n.position.z);
             n.setSiblingIndex(Math.max(0, this.root.children.length - 1));
         }
-        this.layoutFlameBorder();
         this.layoutAmbientEmitters();
     }
 

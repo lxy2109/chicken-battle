@@ -132,162 +132,167 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
     async start() {
-        this.nodeTreeInfoLite();
-        const run = this.ent.run;
-        const me = run.playerFighter();
-        const foe = run.enemyFighter();
-        this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
-        const mapId = run.currentMap().id;
-        const encounter = run.currentRoute().encounter;
-        const mood = stageMood(mapId, encounter);
-        const bg = this.node.getComponent(Sprite);
-        if (bg) bg.color = hexColor(encounter === "final" ? "#f0b4a8" : mood.tint);
-        const pHome = new Vec3(-styleRhythm(me.fightStyle).gap, P_HOME.y + styleRhythm(me.fightStyle).lane, 0);
-        const eHome = new Vec3(styleRhythm(foe.fightStyle).gap, E_HOME.y + styleRhythm(foe.fightStyle).lane, 0);
-        const pLabel = STYLE_LABEL[me.fightStyle || "brawler"];
-        const eLabel = STYLE_LABEL[foe.fightStyle || "brawler"];
-        const sig = SIGNATURE_LABEL[foe.signature || "none"];
-        setLabel(this, "LabTitle", gameText("BattleViewComp_009"));
-        setLabel(this, "LabPlayerName", `${me.name} · ${pLabel}`);
-        setLabel(this, "LabEnemyName", sig ? `${foe.name} · ${eLabel} ${sig}` : `${foe.name} · ${eLabel}`);
-        setLabel(this, "LabLog", `${eLabel} vs ${pLabel}`);
-        const layer = this.getNode("DanmakuLayer");
-        if (layer) this.danmaku = new BattleDanmaku(layer,
-            new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.danmakuGroup || "common"));
+        // 与 openRunView 的进战转圈衔接：场上鸡/特效/氛围预热完再关，避免空场顿一下。
+        oops.gui.waitOpen();
+        try {
+            this.nodeTreeInfoLite();
+            const run = this.ent.run;
+            const me = run.playerFighter();
+            const foe = run.enemyFighter();
+            this.featherColors = { player: me.appearance.colors.wing, enemy: foe.appearance.colors.wing };
+            const mapId = run.currentMap().id;
+            const encounter = run.currentRoute().encounter;
+            const mood = stageMood(mapId, encounter);
+            const bg = this.node.getComponent(Sprite);
+            if (bg) bg.color = hexColor(encounter === "final" ? "#f0b4a8" : mood.tint);
+            const pHome = new Vec3(-styleRhythm(me.fightStyle).gap, P_HOME.y + styleRhythm(me.fightStyle).lane, 0);
+            const eHome = new Vec3(styleRhythm(foe.fightStyle).gap, E_HOME.y + styleRhythm(foe.fightStyle).lane, 0);
+            const pLabel = STYLE_LABEL[me.fightStyle || "brawler"];
+            const eLabel = STYLE_LABEL[foe.fightStyle || "brawler"];
+            const sig = SIGNATURE_LABEL[foe.signature || "none"];
+            setLabel(this, "LabTitle", gameText("BattleViewComp_009"));
+            setLabel(this, "LabPlayerName", `${me.name} · ${pLabel}`);
+            setLabel(this, "LabEnemyName", sig ? `${foe.name} · ${eLabel} ${sig}` : `${foe.name} · ${eLabel}`);
+            setLabel(this, "LabLog", `${eLabel} vs ${pLabel}`);
+            const layer = this.getNode("DanmakuLayer");
+            if (layer) this.danmaku = new BattleDanmaku(layer,
+                new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.danmakuGroup || "common"));
 
-        const playerPortrait = await spawnChicken(this, "PlayerPortrait", run.appearance, 0.76, true);
-        playerPortrait?.setPosition(33.6, -128.6, 0);
-        const enemyPortrait = await spawnChicken(this, "EnemyPortrait", foe.appearance, 1, true);
-        const art = enemyPortrait?.getChildByName("Illustration")?.getComponent(UITransform);
-        if (enemyPortrait && art) {
-            // Head framing is proportional to each illustration, independent of whole-body height.
-            const id = foe.appearance.illustration || "";
-            const heads: Record<string, [number, number, number, number]> = {
-                warmup_1: [0.34, 0.17, 0.4, 0.28],
-                warmup_2: [0.33, 0.18, 0.38, 0.3],
-                warmup_3: [0.29, 0.16, 0.38, 0.28],
-                warmup_4: [0.3, 0.19, 0.4, 0.33],
-                warmup_5: [0.31, 0.17, 0.4, 0.3],
-                warmup_6: [0.3, 0.18, 0.4, 0.3],
-                warmup_7: [0.29, 0.15, 0.38, 0.26],
-                warmup_8: [0.32, 0.16, 0.36, 0.28],
-                warmup_9: [0.3, 0.14, 0.36, 0.26],
-                warmup_10: [0.32, 0.18, 0.42, 0.3],
-                warmup_11: [0.32, 0.18, 0.4, 0.3],
-                warmup_12: [0.3, 0.19, 0.4, 0.32],
-                s1_warmup: [0.38, 0.23, 0.58, 0.43],
-                s2_warmup: [0.43, 0.2, 0.59, 0.36],
-                s3_warmup: [0.43, 0.22, 0.62, 0.42],
-                s4_warmup: [0.4, 0.22, 0.57, 0.4],
-                s5_warmup: [0.43, 0.22, 0.61, 0.41],
+            const playerPortrait = await spawnChicken(this, "PlayerPortrait", run.appearance, 0.76, true);
+            playerPortrait?.setPosition(33.6, -128.6, 0);
+            const enemyPortrait = await spawnChicken(this, "EnemyPortrait", foe.appearance, 1, true);
+            const art = enemyPortrait?.getChildByName("Illustration")?.getComponent(UITransform);
+            if (enemyPortrait && art) {
+                // Head framing is proportional to each illustration, independent of whole-body height.
+                const id = foe.appearance.illustration || "";
+                const heads: Record<string, [number, number, number, number]> = {
+                    warmup_1: [0.34, 0.17, 0.4, 0.28],
+                    warmup_2: [0.33, 0.18, 0.38, 0.3],
+                    warmup_3: [0.29, 0.16, 0.38, 0.28],
+                    warmup_4: [0.3, 0.19, 0.4, 0.33],
+                    warmup_5: [0.31, 0.17, 0.4, 0.3],
+                    warmup_6: [0.3, 0.18, 0.4, 0.3],
+                    warmup_7: [0.29, 0.15, 0.38, 0.26],
+                    warmup_8: [0.32, 0.16, 0.36, 0.28],
+                    warmup_9: [0.3, 0.14, 0.36, 0.26],
+                    warmup_10: [0.32, 0.18, 0.42, 0.3],
+                    warmup_11: [0.32, 0.18, 0.4, 0.3],
+                    warmup_12: [0.3, 0.19, 0.4, 0.32],
+                    s1_warmup: [0.38, 0.23, 0.58, 0.43],
+                    s2_warmup: [0.43, 0.2, 0.59, 0.36],
+                    s3_warmup: [0.43, 0.22, 0.62, 0.42],
+                    s4_warmup: [0.4, 0.22, 0.57, 0.4],
+                    s5_warmup: [0.43, 0.22, 0.61, 0.41],
+                };
+                const [x, y, w, h] = heads[id] || [0.5, 0.13, 0.5, 0.23];
+                const size = this.getNode("EnemyPortrait")!.getComponent(UITransform)!;
+                const scale = Math.min(size.width / (art.width * w), size.height / (art.height * h));
+                enemyPortrait.setScale(-scale, scale, 1);
+                enemyPortrait.setPosition((0.5 - x) * art.width * scale, (y - 0.5) * art.height * scale);
+            }
+            this.playerNode = await spawnChicken(this, "PlayerSlot", me.appearance, 0.9);
+            this.enemyNode = await spawnChicken(this, "EnemySlot", foe.appearance, 0.9, true);
+            const arena = this.getNode("Arena");
+            if (arena && this.playerNode) {
+                this.playerNode.parent = arena;
+                this.playerNode.setPosition(pHome);
+            }
+            if (arena && this.enemyNode) {
+                this.enemyNode.parent = arena;
+                this.enemyNode.setPosition(eHome);
+            }
+            // 必须等 spawnChicken 建完再造 Actor：它会记下各部位此刻的位置当复位基准，
+            // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
+            if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler", mood);
+            if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler", mood);
+            await Promise.all([this.playerActor?.warmupSheets(), this.enemyActor?.warmupSheets()].filter(Boolean));
+
+            // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
+            const brain = new BattleBrain();
+            const unlocked = run.unlockedSkills();
+            this.session = new BattleSession(
+                me, foe, run.rng().int(1, 999999), run.phase === "boss",
+                (self, opponent) => brain.think(self, opponent),
+                { playerManualSkills: true, playerSkills: unlocked }
+            );
+            this.anim = this.node.getComponent(BattleAnimator) || this.node.addComponent(BattleAnimator);
+            const json = await this.load("bundle", "game/animator/chicken_battle", JsonAsset);
+            if (this.playerNode) this.playerAnim.attach(this.anim, this.playerNode);
+            if (json) this.anim.initWithJson(json.json, this.playerAnim);
+
+            this.refreshHp(true);
+            if (this.closed) return;
+            const stampFrame = async (name: string) => {
+                try {
+                    return await this.load("bundle", `game/image/texture/stamp/${name}/spriteFrame`, SpriteFrame);
+                }
+                catch {
+                    return null;
+                }
             };
-            const [x, y, w, h] = heads[id] || [0.5, 0.13, 0.5, 0.23];
-            const size = this.getNode("EnemyPortrait")!.getComponent(UITransform)!;
-            const scale = Math.min(size.width / (art.width * w), size.height / (art.height * h));
-            enemyPortrait.setScale(-scale, scale, 1);
-            enemyPortrait.setPosition((0.5 - x) * art.width * scale, (y - 0.5) * art.height * scale);
-        }
-        this.playerNode = await spawnChicken(this, "PlayerSlot", me.appearance, 0.9);
-        this.enemyNode = await spawnChicken(this, "EnemySlot", foe.appearance, 0.9, true);
-        const arena = this.getNode("Arena");
-        if (arena && this.playerNode) {
-            this.playerNode.parent = arena;
-            this.playerNode.setPosition(pHome);
-        }
-        if (arena && this.enemyNode) {
-            this.enemyNode.parent = arena;
-            this.enemyNode.setPosition(eHome);
-        }
-        // 必须等 spawnChicken 建完再造 Actor：它会记下各部位此刻的位置当复位基准，
-        // 而强化撑大部位时连带把位置挪过，倒过来建的话复位就会把强化的体型抹平。
-        if (this.playerNode) this.playerActor = new ChickenActor(this.playerNode, pHome, me.fightStyle || "brawler", mood);
-        if (this.enemyNode) this.enemyActor = new ChickenActor(this.enemyNode, eHome, foe.fightStyle || "brawler", mood);
-        await Promise.all([this.playerActor?.warmupSheets(), this.enemyActor?.warmupSheets()].filter(Boolean));
-
-        // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
-        const brain = new BattleBrain();
-        const unlocked = run.unlockedSkills();
-        this.session = new BattleSession(
-            me, foe, run.rng().int(1, 999999), run.phase === "boss",
-            (self, opponent) => brain.think(self, opponent),
-            { playerManualSkills: true, playerSkills: unlocked }
-        );
-        this.anim = this.node.getComponent(BattleAnimator) || this.node.addComponent(BattleAnimator);
-        const json = await this.load("bundle", "game/animator/chicken_battle", JsonAsset);
-        if (this.playerNode) this.playerAnim.attach(this.anim, this.playerNode);
-        if (json) this.anim.initWithJson(json.json, this.playerAnim);
-
-        this.refreshHp(true);
-        if (this.closed) return;
-        const stampFrame = async (name: string) => {
-            try {
-                return await this.load("bundle", `game/image/texture/stamp/${name}/spriteFrame`, SpriteFrame);
+            const featherSf = await stampFrame("cartoon_feather");
+            const splashSf = await stampFrame("cartoon_blood_splash");
+            if (this.closed) return;
+            this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
+            const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
+            const fxFrames = await Promise.all(fxKeys.map(name => stampFrame(name)));
+            const impactPrefab = await this.load("bundle", PREFAB_PATH.fxImpact, Prefab).catch(() => null);
+            const clashPrefab = await this.load("bundle", PREFAB_PATH.fxClash, Prefab).catch(() => null);
+            const fxLayer = this.getNode("FxLayer");
+            if (fxLayer && arena) {
+                const shadowY = this.playerNode?.getChildByName("Shadow")?.position.y ?? -205.5;
+                const floorY = P_HOME.y + shadowY * Math.abs(this.playerNode?.scale.y ?? 0.9);
+                this.impact = new BattleImpact(fxLayer, impactPrefab, clashPrefab, arena, floorY, {
+                    splash: splashSf,
+                    feather: featherSf
+                });
             }
-            catch {
-                return null;
+            const ambientKinds: AmbientKind[] = ["rain", "leaf", "dust", "grain", "incense", "ember", "ash", "mist"];
+            const ambientPrefabList = await Promise.all(ambientKinds.map(async kind => {
+                try {
+                    return await this.load("bundle", PREFAB_PATH.fxAmbient(kind), Prefab);
+                }
+                catch {
+                    return null;
+                }
+            }));
+            if (this.closed) return;
+            if (arena) {
+                // 绝招不再播全屏/半屏立绘，只加载场上斩痕与氛围；招名靠飘字 + 喊招音效。
+                const ambientPrefabs: Partial<Record<AmbientKind, Prefab>> = {};
+                ambientKinds.forEach((kind, i) => {
+                    if (ambientPrefabList[i]) ambientPrefabs[kind] = ambientPrefabList[i]!;
+                });
+                this.fx = new BattleFx(this.node, arena, {
+                    slash: fxFrames[0] || undefined,
+                    star: fxFrames[1] || undefined,
+                    ring: fxFrames[2] || undefined,
+                    streak: fxFrames[3] || undefined,
+                    focus: fxFrames[4] || undefined,
+                    crack: fxFrames[5] || undefined,
+                    ink: fxFrames[6] || undefined,
+                    charge: fxFrames[7] || undefined,
+                    ambientPrefabs
+                });
+                this.fx.paint(mood.dust);
+                // 地图底味 + BOSS/决战叠加全屏氛围（雨/灰烬），不再铺贴边黄框。
+                const layers: Array<{ kind: AmbientKind; weight: number }> = [
+                    { kind: mood.flourish, weight: run.phase === "boss" || encounter === "final" ? 0.55 : 1 }
+                ];
+                if (run.phase === "boss") layers.push({ kind: "rain", weight: 1 });
+                if (encounter === "final") layers.push({ kind: "ash", weight: 0.85 }, { kind: "ember", weight: 0.5 });
+                if (mapId === 2 && run.phase !== "boss") layers.push({ kind: "mist", weight: 0.35 });
+                this.fx.ambience(layers);
             }
-        };
-        const featherSf = await stampFrame("cartoon_feather");
-        const splashSf = await stampFrame("cartoon_blood_splash");
-        if (this.closed) return;
-        this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
-        const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
-        const fxFrames = await Promise.all(fxKeys.map(name => stampFrame(name)));
-        const impactPrefab = await this.load("bundle", PREFAB_PATH.fxImpact, Prefab).catch(() => null);
-        const clashPrefab = await this.load("bundle", PREFAB_PATH.fxClash, Prefab).catch(() => null);
-        const fxLayer = this.getNode("FxLayer");
-        if (fxLayer && arena) {
-            const shadowY = this.playerNode?.getChildByName("Shadow")?.position.y ?? -205.5;
-            const floorY = P_HOME.y + shadowY * Math.abs(this.playerNode?.scale.y ?? 0.9);
-            this.impact = new BattleImpact(fxLayer, impactPrefab, clashPrefab, arena, floorY, {
-                splash: splashSf,
-                feather: featherSf
-            });
+            this.skillBar = new BattleSkillBar(this, this.node);
+            await this.skillBar.mount(unlocked, style => this.onCastSkill(style));
+            if (this.closed) return;
+            this.skillBar.tick(this.session);
+            this.skillBar.raise();
+        } finally {
+            oops.gui.waitClose();
         }
-        const flameBorder = await this.load("bundle", PREFAB_PATH.fxFlameBorder, Prefab).catch(() => null);
-        const ambientKinds: AmbientKind[] = ["rain", "leaf", "dust", "grain", "incense", "ember", "ash", "mist"];
-        const ambientPrefabList = await Promise.all(ambientKinds.map(async kind => {
-            try {
-                return await this.load("bundle", PREFAB_PATH.fxAmbient(kind), Prefab);
-            }
-            catch {
-                return null;
-            }
-        }));
         if (this.closed) return;
-        if (arena) {
-            // 绝招不再播全屏/半屏立绘，只加载场上斩痕与氛围；招名靠飘字 + 喊招音效。
-            const ambientPrefabs: Partial<Record<AmbientKind, Prefab>> = {};
-            ambientKinds.forEach((kind, i) => {
-                if (ambientPrefabList[i]) ambientPrefabs[kind] = ambientPrefabList[i]!;
-            });
-            this.fx = new BattleFx(this.node, arena, {
-                slash: fxFrames[0] || undefined,
-                star: fxFrames[1] || undefined,
-                ring: fxFrames[2] || undefined,
-                streak: fxFrames[3] || undefined,
-                focus: fxFrames[4] || undefined,
-                crack: fxFrames[5] || undefined,
-                ink: fxFrames[6] || undefined,
-                charge: fxFrames[7] || undefined,
-                flameBorder: flameBorder || undefined,
-                ambientPrefabs
-            });
-            this.fx.paint(mood.dust);
-            // 地图底味 + BOSS/决战叠加全屏氛围（雨/灰烬），不再铺贴边黄框。
-            const layers: Array<{ kind: AmbientKind; weight: number }> = [
-                { kind: mood.flourish, weight: run.phase === "boss" || encounter === "final" ? 0.55 : 1 }
-            ];
-            if (run.phase === "boss") layers.push({ kind: "rain", weight: 1 });
-            if (encounter === "final") layers.push({ kind: "ash", weight: 0.85 }, { kind: "ember", weight: 0.5 });
-            if (mapId === 2 && run.phase !== "boss") layers.push({ kind: "mist", weight: 0.35 });
-            this.fx.ambience(layers);
-        }
-        this.skillBar = new BattleSkillBar(this, this.node);
-        await this.skillBar.mount(unlocked, style => this.onCastSkill(style));
-        if (this.closed) return;
-        this.skillBar.tick(this.session);
-        this.skillBar.raise();
         await this.playIntro();
         if (this.closed) return;
         this.playerActor?.stance();
@@ -335,8 +340,6 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         }
         this.danmaku?.tick(dt, this.session.hp("player") <= this.session.maxHp("player") / 2
             || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
-        const eMax = this.session.maxHp("enemy");
-        this.fx?.tickFlame(eMax > 0 ? this.session.hp("enemy") / eMax : 0, dt);
         this.fx?.tickAmbient(dt);
         if (this.logLeft > 0) {
             this.logLeft -= dt;
@@ -802,6 +805,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     reset() {
         this.closed = true;
+        oops.gui.waitClose();
         this.skillBar?.clear();
         this.fx?.clear();
         this.screenEffects?.clear();

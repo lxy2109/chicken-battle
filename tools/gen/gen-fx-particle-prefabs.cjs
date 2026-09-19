@@ -2,7 +2,6 @@
  * 战斗特效预制体（全部 ParticleSystem2D + 必要 Label/Sprite）
  *
  * 目录：
- *   prefab/fx/border/   fx_flame_border
  *   prefab/fx/ambient/  fx_ambient_*
  *   prefab/fx/combat/   fx_hit / fx_heal / fx_start / fx_skill / fx_impact / fx_clash
  *   prefab/fx/ribbon/   fx_ribbon
@@ -287,179 +286,6 @@ function writePrefab(relDir, name, objs, uuidTail) {
   console.log("wrote", path.relative(ROOT, rel));
 }
 
-// ─── 残血火焰边框：贴边连续火墙，火舌朝场内 ─────────────────
-// rotationIsDir：贴图尖朝上，沿发射角旋转，左右边不再竖着飞
-// 低速短寿 + 窄 posVar：火墙贴边，不往场内乱喷
-function makeFlameBorder() {
-  const b = new Builder("fx_flame_border");
-  const root = b.node({ name: "fx_flame_border", w: 720, h: 1280 });
-  b.opacity(root, 255);
-
-  // 描边卡通火：alpha 保留棕描边；色近白以免洗掉平涂
-  const edge = {
-    frame: "particle_flame",
-    blend: "alpha",
-    playOnLoad: false,
-    rotationIsDir: true,
-    rate: 42,
-    total: 130,
-    life: 0.55,
-    lifeVar: 0.18,
-    startSize: 40,
-    startSizeVar: 12,
-    endSize: 18,
-    endSizeVar: 8,
-    speed: 36,
-    speedVar: 12,
-    tang: 0,
-    tangVar: 6,
-    rad: 0,
-    radVar: 4,
-    startSpin: 0,
-    startSpinVar: 0,
-    endSpin: 0,
-    endSpinVar: 0,
-    startColor: [255, 255, 255, 255],
-    startColorVar: [0, 0, 0, 20],
-    endColor: [255, 255, 255, 0],
-    endColorVar: [0, 0, 0, 0]
-  };
-
-  // 底/顶：尖朝场内；轻微重力沿法线，像贴边燃烧
-  let n = b.node({ name: "EdgeBottom", parent: root, y: -600, w: 720, h: 80 });
-  b.particle(n, { ...edge, angle: 90, angleVar: 10, posVarX: 340, posVarY: 8, gx: 0, gy: 28 });
-
-  n = b.node({ name: "EdgeTop", parent: root, y: 600, w: 720, h: 80 });
-  b.particle(n, { ...edge, angle: -90, angleVar: 10, posVarX: 340, posVarY: 8, gx: 0, gy: -28 });
-
-  n = b.node({ name: "EdgeLeft", parent: root, x: -340, w: 80, h: 1280 });
-  b.particle(n, {
-    ...edge, angle: 0, angleVar: 10, posVarX: 8, posVarY: 580,
-    gx: 22, gy: 18, rate: 56, total: 170
-  });
-
-  n = b.node({ name: "EdgeRight", parent: root, x: 340, w: 80, h: 1280 });
-  b.particle(n, {
-    ...edge, angle: 180, angleVar: 10, posVarX: 8, posVarY: 580,
-    gx: -22, gy: 18, rate: 56, total: 170
-  });
-
-  // 贴边第二层：更小更密，仍在同一边缘（不往场内平移）
-  const liner = {
-    ...edge,
-    rate: 30,
-    total: 90,
-    startSize: 28,
-    startSizeVar: 10,
-    endSize: 10,
-    speed: 28,
-    speedVar: 10,
-    life: 0.42,
-    lifeVar: 0.12,
-    angleVar: 14
-  };
-  n = b.node({ name: "InnerBottom", parent: root, y: -600, w: 720, h: 60 });
-  b.particle(n, { ...liner, angle: 90, posVarX: 320, posVarY: 6, gx: 0, gy: 18 });
-  n = b.node({ name: "InnerTop", parent: root, y: 600, w: 720, h: 60 });
-  b.particle(n, { ...liner, angle: -90, posVarX: 320, posVarY: 6, gx: 0, gy: -18 });
-  n = b.node({ name: "InnerLeft", parent: root, x: -340, w: 60, h: 1280 });
-  b.particle(n, { ...liner, angle: 0, posVarX: 6, posVarY: 540, gx: 14, gy: 12, rate: 36, total: 110 });
-  n = b.node({ name: "InnerRight", parent: root, x: 340, w: 60, h: 1280 });
-  b.particle(n, { ...liner, angle: 180, posVarX: 6, posVarY: 540, gx: -14, gy: 12, rate: 36, total: 110 });
-
-  const corner = {
-    frame: "particle_flame",
-    blend: "alpha",
-    playOnLoad: false,
-    rotationIsDir: true,
-    rate: 16,
-    total: 42,
-    life: 0.5,
-    lifeVar: 0.15,
-    startSize: 44,
-    startSizeVar: 10,
-    endSize: 16,
-    endSizeVar: 6,
-    speed: 30,
-    speedVar: 10,
-    angleVar: 18,
-    posVarX: 12,
-    posVarY: 12,
-    startSpin: 0, startSpinVar: 0, endSpin: 0, endSpinVar: 0,
-    startColor: [255, 255, 255, 255],
-    endColor: [255, 255, 255, 0]
-  };
-
-  n = b.node({ name: "CornerBL", parent: root, x: -340, y: -600, w: 100, h: 100 });
-  b.particle(n, { ...corner, angle: 45, gx: 12, gy: 16 });
-  n = b.node({ name: "CornerBR", parent: root, x: 340, y: -600, w: 100, h: 100 });
-  b.particle(n, { ...corner, angle: 135, gx: -12, gy: 16 });
-  n = b.node({ name: "CornerTL", parent: root, x: -340, y: 600, w: 100, h: 100 });
-  b.particle(n, { ...corner, angle: -45, gx: 12, gy: -16 });
-  n = b.node({ name: "CornerTR", parent: root, x: 340, y: 600, w: 100, h: 100 });
-  b.particle(n, { ...corner, angle: -135, gx: -12, gy: -16 });
-
-  const spark = {
-    frame: "particle_spark",
-    blend: "alpha",
-    playOnLoad: false,
-    rotationIsDir: true,
-    rate: 12,
-    total: 36,
-    life: 0.38,
-    lifeVar: 0.12,
-    startSize: 14,
-    startSizeVar: 5,
-    endSize: 6,
-    endSizeVar: 2,
-    speed: 60,
-    speedVar: 24,
-    angleVar: 28,
-    posVarX: 14,
-    posVarY: 14,
-    startSpin: 0, startSpinVar: 0, endSpin: 0, endSpinVar: 0,
-    startColor: [255, 255, 255, 255],
-    endColor: [255, 255, 255, 0]
-  };
-  n = b.node({ name: "SparkBL", parent: root, x: -340, y: -600, w: 80, h: 80 });
-  b.particle(n, { ...spark, angle: 45, gx: 6, gy: 22 });
-  n = b.node({ name: "SparkBR", parent: root, x: 340, y: -600, w: 80, h: 80 });
-  b.particle(n, { ...spark, angle: 135, gx: -6, gy: 22 });
-  n = b.node({ name: "SparkTL", parent: root, x: -340, y: 600, w: 80, h: 80 });
-  b.particle(n, { ...spark, angle: -45, gx: 6, gy: -22 });
-  n = b.node({ name: "SparkTR", parent: root, x: 340, y: 600, w: 80, h: 80 });
-  b.particle(n, { ...spark, angle: -135, gx: -6, gy: -22 });
-
-  // 底部余烬：沿底边缓慢上飘，不飞满屏
-  const ember = {
-    frame: "particle_ember",
-    blend: "alpha",
-    playOnLoad: false,
-    rate: 12,
-    total: 48,
-    life: 1.1,
-    lifeVar: 0.35,
-    startSize: 12,
-    startSizeVar: 5,
-    endSize: 5,
-    endSizeVar: 2,
-    speed: 26,
-    speedVar: 12,
-    angle: 90,
-    angleVar: 28,
-    posVarX: 340,
-    posVarY: 16,
-    gx: 0,
-    gy: 42,
-    startColor: [255, 255, 255, 230],
-    endColor: [255, 255, 255, 0]
-  };
-  n = b.node({ name: "EmberRing", parent: root, y: -560, w: 720, h: 60 });
-  b.particle(n, ember);
-
-  writePrefab("border", "fx_flame_border", b.finish(root), 1);
-}
-
 // ─── 全屏氛围 ───────────────────────────────────────────────
 const AMBIENT = {
   rain: {
@@ -730,13 +556,13 @@ function makeImpact() {
     startColor: [255, 255, 255, 160], endColor: [255, 255, 255, 0]
   });
 
-  // 描边羽毛（startColor 由运行时染色）
-  n = b.node({ name: "Feather", parent: root, w: 80, h: 80 });
+  // 描边羽毛（startColor 由运行时按鸡翅膀色染色）；贴图 128，尺寸适中才不糊
+  n = b.node({ name: "Feather", parent: root, w: 96, h: 96 });
   b.particle(n, {
     frame: "particle_feather", blend: "alpha", playOnLoad: true, duration: 0.18,
-    rate: 22, total: 10, life: 0.85, lifeVar: 0.25,
-    angle: 100, angleVar: 55, startSize: 24, startSizeVar: 8, endSize: 14, endSizeVar: 5,
-    speed: 72, speedVar: 30, gx: 8, gy: -100, tang: 14, tangVar: 28, posVarX: 8, posVarY: 8,
+    rate: 28, total: 12, life: 0.95, lifeVar: 0.28,
+    angle: 100, angleVar: 55, startSize: 36, startSizeVar: 10, endSize: 22, endSizeVar: 6,
+    speed: 78, speedVar: 32, gx: 8, gy: -90, tang: 14, tangVar: 28, posVarX: 8, posVarY: 8,
     startSpinVar: 100, endSpinVar: 140,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
   });
@@ -830,7 +656,6 @@ function makeRibbon() {
 }
 
 // ─── 运行 ───────────────────────────────────────────────────
-makeFlameBorder();
 Object.keys(AMBIENT).forEach((k, i) => makeAmbient(k, i));
 makeFloaters();
 makeImpact();

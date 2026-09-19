@@ -53,8 +53,8 @@ export class BattleImpact {
         this.active.add(root);
         tween(root).delay(delay).call(() => {
             this.addStain(landingX, groundY, heavy, critical);
-            // 少量落地羽毛残留
-            const n = critical ? 3 : heavy ? 2 : 1;
+            // 落地羽毛残留（按鸡翅膀色染色）
+            const n = critical ? 3 : heavy || skill ? 2 : 1;
             for (let i = 0; i < n; i++) {
                 this.addGroundFeather(
                     landingX + (Math.random() - 0.5) * 50,
@@ -88,9 +88,7 @@ export class BattleImpact {
         root.setScale(scale * (direction >= 0 ? 1 : -1), scale, 1);
         this.active.add(root);
 
-        const featherTint = featherColor
-            ? Color.fromHEX(new Color(), featherColor)
-            : null;
+        const featherTint = featherColor ? parseFeatherColor(featherColor) : null;
         // 星芒：暴击金 / 绝招亮白蓝 / 普攻近白
         const starTint = critical
             ? new Color(255, 214, 48, 255)
@@ -110,6 +108,7 @@ export class BattleImpact {
                 const base = ps.angle;
                 ps.angle = direction >= 0 ? base : 180 - base;
             }
+            // 空中羽毛：乘翅膀色（贴图近白 + 深描边，染色后仍是该鸡毛色）
             if (ps.node.name === "Feather" && featherTint) {
                 ps.startColor = new Color(featherTint.r, featherTint.g, featherTint.b, 255);
                 ps.endColor = new Color(featherTint.r, featherTint.g, featherTint.b, 0);
@@ -200,17 +199,18 @@ export class BattleImpact {
         node.layer = this.floor.layer;
         node.parent = this.floor;
         this.groundFeathers.add(node);
-        const size = 22 + Math.random() * 12;
+        // 贴图 160，显示尺寸略抬一点，羽脉才清楚
+        const size = 30 + Math.random() * 14;
         node.addComponent(UITransform).setContentSize(size, size);
         const sprite = node.addComponent(Sprite);
         sprite.sizeMode = Sprite.SizeMode.CUSTOM;
         sprite.spriteFrame = this.featherFrame;
-        sprite.color = Color.fromHEX(new Color(), featherColor);
+        sprite.color = parseFeatherColor(featherColor);
         const limit = Math.max(0, this.floor.getComponent(UITransform)!.width / 2 - 30);
         node.setPosition(Math.max(-limit, Math.min(limit, x)), groundY, 0);
         node.angle = (Math.random() - 0.5) * 360;
-        const scale = 0.7 + Math.random() * 0.4;
-        node.setScale(scale, scale * 0.65, 1);
+        const scale = 0.75 + Math.random() * 0.4;
+        node.setScale(scale, scale * 0.7, 1);
         const opacity = node.addComponent(UIOpacity);
         tween(opacity).delay(10).to(2, { opacity: 0 })
             .call(() => { this.groundFeathers.delete(node); node.destroy(); }).start();
@@ -234,4 +234,20 @@ export class BattleImpact {
 
 function heavyBoost(name: string, scale: number) {
     return scale > 1.05 && (name === "Blood" || name === "Feather" || name === "Star" || name === "Spark");
+}
+
+/** 解析鸡翅膀色；非法值回落浅米，避免染成全黑看不见。 */
+function parseFeatherColor(hex: string): Color {
+    const raw = (hex || "").trim();
+    const withHash = raw.startsWith("#") ? raw : raw ? `#${raw}` : "#fff0c0";
+    try {
+        const c = new Color();
+        Color.fromHEX(c, withHash.length === 4
+            ? `#${withHash[1]}${withHash[1]}${withHash[2]}${withHash[2]}${withHash[3]}${withHash[3]}`
+            : withHash);
+        return c;
+    }
+    catch {
+        return new Color(255, 240, 192, 255);
+    }
 }

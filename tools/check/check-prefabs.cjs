@@ -47,7 +47,6 @@ const TARGETS = [
     "assets/bundle/game/prefab/fx/combat/fx_impact.prefab",
     "assets/bundle/game/prefab/fx/combat/fx_clash.prefab",
     "assets/bundle/game/prefab/fx/ribbon/fx_ribbon.prefab",
-    "assets/bundle/game/prefab/fx/border/fx_flame_border.prefab",
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_rain.prefab",
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_leaf.prefab",
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_dust.prefab",

@@ -666,12 +666,8 @@ function makeBattle() {
 
 function makeResult() {
     const b = new Builder("result");
-    // 根节点只做画布；底图独立 bg + UIBgAdaptation，胜/败贴图运行时切换。
-    const root = b.node({ name: "result", w: 720, h: 1280, x: 0, y: 0, sx: 1.5, sy: 1.5 });
-    b.widget(root);
-    const bg = b.node({ name: "bg", parent: root, w: 720, h: 1280 });
-    b.sprite(bg, [255, 255, 255, 255], 0, F["bg/result_figma"]);
-    b.addComp(bg, null, { type: "c1dfdmwioROZrwQN85uxITx", fields: { viewportTransform: null } });
+    // 与 shop/reward 一致：根节点 Sprite，adaptView 运行时剥成 *_adaptBg + UIBgAdaptation。
+    const root = panel(b, "result", F["bg/result_figma"]);
     placeNode(b, root, "ChickenSlot", 272, 544, 539, 734);
     placeText(b, root, "LabHeader", "", 375, 1330, 330, 95, { font: 30, color: INK.cream, outline: true });
     placeText(b, root, "LabDesc", "本局获得", 210, 1470, 440, 56, { font: 24, color: INK.cream });
@@ -1126,7 +1122,7 @@ emit("reward_card", makeRewardCard);
 emit("skill_unlock", makeSkillUnlock);
 emit("taunt", makeTauntBubble);
 if (!ONLY) {
-    // 战斗飘字/命中/彩带/火焰边框改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
+    // 战斗飘字/命中/彩带/氛围改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
     makeShopItem();
     makeShopSetItem();
     writeWhitePng();

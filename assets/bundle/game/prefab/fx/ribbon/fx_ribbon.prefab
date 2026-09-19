@@ -94,7 +94,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "izQ7oFWduL2jAR8pGXevM3"
+    "fileId": "ctK1izQ7oFWduL2jAR8pGX"
   },
   {
     "__type__": "cc.UIOpacity",
@@ -112,7 +112,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "pGXevM3kBS9qHYfwN4lCTa"
+    "fileId": "jAR8pGXevM3kBS9qHYfwN4"
   },
   {
     "__type__": "cc.Node",
@@ -189,7 +189,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "wN4lCTarIZgxO5mDUbsJ0h"
+    "fileId": "qHYfwN4lCTarIZgxO5mDUb"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -298,7 +298,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "DUbsJ0hyP6nEVctK1izQ7o"
+    "fileId": "xO5mDUbsJ0hyP6nEVctK1i"
   },
   {
     "__type__": "cc.Node",
@@ -375,7 +375,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "K1izQ7oFWduL2jAR8pGXev"
+    "fileId": "EVctK1izQ7oFWduL2jAR8p"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -484,7 +484,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "R8pGXevM3kBS9qHYfwN4lC"
+    "fileId": "L2jAR8pGXevM3kBS9qHYfw"
   },
   {
     "__type__": "cc.Node",
@@ -561,7 +561,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "YfwN4lCTarIZgxO5mDUbsJ"
+    "fileId": "S9qHYfwN4lCTarIZgxO5mD"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -670,7 +670,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "5mDUbsJ0hyP6nEVctK1izQ"
+    "fileId": "ZgxO5mDUbsJ0hyP6nEVctK"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -680,7 +680,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "ctK1izQ7oFWduL2jAR8pGX",
+    "fileId": "6nEVctK1izQ7oFWduL2jAR",
     "instance": null,
     "targetOverrides": null
   },
@@ -692,7 +692,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "jAR8pGXevM3kBS9qHYfwN4",
+    "fileId": "duL2jAR8pGXevM3kBS9qHY",
     "instance": null,
     "targetOverrides": null
   },
@@ -704,7 +704,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "qHYfwN4lCTarIZgxO5mDUb",
+    "fileId": "kBS9qHYfwN4lCTarIZgxO5",
     "instance": null,
     "targetOverrides": null
   },
@@ -716,7 +716,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "xO5mDUbsJ0hyP6nEVctK1i",
+    "fileId": "rIZgxO5mDUbsJ0hyP6nEVc",
     "instance": null,
     "targetOverrides": null
   }

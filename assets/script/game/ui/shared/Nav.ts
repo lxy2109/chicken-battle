@@ -1,3 +1,7 @@
+import { gui } from "db://oops-framework/core/gui/Gui";
+import { LayerUIElement } from "db://oops-framework/core/gui/layer/LayerUIElement";
+import { oops } from "db://oops-framework/core/Oops";
+import { ECSModel } from "db://oops-framework/libs/ecs/ECSModel";
 import { CCView } from "db://oops-framework/module/common/CCView";
 import { ChickenRun } from "../../run/ChickenRun";
 import { RunScreen } from "../../domain/Types";
@@ -20,8 +24,32 @@ function screenOfView(view: CCView<ChickenRun>): RunScreen | undefined {
     return undefined;
 }
 
+/** 关掉来源界面：GUI 已无登记或 prefab 路径漂移时不走 removeUi，避免「界面重复关闭」。 */
+function closeFromView(from: CCView<ChickenRun>) {
+    if (!from.ent) return;
+    const key = gui.internal.getKey(from.constructor);
+    const tracked = key ? oops.gui.get(key) : null;
+    // 登记节点就是当前界面时，走标准 removeUi。
+    if (tracked && tracked === from.node) {
+        from.remove();
+        return;
+    }
+    const cct = ECSModel.compCtors[from.tid];
+    if (from.node?.isValid) {
+        const el = from.node.getComponent(LayerUIElement);
+        if (el) {
+            if (cct) el.onClose = from.ent.remove.bind(from.ent, cct);
+            el.remove(true);
+            return;
+        }
+        from.node.destroy();
+    }
+    if (cct && from.ent.has(cct as any)) from.ent.remove(cct);
+}
+
 export async function goScreen(from: CCView<ChickenRun>, screen?: RunScreen) {
     if (openingViews.has(from)) return;
+    if (!from.ent || !from.node?.isValid) return;
     const target = screen ?? from.ent.run.screen;
     const ctor = SCREEN_VIEW[target];
     if (!ctor) {
@@ -39,11 +67,11 @@ export async function goScreen(from: CCView<ChickenRun>, screen?: RunScreen) {
         // 准备战斗有自己的左右面板入场/退场，不套全局整页滑动。
         const useOwnAnim = target === "prebattle" || fromScreen === "prebattle";
         const newNode = await openRunView(ent, ctor, { entrance: useOwnAnim ? undefined : false });
-        playScreenMusic(target, from.ent.run.currentRoute().enemyId);
+        playScreenMusic(target, ent.run.currentRoute().enemyId);
         if (!useOwnAnim && oldNode?.isValid && newNode?.isValid && oldNode !== newNode) {
             await playScreenTransition(oldNode, newNode, fromScreen, target);
         }
-        from.remove();
+        closeFromView(from);
     } catch (error) {
         console.error("[Nav] 界面资源加载失败，可重试", target, error);
     } finally {
