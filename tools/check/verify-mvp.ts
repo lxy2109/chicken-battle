@@ -878,16 +878,20 @@ function run() {
         run.gold = 3000;
         assert(!run.buySet("champion") && !run.buyItem("champion_head"), "奖励不能免费购买");
         assert(!run.buySet("miser"), "未到解锁地图不能绕过UI购买");
-        assert(run.buySet("rookie") && run.equipSet("rookie"), "新手套可购买并穿戴");
+        assert(run.buySet("rookie"), "新手套可购买");
+        assert(getSets().find(s => s.id === "rookie")!.pieceIds.every(id => run.equippedIds.includes(id)), "买完自动穿上");
         assert(run.playerFighter().stats.retainGrowth === 1, "四件保留成长生效");
         run.routeNode = mapStart(3);
-        assert(run.buySet("miser") && run.equipSet("miser"), "第三图铁公鸡解锁");
+        assert(run.buySet("miser"), "第三图铁公鸡解锁");
+        assert(getSets().find(s => s.id === "miser")!.pieceIds.every(id => run.equippedIds.includes(id)), "买铁公鸡自动穿上");
         const gold = run.gold, price = run.itemPrice("medic_head");
         assert(run.buyItem("medic_head") && gold - run.gold === price, "显示价和实扣一致");
         const missingPrice = run.setPrice("medic");
         assert(missingPrice < setPrice("medic"), "补齐不收费已拥有部件且享装备折扣");
         const before = run.gold;
         assert(run.buySet("medic") && before - run.gold === missingPrice, "整套确认按缺件折扣收费");
+        // 买 medic 会自动换上；这里改回铁公鸡以验证金币加成。
+        assert(run.equipSet("miser"), "可切回铁公鸡");
         run.screen = "battle";
         const reward = getRoute().find(n => n.id === mapStart(3))!.goldWin!;
         run.settle(true);
@@ -938,9 +942,10 @@ function run() {
         assert(!run.buySet("digger") && !run.buySet("coming"), "未到地图不能买新套装");
         run.routeNode = mapStart(4);
         assert(run.buySet("digger") && !run.buySet("coming"), "第四图只解锁挖掘鸡");
-        assert(run.equipSet("digger") && run.playerFighter().stats.lockHp === true, "挖掘鸡四件锁血");
+        assert(run.playerFighter().stats.lockHp === true, "买挖掘鸡自动穿上且四件锁血");
         run.routeNode = mapStart(5);
         assert(run.buySet("coming"), "第五图解锁鸡来套装");
+        assert(getSets().find(s => s.id === "coming")!.pieceIds.every(id => run.equippedIds.includes(id)), "买鸡来自动穿上");
         assert(!run.buySet("champion"), "鸡王中王仍不能购买");
         run.routeNode = kunId(); run.phase = "boss"; run.screen = "battle";
         run.settle(true);

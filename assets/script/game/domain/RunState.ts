@@ -309,6 +309,11 @@ export class RunState {
         for (const id of missing) this.ownedIds.push(id);
         const bought = new Set(missing);
         this.shopItems = this.shopItems.filter(shopItem => !bought.has(shopItem.id));
+        // 买完直接穿上整套（强制穿戴，不走 equipSet 的切换卸下逻辑）。
+        const slots = def.pieceIds.map(id => itemById(id).slot);
+        this.equippedIds = this.equippedIds.filter(id => !slots.includes(itemById(id).slot));
+        this.equippedIds.push(...def.pieceIds);
+        this.hideEquippedAppearance = false;
         this.onChanged?.();
         return true;
     }
