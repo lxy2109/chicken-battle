@@ -40,7 +40,8 @@ interface Slot {
 
 /**
  * 对战页底部已解锁的主动绝招。
- * 宿主 SkillBar 写在 battle.prefab 上，Widget 居中钉底；这里只填图标、冷却和攻击数值。
+ * 宿主 SkillBar 写在 battle.prefab 上，Widget 居中钉底；
+ * 图标按实际数量逐行居中排布，并刷新冷却与攻击数值。
  */
 export class BattleSkillBar {
     private bar: Node | null = null;
@@ -52,7 +53,6 @@ export class BattleSkillBar {
     async mount(skills: readonly StrikeStyle[], onCast: (style: StrikeStyle) => void) {
         const bar = this.ensureBar();
         const grid = bar.getChildByName(GRID) || bar;
-        const laidOut = !!grid.getComponent(Layout);
         this.slots = [];
         // 清掉旧档/上一场留下的未解锁按钮，避免残留可点。
         for (const child of [...grid.children]) {
@@ -66,18 +66,23 @@ export class BattleSkillBar {
             return;
         }
         bar.active = true;
+        // 预制体 Layout 按满 4 列左起排；实际解锁不足时会偏左。关掉 Layout，按行居中手排。
+        const layout = grid.getComponent(Layout);
+        if (layout) layout.enabled = false;
         const cols = Math.min(COLS, Math.max(1, skills.length));
         const rows = Math.ceil(skills.length / cols);
-        const totalW = cols * SIZE + (cols - 1) * GAP_X;
         const totalH = rows * SIZE + (rows - 1) * GAP_Y;
-        const originX = -totalW / 2 + SIZE / 2;
         const originY = totalH / 2 - SIZE / 2;
         for (let i = 0; i < skills.length; i++) {
-            const col = i % cols;
             const row = Math.floor(i / cols);
-            const x = laidOut ? 0 : originX + col * (SIZE + GAP_X);
-            const y = laidOut ? 0 : originY - row * (SIZE + GAP_Y);
-            this.slots.push(await this.makeSlot(grid, skills[i], x, y, laidOut, onCast));
+            const indexInRow = i % cols;
+            const rowStart = row * cols;
+            const rowCount = Math.min(cols, skills.length - rowStart);
+            const rowW = rowCount * SIZE + (rowCount - 1) * GAP_X;
+            const originX = -rowW / 2 + SIZE / 2;
+            const x = originX + indexInRow * (SIZE + GAP_X);
+            const y = originY - row * (SIZE + GAP_Y);
+            this.slots.push(await this.makeSlot(grid, skills[i], x, y, onCast));
         }
         this.raise();
     }
@@ -156,7 +161,6 @@ export class BattleSkillBar {
         style: StrikeStyle,
         x: number,
         y: number,
-        laidOut: boolean,
         onCast: (style: StrikeStyle) => void
     ): Promise<Slot> {
         const name = `SkillBtn_${style}`;
@@ -166,7 +170,7 @@ export class BattleSkillBar {
             node.layer = parent.layer;
             parent.addChild(node);
         }
-        if (!laidOut) node.setPosition(x, y, 0);
+        node.setPosition(x, y, 0);
         (node.getComponent(UITransform) || node.addComponent(UITransform)).setContentSize(SIZE, SIZE);
         const rgb = RGB[style];
 

@@ -112,6 +112,11 @@ function ensureCoverBackground(host: Node): Node | null {
         bgWidget.enabled = false;
         bgWidget.destroy();
     }
+    // Cover 只作用在底图节点；根节点若误挂 UIBgAdaptation 会把整页 UI 一起放大。
+    if (bg !== host) {
+        const hostAdapt = host.getComponent(UIBgAdaptation);
+        if (hostAdapt) hostAdapt.destroy();
+    }
     if (!bg.getComponent(UIBgAdaptation)) bg.addComponent(UIBgAdaptation);
     bg.setSiblingIndex(0);
     return bg;

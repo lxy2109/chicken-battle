@@ -8,10 +8,11 @@ import { ChickenRun } from "../../run/ChickenRun";
 import { getMaps, TEX, routeNode } from "../../domain/Catalog";
 import { Appearance } from "../../domain/Types";
 import { celebrateChicken, mournChicken, spawnChicken } from "../shared/ChickenBinder";
-import { adaptView } from "../shared/adaptView";
+import { coverBackgroundOf } from "../shared/adaptView";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { playWinRibbon } from "../shared/RibbonFx";
 import { playResultSuitVideo, stopSlotVideo } from "../shared/SlotVideo";
+import { UIBgAdaptation } from "../shared/UIBgAdaptation";
 import { bindClick, setCoverSprite, setLabel, setNodeActive } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -22,7 +23,6 @@ const { ccclass, executionOrder } = _decorator;
 @gui.register("ResultView", { layer: LayerType.UI, prefab: "gui/result/result" })
 export class ResultViewComp extends GameUIBase<ChickenRun> {
     async start() {
-        adaptView(this.node);
         this.nodeTreeInfoLite();
         const run = this.ent.run;
         const win = run.lastWin;
@@ -31,7 +31,9 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
         const appearance = run.playerFighter().appearance;
         const look: Appearance = win ? appearance : { ...appearance, face: "sad" };
         try {
+            // 胜/败底图都挂在 bg + UIBgAdaptation 上，换贴图后刷新 Cover。
             await setCoverSprite(this, TEX.background(win ? "result_figma" : "result_lose_figma"));
+            coverBackgroundOf(this.node).getComponent(UIBgAdaptation)?.refresh();
             const battleNode = routeNode(run.lastBattleNode);
             const boss = battleNode.kind === "boss";
             setLabel(this, "LabHeader", run.playerFighter().name);
@@ -47,9 +49,8 @@ export class ResultViewComp extends GameUIBase<ChickenRun> {
                 : battleNode.encounter === "final" ? gameText("ResultViewComp_012") : gameText("ResultViewComp_013");
             else hint = win ? gameText("ResultViewComp_016") : gameText("ResultViewComp_017");
             if (run.upgrades.length > 0) hint += gameText("ResultViewComp_018");
-            // 失败底图已经写了「失败 / 变强继续挑战！」，不再叠爆炸框和底部说明。
+            // 失败底图已经写了「失败 / 变强继续挑战！」，不再叠底部说明。
             setLabel(this, "LabHint", win ? hint : "");
-            setNodeActive(this, "LossBanner", false);
             setNodeActive(this, "LabHint", win);
             if (win) void playWinRibbon(this);
             // 先出立绘，GIF 首帧好了再换上。安卓读 10MB 级动图可能要几秒，不能把槽位留空。

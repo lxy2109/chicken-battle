@@ -34,28 +34,11 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
     private videoDone: (() => void) | null = null;
     private finished = false;
 
-    onLoad() {
-        super.onLoad();
-        this.hideLegacy();
-    }
-
     async start() {
         this.nodeTreeInfoLite();
         const panel = await this.mountChampionPanel();
         await this.playEndingVideo();
         if (this.node?.isValid) this.showChampion(panel);
-    }
-
-    private hideLegacy() {
-        const bg = this.node.children.find(child => child.name.endsWith("_adaptBg") || child.name === "bg");
-        const sp = bg?.getComponent(Sprite);
-        if (sp) sp.color = Color.BLACK;
-        const content = this.node.getChildByName("content");
-        for (const child of (content || this.node).children) {
-            if (child === bg) continue;
-            if (child.name === CHAMPION_NODE || child.name === VIDEO_NODE) continue;
-            child.active = false;
-        }
     }
 
     private async playEndingVideo() {

@@ -666,16 +666,18 @@ function makeBattle() {
 
 function makeResult() {
     const b = new Builder("result");
-    const root = panel(b, "result", F['bg/result_figma']);
-    // Same jagged burst as the baked WINNER heading, tinted red so fail rhymes with victory.
-    const loss = placeNode(b, root, "LossBanner", 90, 36, 900, 360, { active: false });
-    b.sprite(loss, [230, 76, 64, 255], 0, SF.burst_win);
-    textNode(b, loss, "LabTitle", "失败", 0, 6, { font: 68, w: 460, h: 96, color: INK.cream, outline: true, outlineWidth: 6 });
+    // 根节点只做画布；底图独立 bg + UIBgAdaptation，胜/败贴图运行时切换。
+    const root = b.node({ name: "result", w: 720, h: 1280, x: 0, y: 0, sx: 1.5, sy: 1.5 });
+    b.widget(root);
+    const bg = b.node({ name: "bg", parent: root, w: 720, h: 1280 });
+    b.sprite(bg, [255, 255, 255, 255], 0, F["bg/result_figma"]);
+    b.addComp(bg, null, { type: "c1dfdmwioROZrwQN85uxITx", fields: { viewportTransform: null } });
     placeNode(b, root, "ChickenSlot", 272, 544, 539, 734);
     placeText(b, root, "LabHeader", "", 375, 1330, 330, 95, { font: 30, color: INK.cream, outline: true });
     placeText(b, root, "LabDesc", "本局获得", 210, 1470, 440, 56, { font: 24, color: INK.cream });
     placeText(b, root, "LabGold", "+0", 650, 1470, 220, 56, { font: 30, color: INK.gold, outline: true });
-    placeButton(b, root, "BtnNext", "选择强化", 292, 1610, 500, 182, "green");
+    const next = placeButton(b, root, "BtnNext", "选择强化", 292, 1610, 500, 182, "green");
+    pin(b, next, 20, layoutBox(292, 1610, 500, 182));
     placeText(b, root, "LabHint", "", 70, 1805, 940, 100, { font: 22, color: INK.cream, outline: true });
     writePrefab("assets/bundle/gui/result/result.prefab", b.finish(root));
 }
@@ -722,26 +724,13 @@ function makeShop() {
 }
 
 function makeEnding() {
+    // 结局页只保留黑底壳；视频与领奖面板由 EndingViewComp 运行时挂载。
     const b = new Builder("ending");
-    const root = panel(b, "ending", SF.bg_village_figma);
-    header(b, root, "LabHeader", "路线通关");
-    const confetti = b.node({ name: "Confetti", parent: root, w: 720, h: 1280 });
-    b.sprite(confetti, [255, 255, 255, 200], 0, SF.confetti);
-
-    const burst = b.node({ name: "Burst", parent: root, x: 0, y: 440, w: 640, h: 310 });
-    b.sprite(burst, [255, 255, 255, 255], 0, SF.burst_win);
-    textNode(b, burst, "LabTitle", "村口鸡王", 0, 6, { font: 56, w: 520, h: 78, color: INK.cream, outline: true, outlineWidth: 5 });
-
-    b.node({ name: "ChickenSlot", parent: root, x: 0, y: 90, w: 260, h: 300 });
-
-    const gain = card(b, root, "GainCard", 0, -200, 580, 156, SF.panel_cream);
-    textNode(b, gain, "LabDesc", "", 0, 34, { font: 22, w: 520, h: 60, color: INK.dark });
-    iconNode(b, gain, "GoldIcon", SF.icon_coin, -104, -32, 52);
-    textNode(b, gain, "LabGold", "0", 24, -32, { font: 32, w: 220, h: 44, color: INK.dark, align: 0 });
-
-    textNode(b, root, "LabHint", "", 0, -332, { font: 22, w: 600, h: 34, color: INK.cream, outline: true });
-    labBtn(b, root, "BtnCharacter", "查看奖励套装", 0, -438, 400, 88, "yellow");
-    labBtn(b, root, "BtnRestart", "返回首页", 0, -546, 400, 88, "green");
+    const root = b.node({ name: "ending", w: 720, h: 1280, x: 0, y: 0, sx: 1.5, sy: 1.5 });
+    b.widget(root);
+    const bg = b.node({ name: "bg", parent: root, w: 720, h: 1280 });
+    b.sprite(bg, [0, 0, 0, 255], 0, WHITE);
+    b.addComp(bg, null, { type: "c1dfdmwioROZrwQN85uxITx", fields: { viewportTransform: null } });
     writePrefab("assets/bundle/gui/ending/ending.prefab", b.finish(root));
 }
 
