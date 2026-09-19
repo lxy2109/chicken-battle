@@ -26,7 +26,7 @@ import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { preloadResultSuitGif } from "../shared/SlotVideo";
 import { bindNodeClick, hexColor, setLabel } from "../shared/UiUtil";
-import { playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
+import { ensureScreenMusic, playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
 
 const { ccclass, executionOrder } = _decorator;
 
@@ -369,6 +369,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.trig("toCombat");
     }
 
+    private musicGuard = 0;
+
     private onTick = (dt: number) => {
         if (this.closed || !this.running) return;
         // 圆圈用真实时间生成/收缩；战斗逻辑与血条追赶跟加速倍率走。
@@ -387,11 +389,22 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
         if (this.danmakuReadyAt > 0) this.refreshDanmakuBtn();
         this.fx?.tickAmbient(dt);
+        // 安卓真机：连放技能/音效后 BGM 可能被静默掐掉，低频巡检续播。
+        this.musicGuard += dt;
+        if (this.musicGuard >= 0.5) {
+            this.musicGuard = 0;
+            this.guardBattleMusic();
+        }
         if (this.logLeft > 0) {
             this.logLeft -= dt;
             if (this.logLeft <= 0) setLabel(this, "LabLog", "");
         }
     };
+
+    private guardBattleMusic() {
+        const enemyId = this.ent?.run?.currentRoute?.()?.enemyId;
+        ensureScreenMusic("battle", enemyId);
+    }
 
     private dispatch(ev: BattleEvent) {
         if (this.closed) return;
@@ -530,6 +543,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const fromRight = side === "enemy";
             playGameEffect("skill");
             playSkillAnnounce(style);
+            // 技能连放多条短音后立刻确认 BGM，避免安卓把循环曲掐死后要等巡检才恢复。
+            this.guardBattleMusic();
             this.fx?.skillCharge(self, style);
             this.screenEffects?.skillCast(side === "player" ? 1 : -1, true);
             self.pulse();
@@ -538,6 +553,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             await self.prepareSkill(style);
             if (this.closed) return;
             this.fx?.skillLaunch(self, style, fromRight);
+            this.guardBattleMusic();
         }
         else {
             this.fx?.basicWindup(self, style, side === "enemy");
@@ -561,6 +577,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             ? Math.sign(target.worldPosition.x - source.worldPosition.x) : from === "player" ? 1 : -1;
         playGameEffect(crit ? "critical" : skill ? "skill" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
+        if (skill || crit) this.guardBattleMusic();
         this.actor(to)?.flinch(crit ? 1.75 : skill ? 1.55 : heavy ? 1.3 : 1, direction);
         if (target) {
             this.impact?.play(target, direction, heavy || skill, crit, this.featherColors[to], this.actor(to)?.home.y, skill);
