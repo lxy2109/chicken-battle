@@ -1,6 +1,6 @@
 import { STYLE_LABEL, inferFightStyle } from "../../domain/BattleStyle";
 import { gameText, gameTextOr } from "../../domain/GameConfig";
-import { Color, Label, Mask, Graphics, Tween, UIOpacity, UITransform, tween, v3, _decorator } from "cc";
+import { Color, Label, Mask, Graphics, Tween, UIOpacity, UITransform, Vec3, tween, v3, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -43,6 +43,12 @@ function extraText(s: Stats, style?: FightStyle): string {
 @gui.register("PreBattleView", { layer: LayerType.UI, prefab: "gui/prebattle/prebattle" })
 export class PreBattleViewComp extends GameUIBase<ChickenRun> {
     private exiting = false;
+    /** 左右对比卡落点（含预制体 y），入场/震动/退场都回到这里，VS 圆洞才对得上徽章。 */
+    private panelHome: Record<"Player" | "Enemy", Vec3> = {
+        Player: v3(0, 25, 0),
+        Enemy: v3(0, 25, 0)
+    };
+
     async start() {
         this.nodeTreeInfoLite();
         this.fitMatchBoard();
@@ -113,7 +119,10 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
 
     private preparePanels() {
         // Partition the original composition; the circular badge is rendered only once.
-        for (const side of ["Player", "Enemy"]) {
+        for (const side of ["Player", "Enemy"] as const) {
+            const panel = this.getNode(side + "Panel")!;
+            // 记住预制体落点（含 y=25）；以前写成 ( ±760, 0 ) 会把 y 抹掉，VS 洞和徽章错位。
+            this.panelHome[side] = panel.position.clone();
             const art = this.getNode(side + "PanelArt")!;
             const mask = art.addComponent(Mask);
             mask.type = Mask.Type.GRAPHICS_STENCIL;
@@ -121,6 +130,7 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
             g.clear();
             const w = art.getComponent(UITransform)!.width / 2;
             const h = art.getComponent(UITransform)!.height / 2;
+            // 与 VsBadge / VsArt 裁切一致：洞心相对 PanelArt 为 (-1, -36.667)。
             const cx = -1, cy = -36.667, r = 143.333;
             const edge = side === "Player" ? -w : w;
             g.moveTo(edge, h); g.lineTo(cx, h); g.lineTo(cx, cy + r);
@@ -129,9 +139,12 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
                 g.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
             }
             g.lineTo(cx, -h); g.lineTo(edge, -h); g.close(); g.fill();
-            this.getNode(side + "Panel")!.setPosition(side === "Player" ? -760 : 760, 0);
+            const home = this.panelHome[side];
+            panel.setPosition(side === "Player" ? -760 : 760, home.y, home.z);
         }
         const vs = this.getNode("VsBadge")!;
+        // 徽章对准面板圆洞：PanelArt(1.667,-24.667) + 洞心(-1,-36.667) + panel.y。
+        this.alignVsBadge(vs);
         const mask = vs.addComponent(Mask);
         mask.type = Mask.Type.GRAPHICS_ELLIPSE;
         mask.segments = 64;
@@ -139,16 +152,37 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
         vs.addComponent(UIOpacity).opacity = 0;
     }
 
+    /** 按当前面板落点把 VS 圆徽章摆到左右卡的圆洞中心。 */
+    private alignVsBadge(vs = this.getNode("VsBadge")) {
+        if (!vs) return;
+        const art = this.getNode("PlayerPanelArt");
+        const home = this.panelHome.Player;
+        const artPos = art?.position ?? v3(1.667, -24.667, 0);
+        // 洞心相对 PanelArt；与 preparePanels 遮罩参数保持一致。
+        const holeLocalX = -1;
+        const holeLocalY = -36.667;
+        vs.setPosition(
+            home.x + artPos.x + holeLocalX,
+            home.y + artPos.y + holeLocalY,
+            0
+        );
+        // VsArt 是整张对比卡，偏移使卡上 VS 圆对上徽章中心。
+        const artNode = vs.getChildByName("VsArt");
+        if (artNode) artNode.setPosition(-holeLocalX, -holeLocalY, 0);
+    }
+
     private animatePanels() {
         if (!this.node.isValid) return;
-        for (const side of ["Player", "Enemy"]) {
+        for (const side of ["Player", "Enemy"] as const) {
+            const home = this.panelHome[side];
             const direction = side === "Player" ? 1 : -1;
             tween(this.getNode(side + "Panel")!)
                 .delay(side === "Player" ? 0 : 0.06)
-                .to(0.24, { position: v3(direction * 16, 0) }, { easing: "quartOut" })
-                .to(0.09, { position: v3() }, { easing: "quadOut" }).start();
+                .to(0.24, { position: v3(home.x + direction * 16, home.y, home.z) }, { easing: "quartOut" })
+                .to(0.09, { position: home.clone() }, { easing: "quadOut" }).start();
         }
         const vs = this.getNode("VsBadge")!;
+        this.alignVsBadge(vs);
         const home = vs.position.clone();
         vs.angle = -12;
         tween(vs.getComponent(UIOpacity)!).delay(0.44).to(0.06, { opacity: 255 }).start();
@@ -157,10 +191,12 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
             .call(() => {
                 playGameEffect("hit");
                 // Short local impact shake; keep the camera, background and hit targets steady.
-                for (const side of ["Player", "Enemy"]) {
+                for (const side of ["Player", "Enemy"] as const) {
                     const panel = this.getNode(side + "Panel")!;
-                    tween(panel).to(0.035, { position: v3(-7, 3) })
-                        .to(0.045, { position: v3(5, -2) }).to(0.065, { position: v3() }).start();
+                    const ph = this.panelHome[side];
+                    tween(panel).to(0.035, { position: v3(ph.x - 7, ph.y + 3, ph.z) })
+                        .to(0.045, { position: v3(ph.x + 5, ph.y - 2, ph.z) })
+                        .to(0.065, { position: ph.clone() }).start();
                 }
             })
             .to(0.09, { scale: v3(1.1, 1.1, 1), angle: -2 })
@@ -177,10 +213,13 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
         tween(vs).to(0.1, { scale: v3(1.15, 1.15, 1) })
             .to(0.2, { scale: v3(2.4, 2.4, 1) }, { easing: "quadIn" }).start();
         tween(opacity).delay(0.1).to(0.2, { opacity: 0 }).start();
-        for (const side of ["Player", "Enemy"]) {
+        for (const side of ["Player", "Enemy"] as const) {
             const panel = this.getNode(side + "Panel")!;
+            const home = this.panelHome[side];
             Tween.stopAllByTarget(panel);
-            tween(panel).delay(0.08).to(0.28, { position: v3(side === "Player" ? -800 : 800, 0) }, { easing: "cubicIn" }).start();
+            tween(panel).delay(0.08)
+                .to(0.28, { position: v3(side === "Player" ? -800 : 800, home.y, home.z) }, { easing: "cubicIn" })
+                .start();
         }
         for (const name of ["BtnFight", "BtnLeave"]) {
             const button = this.getNode(name);
