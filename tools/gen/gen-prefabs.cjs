@@ -643,8 +643,21 @@ function makeBattle() {
     b.node({ name: "EnemySlot", parent: arena, x: BATTLE_HOME.enemy[0], y: BATTLE_HOME.enemy[1], w: 40, h: 40 });
     // 战报抬到两排招式按钮上方，避免压住底部 SkillBar。
     placeText(b, root, "LabLog", "", 75, 1380, 930, 100, { font: 28, color: INK.cream, outline: true, outlineWidth: 3 });
-    const danmaku = b.node({ name: "DanmakuLayer", parent: root, y: 405, w: 720, h: 160 });
+    // 三轨弹幕：行距 52 × 2 + 字高余量，层高 180，中心略偏上避开血条/名字。
+    const danmaku = b.node({ name: "DanmakuLayer", parent: root, y: 390, w: 720, h: 180 });
     b.addComp(danmaku, null, { type: "cc.Mask", fields: { _type: 0 } });
+    // 手动弹幕：右上黄钮，贴在弹幕层右侧；文案运行时刷新冷却。
+    const dmBox = { x: 270, y: 390, w: 140, h: 64 };
+    const dmBtn = b.node({ name: "BtnDanmaku", parent: root, x: dmBox.x, y: dmBox.y, w: dmBox.w, h: dmBox.h });
+    b.sprite(dmBtn, [255, 255, 255, 255], 1, BTN.yellow.frame);
+    b.button(dmBtn);
+    b.opacity(dmBtn, 255);
+    const dmLab = b.node({ name: "BtnDanmakuLab", parent: dmBtn, w: dmBox.w - 20, h: dmBox.h - 16 });
+    b.label(dmLab, "弹幕", {
+        font: 24, w: dmBox.w - 20, h: dmBox.h - 16,
+        color: BTN.yellow.ink, outline: true
+    });
+    pin(b, dmBtn, W_TR, dmBox);
     b.node({ name: "FxLayer", parent: root, w: 720, h: 1280 });
     // 主动招式栏：预制体里居中靠下，Widget 钉底；按钮 100×100 分两排。
     const skillY = -640 + SKILL_BAR_BOTTOM + SKILL_BAR_H / 2;

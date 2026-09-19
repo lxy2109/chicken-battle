@@ -2,6 +2,7 @@
   "uiKeys": [
     "battle/BarPlayer/LabPlayerHp",
     "battle/BarEnemy/LabEnemyHp",
+    "battle/BtnDanmaku/BtnDanmakuLab",
     "character/LabGold",
     "character/LabPower",
     "character/BtnPagePrev/BtnPagePrevLab",

@@ -23,10 +23,13 @@ import { BattleEvent, BattleSide, StrikeStyle } from "../../domain/Types";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { preloadResultSuitGif } from "../shared/SlotVideo";
-import { hexColor, setLabel } from "../shared/UiUtil";
+import { bindNodeClick, hexColor, setLabel } from "../shared/UiUtil";
 import { playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
 
 const { ccclass, executionOrder } = _decorator;
+
+/** 手动发弹幕冷却（秒）。 */
+const DANMAKU_FIRE_CD = 1;
 
 /** 与 battle.prefab 里 PlayerSlot / EnemySlot 的落点保持一致。 */
 const P_HOME = new Vec3(-160, -76, 0);
@@ -124,6 +127,10 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private styleOf: Record<BattleSide, StrikeStyle> = { player: "peck", enemy: "peck" };
     private logLeft = 0;
     private danmaku?: BattleDanmaku;
+    /** 手动弹幕可再次点击的时间戳（ms）。 */
+    private danmakuReadyAt = 0;
+    private danmakuBtn?: Node;
+    private danmakuBtnLab?: Label;
     private impact?: BattleImpact;
     private screenEffects?: BattleScreenEffects;
     private fx?: BattleFx;
@@ -157,6 +164,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const layer = this.getNode("DanmakuLayer");
             if (layer) this.danmaku = new BattleDanmaku(layer,
                 new DanmakuPool(encounter === "warmup" ? "warmup" : run.phase === "boss" ? "boss" : "official", foe.danmakuGroup || "common"));
+            this.mountDanmakuBtn();
 
             const playerPortrait = await spawnChicken(this, "PlayerPortrait", run.appearance, 0.76, true);
             playerPortrait?.setPosition(33.6, -128.6, 0);
@@ -340,6 +348,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         }
         this.danmaku?.tick(dt, this.session.hp("player") <= this.session.maxHp("player") / 2
             || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
+        if (this.danmakuReadyAt > 0) this.refreshDanmakuBtn();
         this.fx?.tickAmbient(dt);
         if (this.logLeft > 0) {
             this.logLeft -= dt;
@@ -422,6 +431,42 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (this.closed || !this.running) return;
         for (const ev of this.session.requestSkill(style)) this.dispatch(ev);
         this.skillBar?.tick(this.session);
+    }
+
+    private mountDanmakuBtn() {
+        const node = this.getNode("BtnDanmaku");
+        const labNode = this.getNode("BtnDanmakuLab") || node?.getChildByName("BtnDanmakuLab");
+        if (!node || !labNode) return;
+        const lab = labNode.getComponent(Label);
+        if (!lab) return;
+        this.danmakuBtn = node;
+        this.danmakuBtnLab = lab;
+        this.danmakuReadyAt = 0;
+        node.active = true;
+        this.refreshDanmakuBtn();
+        bindNodeClick(node, () => this.onFireDanmaku(), this);
+    }
+
+    private onFireDanmaku() {
+        if (this.closed || !this.running || !this.danmaku || Date.now() < this.danmakuReadyAt) return;
+        if (!this.danmaku.fire()) return;
+        this.danmakuReadyAt = Date.now() + DANMAKU_FIRE_CD * 1000;
+        this.refreshDanmakuBtn();
+    }
+
+    private refreshDanmakuBtn() {
+        const btn = this.danmakuBtn;
+        const lab = this.danmakuBtnLab;
+        if (!btn?.isValid || !lab?.isValid) return;
+        const remain = Math.max(0, (this.danmakuReadyAt - Date.now()) / 1000);
+        const ready = remain <= 0;
+        if (ready) this.danmakuReadyAt = 0;
+        lab.string = ready
+            ? gameTextOr("BattleViewComp_028", "发送弹幕")
+            : `${Math.ceil(remain)}`;
+        lab.color = ready ? hexColor("#FFFAEC") : hexColor("#B0A898");
+        const opacity = btn.getComponent(UIOpacity) || btn.addComponent(UIOpacity);
+        opacity.opacity = ready ? 255 : 170;
     }
 
     /**
@@ -508,6 +553,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (!this.running) return;
         this.running = false;
         this.danmaku?.clear();
+        if (this.danmakuBtn?.isValid) this.danmakuBtn.active = false;
         playGameEffect(win ? "win" : "lose");
         this.stopTick();
         this.fx?.finish(win);
@@ -811,6 +857,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.screenEffects?.clear();
         this.impact?.clear();
         this.danmaku?.clear();
+        this.danmakuBtn = undefined;
+        this.danmakuBtnLab = undefined;
+        this.danmakuReadyAt = 0;
         this.running = false;
         this.stopTick();
         this.playerActor?.stopRoam();
