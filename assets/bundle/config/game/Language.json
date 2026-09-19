@@ -231,46 +231,6 @@
         "zh": "地图加载失败，请重试",
         "en": ""
     },
-    "MapViewComp_012": {
-        "zh": "一键跳过",
-        "en": ""
-    },
-    "MapViewComp_013": {
-        "zh": "新绝招解锁：{0}",
-        "en": ""
-    },
-    "MapViewComp_014": {
-        "zh": "新绝招解锁",
-        "en": ""
-    },
-    "MapViewComp_015": {
-        "zh": "已学会以下绝招，对战中点按钮释放",
-        "en": ""
-    },
-    "MapViewComp_016": {
-        "zh": "太棒了",
-        "en": ""
-    },
-    "MapViewComp_017": {
-        "zh": "最终挑战",
-        "en": ""
-    },
-    "FinalChallenge_001": {
-        "zh": "最终挑战",
-        "en": ""
-    },
-    "FinalChallenge_002": {
-        "zh": "五图赛程已毕，鸡王坤坤在全村注视下等你。",
-        "en": ""
-    },
-    "FinalChallenge_003": {
-        "zh": "去挑战",
-        "en": ""
-    },
-    "FinalChallenge_004": {
-        "zh": "稍后再说",
-        "en": ""
-    },
     "PreBattleViewComp_001": {
         "zh": "生命",
         "en": ""
@@ -309,10 +269,6 @@
     },
     "PreBattleViewComp_010": {
         "zh": "攻击",
-        "en": ""
-    },
-    "PreBattleViewComp_019": {
-        "zh": "返回地图",
         "en": ""
     },
     "ResultViewComp_001": {
@@ -471,30 +427,6 @@
         "zh": "暂不可购买",
         "en": ""
     },
-    "GameTip_001": {
-        "zh": "购买成功，已穿上{0}",
-        "en": ""
-    },
-    "GameTip_002": {
-        "zh": "套装加成：{0}",
-        "en": ""
-    },
-    "GameTip_003": {
-        "zh": "套装加成：{0}",
-        "en": ""
-    },
-    "GameTip_004": {
-        "zh": "已卸下{0}",
-        "en": ""
-    },
-    "GameTip_005": {
-        "zh": "已穿上{0}",
-        "en": ""
-    },
-    "GameTip_006": {
-        "zh": "获得：{0}",
-        "en": ""
-    },
     "RunState_001": {
         "zh": "本地图已通关，点击下方前往{0}",
         "en": ""
@@ -625,6 +557,74 @@
     },
     "CharacterViewComp_017": {
         "zh": "知道了",
+        "en": ""
+    },
+    "MapViewComp_012": {
+        "zh": "一键跳过",
+        "en": ""
+    },
+    "MapViewComp_013": {
+        "zh": "新绝招解锁：{0}",
+        "en": ""
+    },
+    "MapViewComp_014": {
+        "zh": "新绝招解锁",
+        "en": ""
+    },
+    "MapViewComp_015": {
+        "zh": "已学会以下绝招，对战中点按钮释放",
+        "en": ""
+    },
+    "MapViewComp_016": {
+        "zh": "太棒了",
+        "en": ""
+    },
+    "MapViewComp_017": {
+        "zh": "最终挑战",
+        "en": ""
+    },
+    "FinalChallenge_001": {
+        "zh": "最终挑战",
+        "en": ""
+    },
+    "FinalChallenge_002": {
+        "zh": "五图赛程已毕，鸡王坤坤在全村注视下等你。",
+        "en": ""
+    },
+    "FinalChallenge_003": {
+        "zh": "去挑战",
+        "en": ""
+    },
+    "FinalChallenge_004": {
+        "zh": "稍后再说",
+        "en": ""
+    },
+    "PreBattleViewComp_019": {
+        "zh": "返回地图",
+        "en": ""
+    },
+    "GameTip_001": {
+        "zh": "购买成功，已穿上{0}",
+        "en": ""
+    },
+    "GameTip_002": {
+        "zh": "套装加成：{0}",
+        "en": ""
+    },
+    "GameTip_003": {
+        "zh": "套装加成：{0}",
+        "en": ""
+    },
+    "GameTip_004": {
+        "zh": "已卸下{0}",
+        "en": ""
+    },
+    "GameTip_005": {
+        "zh": "已穿上{0}",
+        "en": ""
+    },
+    "GameTip_006": {
+        "zh": "获得：{0}",
         "en": ""
     }
 }

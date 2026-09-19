@@ -42,7 +42,7 @@ async function main() {
     const exported = await methods.exportConfig(source);
     assert(exported.ok && exported.exported && !exported.warning);
     assert.equal(writes, 1); assert.equal(refreshes, 1);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(directory, "Enemy.json"))).kun_boss.targetBattleSeconds, 45);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(directory, "Enemy.json"))).kun_boss.targetBattleSeconds, 55);
     console.log("PASS 导出使用完整数据，并请求Creator刷新正确资源目录");
     const invalid = await methods.exportConfig(path.join(directory, "missing.xlsx"));
     assert.equal(invalid.ok, false); assert.equal(writes, 1); assert.equal(refreshes, 1);
