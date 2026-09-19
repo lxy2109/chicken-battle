@@ -143,7 +143,7 @@ export class EndingViewComp extends GameUIBase<ChickenRun> {
         titleUt.setContentSize(640, 220);
         title.setPosition(0, 80, 0);
         const titleLab = title.getComponent(Label) || title.addComponent(Label);
-        titleLab.string = gameTextOr("EndingViewComp_002", "冠军请领奖！！！");
+        titleLab.string = gameTextOr("EndingViewComp_002", "您已通关！！");
         titleLab.fontSize = 80;
         titleLab.lineHeight = 96;
         titleLab.isBold = true;
