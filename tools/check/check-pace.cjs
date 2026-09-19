@@ -46,11 +46,12 @@ function steps(step) {
  * **改了那边的时长，这张表要跟着改**，否则这里量出来的节奏是假的。
  */
 const LEAD = {
-    peck: steps(130) * 0.09,
-    jump: steps(168) * 0.18,
+    // peck/jump/leap 起手前多了极短的蓄力顿，和 ChickenActor 对齐
+    peck: 0.04 + steps(130) * 0.09,
+    jump: 0.04 + steps(168) * 0.18,
     dive: 0.14 + steps(220) * 0.12,
     // 腾空下砸直接砸到对手头上，不走 advance
-    leap: 0.2 + 0.13 + 0.15,
+    leap: 0.05 + 0.2 + 0.13 + 0.15,
     charge: steps(250) * 0.08,
     tail: steps(150) * 0.09,
     combo: steps(160) * 0.08,

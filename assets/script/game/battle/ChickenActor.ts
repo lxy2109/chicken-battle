@@ -85,9 +85,14 @@ export class ChickenActor {
         this.resetPose();
         this.skillAmp = 1.42;
         this.skillPrimed = true;
+        // 绝招蓄力阶段就切序列帧 windup，出手时不再闪 idle。
+        this.sheets?.play(style, this.leadOf(style) + 0.18);
         this.windup(style, true);
         await this.skillPose(style, tk);
-        if (!this.alive(tk)) this.skillPrimed = false;
+        if (!this.alive(tk)) {
+            this.skillPrimed = false;
+            this.sheets?.abort();
+        }
     }
 
     /**
@@ -104,29 +109,56 @@ export class ChickenActor {
         const primed = skill && this.skillPrimed;
         this.skillPrimed = false;
         this.roaming = false;
-        const tk = this.begin();
+        // keepSheet：绝招已在 prepareSkill 播着 windup，不能 halt 闪回 idle。
+        const tk = this.begin({ keepSheet: primed });
         // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
         // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
         this.resetPose();
         this.skillAmp = skill ? 1.42 : 1;
-        this.sheets?.play(style);
+        // 先按招式摆起手，再切序列帧，避免 busy 把 lean/squash 全吃掉。
         this.windup(style, skill);
+        if (!primed) this.sheets?.play(style, this.leadOf(style));
         // 没预先蓄力时才现场 pose（例如测试直接 strike）；正常绝招已在 prepareSkill 演过。
         if (skill && !primed) await this.skillPose(style, tk);
         let told = false;
         const contact = (hit: boolean) => {
             if (told) return;
             told = true;
-            if (hit) this.contactJuice();
+            if (hit) {
+                // 序列帧砸到接触帧，和结算同一拍。
+                this.sheets?.impact();
+                this.contactJuice(style);
+            }
             if (onContact) onContact(hit);
         };
 
         const hit = this.alive(tk) ? await this.perform(target, style, tk, contact) : false;
-        contact(false);
+        if (!told) {
+            told = true;
+            this.sheets?.abort();
+            if (onContact) onContact(false);
+        }
         this.skillAmp = 1;
         this.walkLegs(false, tk);
         if (this.alive(tk)) await this.retreat(tk);
         return hit;
+    }
+
+    /**
+     * 各招式「起手到打着」的标称时长，用来把序列帧 windup 压到同一拍。
+     * 真接近距离会变，打早/打晚靠 hold + impact 对齐。
+     */
+    private leadOf(style: StrikeStyle) {
+        switch (style) {
+            case "jump": return this.dur(0.18) * 2;
+            case "dive": return this.dur(0.14) + this.dur(0.12);
+            case "leap": return this.dur(0.2) + 0.13 + 0.15;
+            case "charge": return this.dur(0.08) * 2;
+            case "tail": return this.dur(0.09) * 2;
+            case "combo": return this.dur(0.08) * 2;
+            case "feint": return this.dur(0.09) + 0.06 + this.dur(0.24) + this.dur(0.08);
+            default: return this.dur(0.09) * 2;
+        }
     }
 
     private perform(target: Node, style: StrikeStyle, tk: number, contact: (hit: boolean) => void): Promise<boolean> {
@@ -144,11 +176,16 @@ export class ChickenActor {
 
     //#region 招式
 
-    /** 鸡啄米：先蹲再整只前扑。立绘没有头颈，身子前扑才看得出这一口。 */
+    /** 鸡啄米：先仰头再整只前扑啄实。 */
     private async peckMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
-        this.lean(18, 0.05);
-        this.scaleTo(this.sx * 1.16, this.sy * 0.78, 0.06);
+        this.lean(-12, 0.05);
+        this.scaleTo(this.sx * 0.92, this.sy * 1.1, 0.05);
+        this.tiltPart(this.child("Head"), -16 * this.sign(), 0.05, 0.08);
+        await this.delay(0.04, tk);
+        if (!this.alive(tk)) return false;
+        this.lean(20, 0.05);
+        this.scaleTo(this.sx * 1.18, this.sy * 0.76, 0.05);
         const hit = await this.advance(target, tk, 130, this.dur(0.09));
         this.walkLegs(false, tk);
         if (!hit) return false;
@@ -163,16 +200,19 @@ export class ChickenActor {
      * 那点抬升立刻被插值拉平，所以怎么看都不像跳。
      */
     private async jumpMove(target: Node, tk: number, contact: (hit: boolean) => void) {
-        this.flap(4);
-        this.tuckLegs(-30, 0.07, 0.16);
-        this.scaleTo(this.sx * 0.8, this.sy * 1.24, 0.06);
+        this.flap(5);
+        this.tuckLegs(-34, 0.07, 0.18);
+        this.scaleTo(this.sx * 1.2, this.sy * 0.72, 0.05);
+        await this.delay(0.04, tk);
+        if (!this.alive(tk)) return false;
+        this.scaleTo(this.sx * 0.78, this.sy * 1.28, 0.06);
         // 每跳压到 0.18 秒是有讲究的：出招期间逻辑层挂着 busy 不出新招，
         // 接触前的耗时一旦超过最快出手间隔 0.55 秒，演出就会反过来拖慢节奏，
         // 把速度堆上去的收益白白吃掉。下面几招的时长都是按这条线卡的。
-        const hit = await this.advance(target, tk, 168, this.dur(0.18), this.lift(72), true);
+        const hit = await this.advance(target, tk, 168, this.dur(0.18), this.lift(78), true);
         if (!hit) return false;
         contact(true);
-        this.squash(tk, 1.38, 0.52);
+        this.squash(tk, 1.42, 0.48);
         this.kick(tk);
         await this.delay(0.14, tk);
         return true;
@@ -180,19 +220,21 @@ export class ChickenActor {
 
     /** 乌鸦坐飞鸡：先窜到高处，再压着身子一头扎下来。 */
     private async diveMove(target: Node, tk: number, contact: (hit: boolean) => void) {
-        this.flap(7);
-        this.tuckLegs(-24, 0.06, 0.2);
+        this.flap(8);
+        this.tuckLegs(-28, 0.06, 0.2);
+        this.scaleTo(this.sx * 0.78, this.sy * 1.28, 0.06);
         const up = this.node.position.clone();
-        up.y += this.lift(110);
+        up.y += this.lift(118);
         await this.ease(up, this.dur(0.14), "quadOut", tk);
-        this.lean(48, 0.06);
-        this.scaleTo(this.sx * 0.72, this.sy * 1.34, 0.08);
+        this.lean(52, 0.06);
+        this.scaleTo(this.sx * 0.7, this.sy * 1.36, 0.07);
+        this.ghost(new Color(140, 200, 255));
         const hit = await this.advance(target, tk, 220, this.dur(0.12), 0, true);
         this.node.angle = 0;
         this.scaleTo(this.sx, this.sy, 0.08);
         if (!hit) return false;
         contact(true);
-        this.squash(tk, 1.42, 0.5);
+        this.squash(tk, 1.46, 0.48);
         this.kick(tk);
         await this.delay(0.12, tk);
         return true;
@@ -203,25 +245,29 @@ export class ChickenActor {
      * 那一拍停顿是留给观众反应的，没有它就只是个高一点的乌鸦坐飞鸡。
      */
     private async leapMove(target: Node, tk: number, contact: (hit: boolean) => void) {
-        this.flap(6);
-        this.tuckLegs(-36, 0.08, 0.22);
-        this.scaleTo(this.sx * 0.72, this.sy * 1.36, 0.12);
+        this.flap(7);
+        this.tuckLegs(-40, 0.08, 0.24);
+        this.scaleTo(this.sx * 1.24, this.sy * 0.68, 0.06);
+        await this.delay(0.05, tk);
+        if (!this.alive(tk)) return false;
+        this.scaleTo(this.sx * 0.68, this.sy * 1.4, 0.1);
         const sky = this.node.position.clone();
         sky.y += this.lift(186);
         await this.ease(sky, this.dur(0.2), "quadOut", tk);
-        this.lean(-16, 0.08);
+        this.lean(-18, 0.08);
         this.ghost(new Color(255, 240, 210));
+        this.ghost(new Color(255, 160, 80));
         await this.delay(0.13, tk);
         if (!this.alive(tk) || !target.isValid) return false;
-        this.lean(28, 0.08);
-        this.scaleTo(this.sx * 0.84, this.sy * 1.22, 0.08);
+        this.lean(32, 0.07);
+        this.scaleTo(this.sx * 0.82, this.sy * 1.24, 0.07);
         const onto = target.position.clone();
         onto.y += 44;
         await this.ease(onto, 0.15, "quadIn", tk);
         this.node.angle = 0;
         if (!this.hits(target)) return false;
         contact(true);
-        this.squash(tk, 1.5, 0.46);
+        this.squash(tk, 1.55, 0.44);
         this.tiltPart(this.child("LegL"), -28, 0.05, 0.18);
         this.tiltPart(this.child("LegR"), 22, 0.05, 0.18);
         this.tiltPart(this.artNode(), 18 * this.sign(), 0.05, 0.16);
@@ -231,11 +277,12 @@ export class ChickenActor {
 
     /** 铁头功：压低身子贴地加速撞过去，撞实了自己也被弹开。 */
     private async chargeMove(target: Node, tk: number, contact: (hit: boolean) => void) {
-        this.flap(8);
+        this.flap(5);
         this.squat(true, tk);
-        this.lean(22, 0.06);
+        this.lean(26, 0.05);
+        this.scaleTo(this.sx * 1.32, this.sy * 0.64, 0.06);
         this.ghost(this.ghostTint());
-        this.ghost(this.ghostTint());
+        this.ghost(new Color(255, 170, 70));
         const hit = await this.advance(target, tk, 250, this.dur(0.08), 0, true);
         if (!hit) {
             this.squat(false, tk);
@@ -243,8 +290,9 @@ export class ChickenActor {
             return false;
         }
         contact(true);
-        this.squash(tk, 1.46, 0.5);
-        await this.knockBack(tk, 70);
+        this.squash(tk, 1.5, 0.46);
+        this.tiltPart(this.child("Head"), 18 * this.sign(), 0.04, 0.16);
+        await this.knockBack(tk, 76);
         this.squat(false, tk);
         this.node.angle = 0;
         return true;
@@ -253,8 +301,9 @@ export class ChickenActor {
     /** 神龙摆尾：整只转一圈抽过去。立绘没有尾巴，转圈才看得出这一招。 */
     private async tailMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
-        this.lean(-22, 0.06);
-        this.scaleTo(this.sx * 0.88, this.sy * 1.16, 0.06);
+        this.lean(-28, 0.06);
+        this.scaleTo(this.sx * 0.84, this.sy * 1.2, 0.06);
+        this.tiltPart(this.child("WingBack"), -20 * this.sign(), 0.06, 0.12);
         const hit = await this.advance(target, tk, 150, this.dur(0.09));
         this.walkLegs(false, tk);
         if (!hit) return false;
@@ -266,30 +315,34 @@ export class ChickenActor {
     /** 连珠神啄：贴上去快啄三下，一下比一下猛，伤害仍然只结算一次。 */
     private async comboMove(target: Node, tk: number, contact: (hit: boolean) => void) {
         this.walkLegs(true, tk);
+        this.lean(14, 0.04);
+        this.scaleTo(this.sx * 1.1, this.sy * 0.86, 0.04);
         const hit = await this.advance(target, tk, 160, this.dur(0.08));
         this.walkLegs(false, tk);
         if (!hit) return false;
         contact(true);
         for (let i = 0; i < 3 && this.alive(tk); i++) {
-            if (i > 0) this.ghost();
-            await this.peck(tk, i === 2 ? 0.2 : 0.12, i === 2);
-            if (i < 2 && this.alive(tk)) await this.nudge(tk, 22);
+            if (i > 0) this.ghost(new Color(255, 230, 120));
+            await this.peck(tk, i === 2 ? 0.2 : 0.11, i === 2);
+            if (i < 2 && this.alive(tk)) await this.nudge(tk, 24);
         }
         return true;
     }
 
     /** 金蝉脱壳：先虚晃一下把对手骗住，再绕到它另一侧偷一口。 */
     private async feintMove(target: Node, tk: number, contact: (hit: boolean) => void) {
-        this.lean(-22, 0.06);
-        this.scaleTo(this.sx * 1.18, this.sy * 0.78, 0.06);
-        this.tiltPart(this.child("Head"), -14 * this.sign(), 0.06, 0.1);
-        this.tiltPart(this.artNode(), -16 * this.sign(), 0.06, 0.1);
+        this.lean(16, 0.05);
+        this.scaleTo(this.sx * 1.22, this.sy * 0.74, 0.05);
+        this.tiltPart(this.child("Head"), 12 * this.sign(), 0.05, 0.08);
+        this.tiltPart(this.artNode(), 14 * this.sign(), 0.05, 0.08);
         const bait = this.approach(target, 96);
         await this.ease(bait, this.dur(0.09), "quadOut", tk);
-        this.ghost(this.ghostTint());
+        this.ghost(new Color(180, 130, 255));
+        this.scaleTo(this.sx * 0.7, this.sy * 1.15, 0.05);
         await this.delay(0.06, tk);
         if (!this.alive(tk) || !target.isValid) return false;
-        this.flap(4);
+        this.flap(5);
+        this.lean(-20, 0.06);
         await this.arcTo(this.behind(target), this.dur(0.24), this.lift(118), tk);
         const hit = await this.advance(target, tk, 150, this.dur(0.08));
         if (!hit) return false;
@@ -464,15 +517,67 @@ export class ChickenActor {
         return n && n.isValid ? n : null;
     }
 
-    /** 出招前的小花活，不 await，免得把接触前预算吃掉。绝招多叠一层亮色残影。 */
-    private windup(_style: StrikeStyle, skill = false) {
+    /**
+     * 出招前的小花活，不 await，免得把接触前预算吃掉。
+     * 按招式分起手，再叠地图 flourish 与绝招增幅，避免八招同一套预备。
+     */
+    private windup(style: StrikeStyle, skill = false) {
         const f = this.mood?.flourish;
         if (f === "leaf") this.flap(skill ? 4 : 2);
         else if (f === "incense") this.lean(-(this.mood?.spin || 12) * 0.4, 0.05);
         else if (f === "ember") this.flash(new Color(255, 90, 50), skill ? 0.16 : 0.08);
         else if (f === "dust") this.scaleTo(this.sx * 1.14, this.sy * 0.84, 0.05);
         else if (f === "grain") this.ghost();
-        this.ghost(this.ghostTint());
+
+        switch (style) {
+            case "peck":
+                this.lean(-10, 0.05);
+                this.tiltPart(this.child("Head"), -12 * this.sign(), 0.05, 0.1);
+                this.ghost(new Color(255, 200, 90));
+                break;
+            case "jump":
+                this.tuckLegs(-22, 0.05, 0.12);
+                this.scaleTo(this.sx * 1.16, this.sy * 0.78, 0.05);
+                this.ghost(new Color(255, 230, 120));
+                break;
+            case "dive":
+                this.flap(skill ? 6 : 4);
+                this.lean(-14, 0.05);
+                this.scaleTo(this.sx * 0.86, this.sy * 1.16, 0.05);
+                this.ghost(new Color(130, 190, 255));
+                break;
+            case "leap":
+                this.flap(skill ? 7 : 5);
+                this.tuckLegs(-28, 0.06, 0.14);
+                this.scaleTo(this.sx * 1.2, this.sy * 0.72, 0.06);
+                this.ghost(new Color(255, 150, 70));
+                break;
+            case "charge":
+                this.squat(true, this.token);
+                this.lean(18, 0.05);
+                this.ghost(new Color(255, 160, 70));
+                this.ghost(this.ghostTint());
+                break;
+            case "tail":
+                this.lean(-24, 0.05);
+                this.tiltPart(this.child("WingBack"), -16 * this.sign(), 0.05, 0.12);
+                this.ghost(new Color(90, 220, 170));
+                break;
+            case "combo":
+                this.lean(10, 0.04);
+                this.scaleTo(this.sx * 1.1, this.sy * 0.88, 0.04);
+                this.ghost(new Color(255, 230, 100));
+                break;
+            case "feint":
+                this.lean(14, 0.05);
+                this.scaleTo(this.sx * 1.16, this.sy * 0.8, 0.05);
+                this.ghost(new Color(180, 130, 255));
+                break;
+            default:
+                this.ghost(this.ghostTint());
+                break;
+        }
+
         if (skill) {
             this.ghost(new Color(255, 236, 180));
             this.flash(new Color(255, 220, 140), 0.18);
@@ -480,28 +585,55 @@ export class ChickenActor {
     }
 
     /**
-     * 绝招起手定格：先拉高再压扁蓄力，场上读招约 0.22 秒，随即冲刺。
+     * 绝招起手定格：按招式拉开蓄力姿，场上读招约 0.22 秒，随即冲刺。
      */
     private async skillPose(style: StrikeStyle, tk: number) {
         if (!this.alive(tk)) return;
         const air = style === "jump" || style === "dive" || style === "leap";
         const rush = style === "charge" || style === "peck" || style === "combo";
-        this.flap(air ? 8 : 5);
+        this.flap(air ? 8 : style === "tail" ? 6 : 5);
         this.ghost(new Color(255, 245, 210));
         this.ghost(new Color(255, 190, 90));
-        if (air) {
-            this.tuckLegs(-32, 0.08, 0.2);
-            this.scaleTo(this.sx * 0.68, this.sy * 1.4, 0.1);
-            this.lean(-16, 0.1);
+        if (style === "leap") {
+            this.tuckLegs(-40, 0.08, 0.22);
+            this.scaleTo(this.sx * 0.62, this.sy * 1.48, 0.12);
+            this.lean(-20, 0.1);
+            this.ghost(new Color(255, 140, 60));
         }
-        else if (rush) {
+        else if (style === "dive") {
+            this.tuckLegs(-30, 0.08, 0.2);
+            this.scaleTo(this.sx * 0.7, this.sy * 1.36, 0.1);
+            this.lean(-22, 0.1);
+            this.ghost(new Color(120, 180, 255));
+        }
+        else if (style === "jump") {
+            this.tuckLegs(-34, 0.08, 0.2);
+            this.scaleTo(this.sx * 0.72, this.sy * 1.34, 0.1);
+            this.lean(-14, 0.1);
+        }
+        else if (style === "charge") {
             this.squat(true, tk);
-            this.lean(24, 0.1);
-            this.scaleTo(this.sx * 1.28, this.sy * 0.66, 0.1);
+            this.lean(28, 0.1);
+            this.scaleTo(this.sx * 1.34, this.sy * 0.6, 0.1);
+            this.ghost(new Color(255, 150, 50));
+        }
+        else if (style === "peck" || style === "combo") {
+            this.squat(true, tk);
+            this.lean(22, 0.1);
+            this.tiltPart(this.child("Head"), -18 * this.sign(), 0.08, 0.14);
+            this.scaleTo(this.sx * 1.24, this.sy * 0.68, 0.1);
         }
         else if (style === "tail") {
-            this.lean(-30, 0.1);
-            this.scaleTo(this.sx * 0.82, this.sy * 1.24, 0.1);
+            this.lean(-34, 0.1);
+            this.scaleTo(this.sx * 0.78, this.sy * 1.28, 0.1);
+            this.tiltPart(this.child("WingBack"), -24 * this.sign(), 0.08, 0.16);
+            this.ghost(new Color(80, 220, 170));
+        }
+        else if (style === "feint") {
+            this.lean(18, 0.1);
+            this.scaleTo(this.sx * 1.26, this.sy * 0.7, 0.1);
+            this.ghost(new Color(180, 120, 255));
+            this.tiltPart(this.child("Head"), 14 * this.sign(), 0.08, 0.12);
         }
         else {
             this.lean(-20, 0.1);
@@ -516,14 +648,39 @@ export class ChickenActor {
         if (rush) this.squat(false, tk);
     }
 
-    /** 打着那一帧按地图补一层味道，路数残影叠场地色。 */
-    private contactJuice() {
+    /** 打着那一帧按招式 + 地图补反馈，路数残影叠场地色。 */
+    private contactJuice(style?: StrikeStyle) {
         const f = this.mood?.flourish;
         if (f === "ember") this.flash(new Color(255, 70, 36), 0.12);
         else if (f === "incense") this.ghost(new Color(168, 92, 210));
         else if (f === "leaf") this.ghost(new Color(90, 180, 70));
         else if (f === "grain") this.ghost(new Color(230, 190, 60));
         else if (f === "dust") this.ghost(new Color(196, 140, 70));
+
+        if (style === "peck" || style === "combo") {
+            this.ghost(new Color(255, 210, 90));
+            this.flash(new Color(255, 200, 80), 0.08);
+        }
+        else if (style === "jump" || style === "leap") {
+            this.ghost(new Color(255, 230, 140));
+            this.squash(this.token, style === "leap" ? 1.4 : 1.28, 0.55);
+        }
+        else if (style === "dive") {
+            this.ghost(new Color(120, 190, 255));
+            this.flash(new Color(100, 170, 255), 0.1);
+        }
+        else if (style === "charge") {
+            this.ghost(new Color(255, 140, 50));
+            this.flash(new Color(255, 120, 40), 0.1);
+        }
+        else if (style === "tail") {
+            this.ghost(new Color(80, 220, 170));
+        }
+        else if (style === "feint") {
+            this.ghost(new Color(170, 120, 255));
+            this.flash(new Color(190, 140, 255), 0.08);
+        }
+
         const spin = this.mood?.spin ?? 0;
         if (spin >= 16) this.tiltPart(this.artNode(), spin * this.sign() * 0.35, 0.05, 0.12);
         if (this.skillAmp > 1) {
@@ -567,7 +724,18 @@ export class ChickenActor {
         this.tiltPart(this.child("Neck"), nod * 0.3, 0.04, 0.22);
         this.tiltPart(this.child("Wing"), 16 * force, 0.05, 0.2);
         this.tiltPart(this.child("WingBack"), 12 * force, 0.05, 0.2);
-        this.tiltPart(this.artNode(), nod * 0.55, 0.04, 0.2);
+        // 立绘正在播出招时 artNode 会空，根节点补一点后仰，挨打才看得见。
+        if (this.sheets?.busy) {
+            const kick = 10 * force * localDirection;
+            tween(this.node)
+                .to(0.05, { angle: this.node.angle + kick })
+                .to(0.16, { angle: 0 }, { easing: "quadOut" })
+                .start();
+            this.scaleTo(this.sx * (1 + 0.08 * force), this.sy * (1 - 0.1 * force), 0.05);
+        }
+        else {
+            this.tiltPart(this.artNode(), nod * 0.55, 0.04, 0.2);
+        }
         this.blink();
     }
 
@@ -624,11 +792,14 @@ export class ChickenActor {
 
     //#region 令牌
 
-    /** 开启一个新动作：作废旧令牌、停掉残留 tween、放行所有挂起的 await。 */
-    private begin(): number {
+    /**
+     * 开启一个新动作：作废旧令牌、停掉残留 tween、放行所有挂起的 await。
+     * keepSheet：绝招蓄力已在播序列帧时，出手不要 halt 闪回 idle。
+     */
+    private begin(opts?: { keepSheet?: boolean }): number {
         this.token += 1;
         this.stopAll();
-        this.sheets?.halt();
+        if (!opts?.keepSheet) this.sheets?.halt();
         const list = this.waiters;
         this.waiters = [];
         for (const fn of list) fn();
@@ -671,10 +842,59 @@ export class ChickenActor {
         const x = this.home.x + (Math.random() - 0.5) * 18 * this.rhythm.roam;
         const y = this.home.y + (Math.random() - 0.5) * (this.style === "aerial" ? 22 : 10) * this.rhythm.roam;
         this.idleMotion(true);
+        // 待机序列帧速度随路数微抖，双方不会同拍点头。
+        this.sheets?.setIdlePace(this.idleSheetPace());
         this.moveTo(v3(x, y, 0), 0.28 + Math.random() * 0.12, tk).then(() => {
             if (!this.roaming || !this.alive(tk)) return;
-            this.bob(tk).then(() => this.roamStep(tk));
+            // 偶尔加一点路数小动作，冷却空档不至于只会原地蹭。
+            const flourish = this.idleFlourish(tk);
+            const next = flourish || this.bob(tk);
+            next.then(() => this.roamStep(tk));
         });
+    }
+
+    private idleSheetPace() {
+        const base = this.style === "swift" || this.style === "trickster" ? 1.2
+            : this.style === "tank" ? 0.75
+                : this.style === "aerial" ? 1.1
+                    : this.style === "berserker" ? 1.25
+                        : 1;
+        return base * (0.92 + Math.random() * 0.16);
+    }
+
+    /** 踱步间隙的路数小动作；返回 null 表示本轮只做普通点头。 */
+    private idleFlourish(tk: number): Promise<void> | null {
+        if (Math.random() > 0.28) return null;
+        if (this.style === "aerial") {
+            this.flap(2);
+            const p = this.node.position.clone();
+            p.y += this.lift(28);
+            return this.moveTo(p, 0.12, tk).then(() => this.moveTo(this.home.clone(), 0.14, tk));
+        }
+        if (this.style === "swift" || this.style === "trickster") {
+            this.ghost(this.ghostTint());
+            this.lean(this.style === "trickster" ? -12 : 8, 0.08);
+            return this.delay(0.14, tk).then(() => {
+                if (this.alive(tk)) this.lean(0, 0.1);
+            });
+        }
+        if (this.style === "tank") {
+            this.scaleTo(this.sx * 1.08, this.sy * 0.9, 0.1);
+            return this.delay(0.12, tk).then(() => {
+                if (this.alive(tk)) this.scaleTo(this.sx, this.sy, 0.12);
+            });
+        }
+        if (this.style === "berserker") {
+            this.pulse();
+            return this.delay(0.16, tk);
+        }
+        if (this.style === "medic") {
+            this.flap(2);
+            return this.delay(0.14, tk);
+        }
+        this.tiltPart(this.child("Head"), 10 * this.sign(), 0.08, 0.12);
+        this.tiltPart(this.artNode(), 8 * this.sign(), 0.08, 0.12);
+        return this.delay(0.16, tk);
     }
 
     private approach(target: Node, step: number) {
@@ -765,8 +985,9 @@ export class ChickenActor {
     }
 
     private lean(deg: number, dur = 0.08) {
-        if (this.sheets?.busy) return;
-        tween(this.node).to(dur, { angle: deg * this.sign() }, { easing: "quadOut" }).start();
+        // 立绘序列帧自己在拧身子时，根节点只做很小倾角，避免和贴图双重旋转。
+        const amp = this.sheets?.busy ? 0.35 : 1;
+        tween(this.node).to(dur, { angle: deg * this.sign() * amp }, { easing: "quadOut" }).start();
     }
 
     private tuckLegs(deg: number, out: number, back: number) {
@@ -817,11 +1038,13 @@ export class ChickenActor {
 
     /** 砸实了的压扁回弹，落地和撞击都用它收尾。绝招再压深一点。 */
     private squash(tk: number, wide = 1.28, flat = 0.62) {
-        if (!this.alive(tk) || this.sheets?.busy) return;
+        if (!this.alive(tk)) return;
+        // 序列帧已含形变时只做轻压，位移打击感还在，不会和贴图抢戏。
+        const sheetMul = this.sheets?.busy ? 0.45 : 1;
         const map = this.mood?.squash ?? 1;
-        const amp = this.skillAmp;
+        const amp = this.skillAmp * sheetMul;
         const w = 1 + (wide - 1) * this.rhythm.squash * map * amp;
-        const f = 1 - (1 - flat) * this.rhythm.squash * map * Math.min(1.35, amp);
+        const f = 1 - (1 - flat) * this.rhythm.squash * map * Math.min(1.35, Math.max(amp, 0.35));
         tween(this.node)
             .to(0.05, { scale: v3(this.sx * w, this.sy * Math.max(0.38, f), 1) })
             .to(this.skillAmp > 1 ? 0.18 : 0.14, { scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
@@ -833,9 +1056,10 @@ export class ChickenActor {
      * 被抢占后就别再站起来了：那会儿新动作已经摆好自己的姿态，这一下会把它盖掉。
      */
     private squat(on: boolean, tk: number) {
-        if (!this.alive(tk) || this.sheets?.busy) return;
-        const x = on ? this.sx * 1.22 : this.sx;
-        const y = on ? this.sy * 0.74 : this.sy;
+        if (!this.alive(tk)) return;
+        const mul = this.sheets?.busy ? 0.5 : 1;
+        const x = on ? this.sx * (1 + 0.22 * mul) : this.sx;
+        const y = on ? this.sy * (1 - 0.26 * mul) : this.sy;
         tween(this.node).to(0.08, { scale: v3(x, y, 1) }).start();
     }
 
@@ -850,18 +1074,18 @@ export class ChickenActor {
     private async sweep(tk: number) {
         const dir = this.sign();
         const extra = this.mood?.spin ?? 0;
+        // 有序列帧时贴图自己在转，根节点只跟半圈，避免拧成麻花。
+        const spin = this.sheets?.busy ? 0.42 : 1;
         this.lean(-32, 0.08);
         this.tiltSeq(this.child("WingBack"), [[-8 * dir, 0.06], [-36 * dir, 0.08], [12 * dir, 0.1], [0, 0.12]]);
         this.tiltSeq(this.child("Wing"), [[14 * dir, 0.06], [-10 * dir, 0.1], [0, 0.14]]);
         this.tiltSeq(this.child("Head"), [[12 * dir, 0.08], [-8 * dir, 0.12], [0, 0.1]]);
         this.tiltSeq(this.artNode(), [[18 * dir, 0.08], [-22 * dir, 0.14], [0, 0.12]]);
-        if (!this.sheets?.busy) {
-            tween(this.node)
-                .to(0.12, { angle: -(170 + extra) * dir }, { easing: "quadIn" })
-                .to(0.16, { angle: 18 * dir }, { easing: "quadOut" })
-                .to(0.1, { angle: 0 })
-                .start();
-        }
+        tween(this.node)
+            .to(0.12, { angle: -(170 + extra) * dir * spin }, { easing: "quadIn" })
+            .to(0.16, { angle: 18 * dir * spin }, { easing: "quadOut" })
+            .to(0.1, { angle: 0 })
+            .start();
         this.squash(tk, 1.22, 0.7);
         await this.delay(0.38, tk);
         if (!this.alive(tk)) return;
@@ -882,7 +1106,13 @@ export class ChickenActor {
     }
 
     private scaleTo(x: number, y: number, dur: number) {
-        if (this.sheets?.busy) return;
+        if (this.sheets?.busy) {
+            // 立绘出招时只保留一部分根缩放，让跳/冲的身形仍可读。
+            const mx = this.sx + (x - this.sx) * 0.4;
+            const my = this.sy + (y - this.sy) * 0.4;
+            tween(this.node).to(dur, { scale: v3(mx, my, 1) }).start();
+            return;
+        }
         tween(this.node).to(dur, { scale: v3(x, y, 1) }).start();
     }
 
@@ -1009,6 +1239,7 @@ export class ChickenActor {
     private peck(tk: number, dur = 0.2, heavy = false) {
         const dir = this.sign();
         const amp = heavy ? 1.25 : 1;
+        const sheetMul = this.sheets?.busy ? 0.4 : 1;
         const art = this.artNode();
         const head = this.child("Head");
         const neck = this.child("Neck");
@@ -1019,12 +1250,13 @@ export class ChickenActor {
                 this.tiltPart(head, 22 * dir * amp, dur * 0.4, dur * 0.6);
                 this.tiltPart(neck, 8 * dir * amp, dur * 0.4, dur * 0.6);
             }
-            if (!this.sheets?.busy) {
-                tween(this.node)
-                    .to(dur * 0.4, { angle: 20 * dir * amp, scale: v3(this.sx * 1.16, this.sy * 0.82, 1) })
-                    .to(dur * 0.6, { angle: 0, scale: v3(this.sx, this.sy, 1) })
-                    .start();
-            }
+            tween(this.node)
+                .to(dur * 0.4, {
+                    angle: 20 * dir * amp * sheetMul,
+                    scale: v3(this.sx * (1 + 0.16 * sheetMul), this.sy * (1 - 0.18 * sheetMul), 1)
+                })
+                .to(dur * 0.6, { angle: 0, scale: v3(this.sx, this.sy, 1) })
+                .start();
             return this.delay(dur, tk);
         }
         const wind = dur * 0.32;
@@ -1038,19 +1270,24 @@ export class ChickenActor {
             this.tiltSeq(neck, [[-7 * dir * amp, wind], [12 * dir * amp, snap], [0, back]]);
             this.tiltSeq(wing, [[16 * amp, wind], [-10 * amp, snap], [0, back]]);
         }
-        if (!this.sheets?.busy) {
-            tween(this.node)
-                .to(wind, { angle: -18 * dir * amp, scale: v3(this.sx * 0.9, this.sy * 1.12, 1) })
-                .to(snap, { angle: 26 * dir * amp, scale: v3(this.sx * 1.22, this.sy * 0.76, 1) })
-                .to(back, { angle: 0, scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
-                .start();
-        }
+        tween(this.node)
+            .to(wind, {
+                angle: -18 * dir * amp * sheetMul,
+                scale: v3(this.sx * (1 - 0.1 * sheetMul), this.sy * (1 + 0.12 * sheetMul), 1)
+            })
+            .to(snap, {
+                angle: 26 * dir * amp * sheetMul,
+                scale: v3(this.sx * (1 + 0.22 * sheetMul), this.sy * (1 - 0.24 * sheetMul), 1)
+            })
+            .to(back, { angle: 0, scale: v3(this.sx, this.sy, 1) }, { easing: "backOut" })
+            .start();
         return this.delay(dur, tk);
     }
 
     private kick(tk: number) {
         if (!this.alive(tk)) return;
         const dir = this.sign();
+        const sheetMul = this.sheets?.busy ? 0.4 : 1;
         const art = this.artNode();
         if (art) this.tiltSeq(art, [[14 * dir, 0.05], [-32 * dir, 0.07], [0, 0.12]]);
         else {
@@ -1058,13 +1295,11 @@ export class ChickenActor {
             this.tiltPart(this.child("LegR"), 16, 0.06, 0.14);
             this.tiltPart(this.child("Head"), 10 * dir, 0.06, 0.12);
         }
-        if (!this.sheets?.busy) {
-            tween(this.node)
-                .to(0.06, { angle: -12 * dir })
-                .to(0.08, { angle: 16 * dir })
-                .to(0.12, { angle: 0 })
-                .start();
-        }
+        tween(this.node)
+            .to(0.06, { angle: -12 * dir * sheetMul })
+            .to(0.08, { angle: 16 * dir * sheetMul })
+            .to(0.12, { angle: 0 })
+            .start();
     }
 
     private bob(tk: number) {
