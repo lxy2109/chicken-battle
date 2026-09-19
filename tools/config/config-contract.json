@@ -217,21 +217,6 @@
       "max": null,
       "integer": false
     },
-    "danmaku_warmupLimit": {
-      "min": 0,
-      "max": null,
-      "integer": true
-    },
-    "danmaku_officialLimit": {
-      "min": 0,
-      "max": null,
-      "integer": true
-    },
-    "danmaku_bossLimit": {
-      "min": 0,
-      "max": null,
-      "integer": true
-    },
     "danmaku_travelSeconds": {
       "min": 0.1,
       "max": null,

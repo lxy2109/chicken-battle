@@ -196,24 +196,6 @@
         "desc": "首条弹幕延迟（秒）",
         "min": 0
     },
-    "danmaku_warmupLimit": {
-        "id": "danmaku_warmupLimit",
-        "value": 5,
-        "desc": "热身赛弹幕总条数",
-        "min": 0
-    },
-    "danmaku_officialLimit": {
-        "id": "danmaku_officialLimit",
-        "value": 7,
-        "desc": "正式赛弹幕总条数",
-        "min": 0
-    },
-    "danmaku_bossLimit": {
-        "id": "danmaku_bossLimit",
-        "value": 9,
-        "desc": "Boss弹幕总条数",
-        "min": 0
-    },
     "danmaku_travelSeconds": {
         "id": "danmaku_travelSeconds",
         "value": 8,
