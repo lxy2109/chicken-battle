@@ -3,7 +3,7 @@ import {
 } from "cc";
 import { GameComponent } from "db://oops-framework/module/common/GameComponent";
 import { BattleSession } from "../../domain/BattleSession";
-import { PLAYER_SKILLS, SKILL_ICON, skillCooldownOf } from "../../domain/BattleStyle";
+import { SKILL_ICON, skillCooldownOf } from "../../domain/BattleStyle";
 import { TEX } from "../../domain/Catalog";
 import { gameText } from "../../domain/GameConfig";
 import { StrikeStyle } from "../../domain/Types";
@@ -39,7 +39,7 @@ interface Slot {
 }
 
 /**
- * 对战页底部全部带特效的主动绝招。
+ * 对战页底部已解锁的主动绝招。
  * 宿主 SkillBar 写在 battle.prefab 上，Widget 居中钉底；这里只填图标、冷却和攻击数值。
  */
 export class BattleSkillBar {
@@ -49,22 +49,35 @@ export class BattleSkillBar {
 
     constructor(private view: GameComponent, private root: Node) {}
 
-    async mount(onCast: (style: StrikeStyle) => void) {
+    async mount(skills: readonly StrikeStyle[], onCast: (style: StrikeStyle) => void) {
         const bar = this.ensureBar();
         const grid = bar.getChildByName(GRID) || bar;
         const laidOut = !!grid.getComponent(Layout);
         this.slots = [];
-        const rows = Math.ceil(PLAYER_SKILLS.length / COLS);
-        const totalW = COLS * SIZE + (COLS - 1) * GAP_X;
+        // 清掉旧档/上一场留下的未解锁按钮，避免残留可点。
+        for (const child of [...grid.children]) {
+            if (child.name.startsWith("SkillBtn_") && !skills.some(style => child.name === `SkillBtn_${style}`)) {
+                child.destroy();
+            }
+        }
+        if (!skills.length) {
+            bar.active = false;
+            this.raise();
+            return;
+        }
+        bar.active = true;
+        const cols = Math.min(COLS, Math.max(1, skills.length));
+        const rows = Math.ceil(skills.length / cols);
+        const totalW = cols * SIZE + (cols - 1) * GAP_X;
         const totalH = rows * SIZE + (rows - 1) * GAP_Y;
         const originX = -totalW / 2 + SIZE / 2;
         const originY = totalH / 2 - SIZE / 2;
-        for (let i = 0; i < PLAYER_SKILLS.length; i++) {
-            const col = i % COLS;
-            const row = Math.floor(i / COLS);
+        for (let i = 0; i < skills.length; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
             const x = laidOut ? 0 : originX + col * (SIZE + GAP_X);
             const y = laidOut ? 0 : originY - row * (SIZE + GAP_Y);
-            this.slots.push(await this.makeSlot(grid, PLAYER_SKILLS[i], x, y, laidOut, onCast));
+            this.slots.push(await this.makeSlot(grid, skills[i], x, y, laidOut, onCast));
         }
         this.raise();
     }

@@ -5,6 +5,7 @@
  */
 const path = require("path");
 const png = require("./png.cjs");
+const { keyCheckerboard, optsForName } = require("./key-checkerboard.cjs");
 
 const DIRS = [
     [1, 0], [-1, 0], [0, 1], [0, -1],
@@ -262,6 +263,70 @@ function knockWhiteViaMagenta(img) {
     return knockKeyedMagentaPixels(img);
 }
 
+/**
+ * 清掉环/星等闭合图形内部残留的棋盘格（边缘洪水够不着的洞）。
+ * 只清低饱和浅灰，且连通块够大或贴边，避免吃掉小高光。
+ */
+function knockInteriorChecker(img) {
+    const { width: w, height: h, data } = img;
+    const seen = new Uint8Array(w * h);
+    const queue = new Int32Array(w * h);
+    let cleared = 0;
+
+    function isChecker(r, g, b) {
+        const sat = Math.max(r, g, b) - Math.min(r, g, b);
+        const avg = (r + g + b) / 3;
+        return sat <= 18 && avg >= 200 && avg <= 248;
+    }
+
+    function flood(sx, sy) {
+        const start = sy * w + sx;
+        if (seen[start]) return 0;
+        const d0 = start * 4;
+        if (data[d0 + 3] < 8 || !isChecker(data[d0], data[d0 + 1], data[d0 + 2])) return 0;
+        let head = 0;
+        let tail = 0;
+        queue[tail++] = start;
+        seen[start] = 1;
+        const cells = [];
+        while (head < tail) {
+            const i = queue[head++];
+            cells.push(i);
+            const x = i % w;
+            const y = (i - x) / w;
+            for (const [dx, dy] of DIRS) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                const ni = ny * w + nx;
+                if (seen[ni]) continue;
+                const d = ni * 4;
+                if (data[d + 3] < 8) continue;
+                if (!isChecker(data[d], data[d + 1], data[d + 2])) continue;
+                seen[ni] = 1;
+                queue[tail++] = ni;
+            }
+        }
+        let border = false;
+        for (const i of cells) {
+            const x = i % w;
+            const y = (i - x) / w;
+            if (x <= 1 || y <= 1 || x >= w - 2 || y >= h - 2) {
+                border = true;
+                break;
+            }
+        }
+        if (!border && cells.length < 80) return 0;
+        for (const i of cells) data.fill(0, i * 4, i * 4 + 4);
+        return cells.length;
+    }
+
+    for (let y = 0; y < h; y += 2) {
+        for (let x = 0; x < w; x += 2) cleared += flood(x, y);
+    }
+    return cleared;
+}
+
 /** 原地抠底，返回被清掉的像素数。 */
 function knock(img, avgMin = 232) {
     const { width: w, height: h, data } = img;
@@ -336,6 +401,7 @@ function main() {
         const a = args[i];
         if (a === "--magenta") chroma = "magenta";
         else if (a === "--via-magenta") chroma = "via-magenta";
+        else if (a === "--checker" || a === "--fx") chroma = "checker";
         else if (a === "--chroma") chroma = String(args[++i] || "magenta");
         else if (a.startsWith("--chroma=")) chroma = a.slice(9);
         else if (a === "--trim") pad = Number(args[++i] || 16);
@@ -343,14 +409,24 @@ function main() {
         else files.push(a);
     }
     if (!files.length) {
-        console.error("用法: node tools/knock-alpha.cjs [--chroma magenta|via-magenta] [--trim 16] <png...>");
+        console.error("用法: node tools/art/knock-alpha.cjs [--chroma magenta|via-magenta|checker] [--trim 16] <png...>");
         process.exit(1);
     }
     for (const file of files) {
         let img = png.decode(file);
         const total = img.width * img.height;
-        const cleared = chroma === "via-magenta" ? knockWhiteViaMagenta(img)
-            : chroma === "magenta" ? knockMagenta(img) : knock(img);
+        const base = path.basename(file, path.extname(file));
+        let cleared;
+        if (chroma === "checker" || chroma === "fx") {
+            cleared = keyCheckerboard(img, optsForName(base));
+        } else if (chroma === "via-magenta") {
+            cleared = knockWhiteViaMagenta(img);
+            cleared += knockInteriorChecker(img);
+        } else if (chroma === "magenta") {
+            cleared = knockMagenta(img);
+        } else {
+            cleared = knock(img);
+        }
         if (pad > 0) {
             const trimmed = png.trim(img, pad);
             if (trimmed) img = trimmed;
@@ -360,6 +436,6 @@ function main() {
     }
 }
 
-module.exports = { knock, knockMagenta, whiteToMagenta, knockWhiteViaMagenta };
+module.exports = { knock, knockMagenta, whiteToMagenta, knockWhiteViaMagenta, knockInteriorChecker, keyCheckerboard };
 
 if (require.main === module) main();

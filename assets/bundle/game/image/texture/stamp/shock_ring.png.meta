@@ -26,7 +26,8 @@
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
-        "anisotropy": 0,
+        "premultiplyAlpha": false,
+        "anisotropy": 1,
         "isUuid": true,
         "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000003",
         "visible": false
@@ -63,7 +64,7 @@
         "isUuid": true,
         "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000003@6c48a",
         "atlasUuid": "",
-        "packable": true,
+        "packable": false,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
         "pivotY": 0.5,
@@ -127,12 +128,8 @@
   },
   "userData": {
     "type": "sprite-frame",
-    "fixAlphaTransparencyArtifacts": false,
-    "hasAlpha": true,
     "redirect": "a1b2c3d4-4004-4000-8000-000000000003@6c48a",
-    "compressSettings": {
-      "useCompressTexture": true,
-      "presetId": "chicken-web"
-    }
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": false
   }
 }

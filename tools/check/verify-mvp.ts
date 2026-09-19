@@ -5,7 +5,7 @@ import { AiFighter, decideAction, decide } from "../../assets/script/game/domain
 import { BattleSession } from "../../assets/script/game/domain/BattleSession";
 import { DanmakuPool } from "../../assets/script/game/domain/Danmaku";
 import { Rng } from "../../assets/script/game/domain/Rng";
-import { enemyCombatProfile, PLAYER_SKILLS, skillAttackValue, skillCooldownOf, stageMood, STYLE_OPENING } from "../../assets/script/game/domain/BattleStyle";
+import { enemyCombatProfile, PLAYER_SKILLS, SKILL_UNLOCK_MAP, skillAttackValue, skillCooldownOf, skillsUnlockedAt, skillsUnlockedOnMap, stageMood, STYLE_OPENING } from "../../assets/script/game/domain/BattleStyle";
 import { getItems, getRoute, getSets } from "../../assets/script/game/domain/Catalog";
 import { bindTables } from "../../assets/script/game/domain/Config";
 import { buildStats, combatPower, setPrice } from "../../assets/script/game/domain/EquipMath";
@@ -130,7 +130,10 @@ function run() {
         const warmups = [2, 2, 3, 3, 5];
         for (let id = 1; id <= 5; id++) {
             const prefab = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), `assets/bundle/gui/map/map_${id}.prefab`), "utf8"));
-            const root = prefab.find((obj: any) => obj.__type__ === "cc.Node" && obj._name === "map" && obj._parent === null);
+            // 根节点名是 map_1…map_5，兼容旧名 map。
+            const root = prefab.find((obj: any) => obj.__type__ === "cc.Node" && obj._parent === null
+                && (obj._name === "map" || obj._name === `map_${id}`));
+            assert(!!root?._children, `地图${id}预制体应有根节点`);
             const child = (ref: any) => prefab[ref.__id__]._name;
             const names = root._children.map(child);
             const shops = names.filter((name: string) => /^BtnShop/.test(name));
@@ -1161,15 +1164,36 @@ function run() {
         assert(meme / 5000 > 0.77 && meme / 5000 < 0.83, "坤坤80%主题弹幕，允许重复");
     });
 
-    ok("玩家主动招式按各自冷却放，不会自动放绝招", () => {
+    ok("玩家主动招式按地图解锁，最终八招，冷却独立且不会自动放", () => {
+        assert(PLAYER_SKILLS.length === 8, "总共应有八个特效绝招");
+        assert(skillsUnlockedAt(1).length === 2 && skillsUnlockedAt(1).includes("peck") && skillsUnlockedAt(1).includes("combo"), "第一图解锁鸡啄米与连珠神啄");
+        assert(skillsUnlockedOnMap(2).includes("jump") && skillsUnlockedOnMap(2).includes("feint"), "第二图解锁金鸡独立与金蝉脱壳");
+        assert(skillsUnlockedAt(5).length === 8, "第五图应凑齐全部八招");
+        for (const style of PLAYER_SKILLS) {
+            assert(SKILL_UNLOCK_MAP[style] >= 1 && SKILL_UNLOCK_MAP[style] <= 5, `${style} 应在 1-5 图解锁`);
+        }
+
         const run = new RunState(21);
         run.confirmAppearance(defaultAppearance());
+        assert(run.unlockedSkills().length === 2, "开局只应有两招");
+        const firstNotice = run.takeSkillUnlockNotice();
+        assert(firstNotice.length === 2 && firstNotice.includes("peck"), "第一图应弹出起始绝招");
+        assert(run.takeSkillUnlockNotice().length === 0, "同图不应重复弹解锁");
+
         const p = run.playerFighter(), e = run.enemyFighter();
         p.stats = { ...p.stats, atk: 20, def: 0, spd: 8, crit: 0, hp: 900, maxHp: 900 };
         e.stats = { ...e.stats, atk: 8, def: 0, spd: 4, crit: 0, hp: 900, maxHp: 900 };
-        const battle = new BattleSession(p, e, 21, false, () => ({ kind: "attack", style: "peck" }), { playerManualSkills: true });
+        const early = new BattleSession(p, e, 21, false, () => ({ kind: "attack", style: "peck" }), {
+            playerManualSkills: true, playerSkills: run.unlockedSkills()
+        });
+        early.beginCombat();
+        assert(early.requestSkill("peck").some(ev => ev.type === "action" && ev.style === "peck"), "已解锁的鸡啄米应能点");
+        assert(early.requestSkill("leap").length === 0, "未解锁的天外飞鸡不能放");
+
+        const battle = new BattleSession(p, e, 21, false, () => ({ kind: "attack", style: "peck" }), {
+            playerManualSkills: true, playerSkills: PLAYER_SKILLS
+        });
         battle.beginCombat();
-        assert(PLAYER_SKILLS.length === 8, "八个特效招式都应能主动点");
         for (const style of PLAYER_SKILLS) {
             assert(skillCooldownOf(style) > 0 && battle.previewSkillAtk(style) > 0, `${style} 应有独立冷却和攻击`);
         }

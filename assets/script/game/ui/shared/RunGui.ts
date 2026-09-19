@@ -10,8 +10,17 @@ import { applyConfiguredTexts } from "./UiUtil";
 
 const preparedDirectories = new Map<string, Promise<void>>();
 
+export type OpenRunViewOptions = {
+    /** 是否播放控件错落入场；切图/切屏滑动时关掉，避免和整页滑动抢戏。 */
+    entrance?: boolean;
+};
+
 /** 打开界面：预制体缺脚本时补挂，保证动态加载预制体可跑 */
-export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: ECSCtor<T>): Promise<Node> {
+export async function openRunView<T extends ECSView>(
+    entity: ChickenRun,
+    ctor: ECSCtor<T>,
+    options: OpenRunViewOptions = {}
+): Promise<Node> {
     const key = gui.internal.getKey(ctor);
     // Dynamic sprites are not prefab dependencies. Finish their downloads and
     // decoding while the loading/previous view is still visible.
@@ -62,6 +71,7 @@ export async function openRunView<T extends ECSView>(entity: ChickenRun, ctor: E
     }
     entity.add(comp);
     oops.gui.show(key);
+    if (options.entrance === false) return node;
     const entrances: Record<string, string[]> = {
         customize: ["BtnStart", "LabSaveHint"],
         map: ["BtnCharacter", "GoldCard", "BtnChallenge"],

@@ -543,60 +543,151 @@ function makeFloater(name, text, tint, particleCfg, uuidTail) {
   writePrefab("combat", name, b.finish(root), uuidTail);
 }
 
-function makeFloaters() {
-  // 描边卡通贴图：alpha + 近白，保留描边
-  makeFloater("fx_hit", "-10", [255, 210, 200, 255], {
-    frame: "particle_star", blend: "alpha", rate: 50, total: 12, life: 0.3, lifeVar: 0.08,
-    angle: 90, angleVar: 180, startSize: 18, startSizeVar: 6, endSize: 8, endSizeVar: 3,
-    speed: 70, speedVar: 28, gx: 0, gy: -16, posVarX: 6, posVarY: 6,
-    startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
-  }, 0x20);
-
-  makeFloater("fx_skill", "技能", [220, 230, 255, 255], {
-    frame: "particle_glow", blend: "alpha", rate: 40, total: 12, life: 0.35, lifeVar: 0.1,
-    angle: 90, angleVar: 180, startSize: 22, startSizeVar: 8, endSize: 10, endSizeVar: 4,
-    speed: 55, speedVar: 22, gx: 0, gy: 8, posVarX: 8, posVarY: 8,
-    startColor: [200, 220, 255, 230], endColor: [200, 220, 255, 0]
-  }, 0x21);
-
-  makeFloater("fx_heal", "+8", [200, 255, 210, 255], {
-    frame: "particle_glow", blend: "alpha", rate: 36, total: 14, life: 0.5, lifeVar: 0.12,
-    angle: 90, angleVar: 36, startSize: 16, startSizeVar: 6, endSize: 8, endSizeVar: 3,
-    speed: 50, speedVar: 18, gx: 0, gy: 36, posVarX: 12, posVarY: 5,
-    startColor: [180, 255, 200, 240], endColor: [180, 255, 200, 0]
-  }, 0x22);
-
-  makeFloater("fx_start", "开战！", [255, 245, 200, 255], {
-    frame: "particle_spark", blend: "alpha", rate: 56, total: 20, life: 0.38, lifeVar: 0.12,
-    angle: 90, angleVar: 180, startSize: 16, startSizeVar: 6, endSize: 8, endSizeVar: 3,
-    speed: 100, speedVar: 40, gx: 0, gy: 16, posVarX: 16, posVarY: 10,
-    startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
-  }, 0x23);
+/**
+ * 多层飘字底板：根节点 + 若干单图粒子发射器 + 文字。
+ * 单张 sprite 用 ParticleSystem2D 一次喷出一堆，形成漫画打击感。
+ */
+function makeFloaterLayers(name, text, tint, layers, uuidTail) {
+  const b = new Builder(name);
+  const root = b.node({ name, w: 240, h: 120 });
+  b.opacity(root, 255);
+  layers.forEach((cfg, i) => {
+    const n = b.node({ name: "Burst" + i, parent: root, w: 96, h: 96 });
+    b.particle(n, {
+      playOnLoad: true,
+      duration: 0.1,
+      autoRemove: false,
+      ...cfg
+    });
+  });
+  const lab = b.node({ name: "LabText", parent: root, y: 8, w: 200, h: 50 });
+  b.label(lab, text, { font: 28, color: tint });
+  writePrefab("combat", name, b.finish(root), uuidTail);
 }
 
-// ─── 命中喷溅 / 对撞：轻量、短促，避免大块血花糊屏 ──────────
+function makeFloaters() {
+  // 默认字色与运行时 FLOAT_TINT 对齐；运行时仍会按效果再染一遍
+  // 普攻：星屑 + 火花 + 微光
+  makeFloaterLayers("fx_hit", "-10", [255, 88, 68, 255], [
+    {
+      frame: "particle_star", blend: "alpha", rate: 90, total: 18, life: 0.34, lifeVar: 0.1,
+      angle: 90, angleVar: 180, startSize: 20, startSizeVar: 7, endSize: 8, endSizeVar: 3,
+      speed: 90, speedVar: 36, gx: 0, gy: -14, posVarX: 8, posVarY: 8,
+      startColor: [255, 120, 90, 255], endColor: [255, 70, 50, 0]
+    },
+    {
+      frame: "particle_spark", blend: "alpha", rate: 70, total: 14, life: 0.28, lifeVar: 0.08,
+      angle: 90, angleVar: 180, startSize: 12, startSizeVar: 5, endSize: 5, endSizeVar: 2,
+      speed: 120, speedVar: 48, gx: 0, gy: -30, posVarX: 6, posVarY: 6,
+      startColor: [255, 220, 160, 255], endColor: [255, 140, 80, 0]
+    }
+  ], 0x20);
+
+  // 绝招 / 暴击：光晕 + 星 + 火花
+  makeFloaterLayers("fx_skill", "技能", [120, 168, 255, 255], [
+    {
+      frame: "particle_glow", blend: "alpha", rate: 56, total: 14, life: 0.4, lifeVar: 0.1,
+      angle: 90, angleVar: 180, startSize: 28, startSizeVar: 10, endSize: 14, endSizeVar: 5,
+      speed: 50, speedVar: 20, gx: 0, gy: 8, posVarX: 10, posVarY: 8,
+      startColor: [150, 190, 255, 230], endColor: [120, 160, 255, 0]
+    },
+    {
+      frame: "particle_star", blend: "alpha", rate: 72, total: 16, life: 0.36, lifeVar: 0.1,
+      angle: 90, angleVar: 180, startSize: 18, startSizeVar: 6, endSize: 8, endSizeVar: 3,
+      speed: 88, speedVar: 32, gx: 0, gy: 0, posVarX: 8, posVarY: 8,
+      startColor: [200, 220, 255, 255], endColor: [140, 180, 255, 0]
+    },
+    {
+      frame: "particle_spark", blend: "alpha", rate: 64, total: 14, life: 0.3, lifeVar: 0.08,
+      angle: 90, angleVar: 180, startSize: 12, startSizeVar: 4, endSize: 5, endSizeVar: 2,
+      speed: 130, speedVar: 50, gx: 0, gy: -20, posVarX: 6, posVarY: 6,
+      startColor: [255, 255, 255, 255], endColor: [180, 210, 255, 0]
+    }
+  ], 0x21);
+
+  // 治疗：十字 heal 粒子 + 绿光点上飘
+  makeFloaterLayers("fx_heal", "+8", [64, 236, 128, 255], [
+    {
+      frame: "particle_heal", blend: "alpha", rate: 48, total: 12, life: 0.55, lifeVar: 0.14,
+      angle: 90, angleVar: 36, startSize: 22, startSizeVar: 6, endSize: 12, endSizeVar: 4,
+      speed: 48, speedVar: 16, gx: 0, gy: 56, posVarX: 16, posVarY: 8,
+      startSpinVar: 20, endSpinVar: 30,
+      startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
+    },
+    {
+      frame: "particle_glow", blend: "alpha", rate: 40, total: 14, life: 0.6, lifeVar: 0.14,
+      angle: 90, angleVar: 40, startSize: 14, startSizeVar: 5, endSize: 8, endSizeVar: 3,
+      speed: 40, speedVar: 14, gx: 0, gy: 42, posVarX: 18, posVarY: 6,
+      startColor: [90, 255, 150, 220], endColor: [60, 220, 120, 0]
+    }
+  ], 0x22);
+
+  // 开战：火花 + 星 + 余烬
+  makeFloaterLayers("fx_start", "开战！", [255, 242, 170, 255], [
+    {
+      frame: "particle_spark", blend: "alpha", rate: 80, total: 24, life: 0.42, lifeVar: 0.12,
+      angle: 90, angleVar: 180, startSize: 16, startSizeVar: 6, endSize: 7, endSizeVar: 3,
+      speed: 120, speedVar: 48, gx: 0, gy: 20, posVarX: 20, posVarY: 12,
+      startColor: [255, 236, 140, 255], endColor: [255, 200, 80, 0]
+    },
+    {
+      frame: "particle_star", blend: "alpha", rate: 56, total: 14, life: 0.4, lifeVar: 0.1,
+      angle: 90, angleVar: 180, startSize: 20, startSizeVar: 8, endSize: 10, endSizeVar: 4,
+      speed: 90, speedVar: 36, gx: 0, gy: 10, posVarX: 16, posVarY: 10,
+      startColor: [255, 250, 200, 255], endColor: [255, 220, 120, 0]
+    },
+    {
+      frame: "particle_ember", blend: "alpha", rate: 40, total: 12, life: 0.55, lifeVar: 0.15,
+      angle: 90, angleVar: 50, startSize: 12, startSizeVar: 4, endSize: 5, endSizeVar: 2,
+      speed: 60, speedVar: 24, gx: 0, gy: 40, posVarX: 22, posVarY: 10,
+      startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
+    }
+  ], 0x23);
+}
+
+// ─── 命中喷溅 / 对撞：单图 × 多粒子，短促不糊屏 ──────────
 function makeImpact() {
   const b = new Builder("fx_impact");
-  const root = b.node({ name: "fx_impact", w: 160, h: 160 });
+  const root = b.node({ name: "fx_impact", w: 180, h: 180 });
   b.opacity(root, 255);
 
-  // 描边卡通星
-  let n = b.node({ name: "Star", parent: root, w: 64, h: 64 });
+  // 星芒（运行时按暴击/绝招再染）
+  let n = b.node({ name: "Star", parent: root, w: 72, h: 72 });
   b.particle(n, {
-    frame: "particle_star", blend: "alpha", playOnLoad: true, duration: 0.06,
-    rate: 70, total: 12, life: 0.22, lifeVar: 0.08,
-    angle: 90, angleVar: 180, startSize: 26, startSizeVar: 8, endSize: 10, endSizeVar: 4,
-    speed: 100, speedVar: 36, gx: 0, gy: -8, posVarX: 4, posVarY: 4,
+    frame: "particle_star", blend: "alpha", playOnLoad: true, duration: 0.07,
+    rate: 100, total: 18, life: 0.26, lifeVar: 0.08,
+    angle: 90, angleVar: 180, startSize: 30, startSizeVar: 10, endSize: 10, endSizeVar: 4,
+    speed: 120, speedVar: 44, gx: 0, gy: -8, posVarX: 5, posVarY: 5,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
+  });
+
+  // 火花层
+  n = b.node({ name: "Spark", parent: root, w: 80, h: 80 });
+  b.particle(n, {
+    frame: "particle_spark", blend: "alpha", playOnLoad: true, duration: 0.09,
+    rate: 72, total: 18, life: 0.3, lifeVar: 0.1,
+    angle: 90, angleVar: 180, startSize: 14, startSizeVar: 5, endSize: 6, endSizeVar: 3,
+    speed: 150, speedVar: 55, gx: 0, gy: -28, posVarX: 6, posVarY: 6,
+    startColor: [255, 240, 200, 255], endColor: [255, 200, 120, 0]
+  });
+
+  // 微光闪
+  n = b.node({ name: "Glow", parent: root, w: 64, h: 64 });
+  b.particle(n, {
+    frame: "particle_glow", blend: "alpha", playOnLoad: true, duration: 0.05,
+    rate: 40, total: 6, life: 0.2, lifeVar: 0.06,
+    angle: 90, angleVar: 180, startSize: 36, startSizeVar: 10, endSize: 18, endSizeVar: 6,
+    speed: 16, speedVar: 8, gx: 0, gy: 0, posVarX: 4, posVarY: 4,
+    startColor: [255, 230, 180, 200], endColor: [255, 200, 120, 0]
   });
 
   // 描边血花：少而小
   n = b.node({ name: "BloodSplash", parent: root, w: 72, h: 72 });
   b.particle(n, {
     frame: "particle_blood_splash", blend: "alpha", playOnLoad: true, duration: 0.04,
-    rate: 14, total: 2, life: 0.28, lifeVar: 0.08,
-    angle: 90, angleVar: 40, startSize: 32, startSizeVar: 8, endSize: 16, endSizeVar: 6,
-    speed: 24, speedVar: 10, gx: 0, gy: -20, posVarX: 3, posVarY: 3,
+    rate: 20, total: 4, life: 0.28, lifeVar: 0.08,
+    angle: 90, angleVar: 40, startSize: 34, startSizeVar: 8, endSize: 16, endSizeVar: 6,
+    speed: 26, speedVar: 10, gx: 0, gy: -20, posVarX: 3, posVarY: 3,
     startSpinVar: 30, endSpinVar: 40,
     startColor: [255, 255, 255, 230], endColor: [255, 255, 255, 0]
   });
@@ -605,20 +696,30 @@ function makeImpact() {
   n = b.node({ name: "Blood", parent: root, w: 80, h: 80 });
   b.particle(n, {
     frame: "particle_blood", blend: "alpha", playOnLoad: true, duration: 0.14,
-    rate: 36, total: 12, life: 0.48, lifeVar: 0.15,
+    rate: 48, total: 16, life: 0.5, lifeVar: 0.15,
     angle: 75, angleVar: 42, startSize: 16, startSizeVar: 6, endSize: 8, endSizeVar: 3,
-    speed: 120, speedVar: 45, gx: 0, gy: -380, posVarX: 5, posVarY: 5,
+    speed: 130, speedVar: 50, gx: 0, gy: -380, posVarX: 5, posVarY: 5,
     rotationIsDir: true, startSpin: 0, startSpinVar: 0, endSpin: 0, endSpinVar: 0,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
+  });
+
+  // 轻烟（命中尘）
+  n = b.node({ name: "Smoke", parent: root, w: 72, h: 72 });
+  b.particle(n, {
+    frame: "particle_smoke", blend: "alpha", playOnLoad: true, duration: 0.1,
+    rate: 28, total: 8, life: 0.45, lifeVar: 0.12,
+    angle: 90, angleVar: 50, startSize: 22, startSizeVar: 8, endSize: 36, endSizeVar: 10,
+    speed: 36, speedVar: 14, gx: 0, gy: 24, posVarX: 8, posVarY: 6,
+    startColor: [255, 255, 255, 160], endColor: [255, 255, 255, 0]
   });
 
   // 描边羽毛（startColor 由运行时染色）
   n = b.node({ name: "Feather", parent: root, w: 80, h: 80 });
   b.particle(n, {
     frame: "particle_feather", blend: "alpha", playOnLoad: true, duration: 0.18,
-    rate: 16, total: 7, life: 0.85, lifeVar: 0.25,
+    rate: 22, total: 10, life: 0.85, lifeVar: 0.25,
     angle: 100, angleVar: 55, startSize: 24, startSizeVar: 8, endSize: 14, endSizeVar: 5,
-    speed: 70, speedVar: 30, gx: 8, gy: -100, tang: 14, tangVar: 28, posVarX: 8, posVarY: 8,
+    speed: 72, speedVar: 30, gx: 8, gy: -100, tang: 14, tangVar: 28, posVarX: 8, posVarY: 8,
     startSpinVar: 100, endSpinVar: 140,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
   });
@@ -628,35 +729,44 @@ function makeImpact() {
 
 function makeClash() {
   const b = new Builder("fx_clash");
-  const root = b.node({ name: "fx_clash", w: 200, h: 200 });
+  const root = b.node({ name: "fx_clash", w: 220, h: 220 });
   b.opacity(root, 255);
 
-  let n = b.node({ name: "Star", parent: root, w: 90, h: 90 });
+  let n = b.node({ name: "Star", parent: root, w: 96, h: 96 });
   b.particle(n, {
     frame: "particle_star", blend: "alpha", playOnLoad: true, duration: 0.08,
-    rate: 90, total: 20, life: 0.28, lifeVar: 0.1,
-    angle: 90, angleVar: 180, startSize: 32, startSizeVar: 10, endSize: 12, endSizeVar: 4,
-    speed: 140, speedVar: 50, gx: 0, gy: 0, posVarX: 5, posVarY: 5,
+    rate: 110, total: 24, life: 0.3, lifeVar: 0.1,
+    angle: 90, angleVar: 180, startSize: 34, startSizeVar: 10, endSize: 12, endSizeVar: 4,
+    speed: 150, speedVar: 55, gx: 0, gy: 0, posVarX: 6, posVarY: 6,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
   });
 
-  n = b.node({ name: "Spark", parent: root, w: 90, h: 90 });
+  n = b.node({ name: "Spark", parent: root, w: 96, h: 96 });
   b.particle(n, {
     frame: "particle_spark", blend: "alpha", playOnLoad: true, duration: 0.1,
-    rate: 56, total: 20, life: 0.32, lifeVar: 0.1,
-    angle: 90, angleVar: 180, startSize: 16, startSizeVar: 6, endSize: 8, endSizeVar: 3,
-    speed: 160, speedVar: 60, gx: 0, gy: -30, posVarX: 6, posVarY: 6,
+    rate: 80, total: 26, life: 0.34, lifeVar: 0.1,
+    angle: 90, angleVar: 180, startSize: 16, startSizeVar: 6, endSize: 7, endSizeVar: 3,
+    speed: 180, speedVar: 70, gx: 0, gy: -30, posVarX: 8, posVarY: 8,
     startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
   });
 
-  n = b.node({ name: "Slash", parent: root, w: 90, h: 90 });
+  n = b.node({ name: "Slash", parent: root, w: 100, h: 100 });
   b.particle(n, {
-    frame: "particle_slash", blend: "alpha", playOnLoad: true, duration: 0.05,
-    rate: 22, total: 5, life: 0.2, lifeVar: 0.06,
-    angle: 0, angleVar: 22, startSize: 56, startSizeVar: 14, endSize: 22, endSizeVar: 8,
-    speed: 20, speedVar: 10, gx: 0, gy: 0, posVarX: 3, posVarY: 3,
-    startSpinVar: 12, endSpinVar: 18,
+    frame: "particle_slash", blend: "alpha", playOnLoad: true, duration: 0.06,
+    rate: 36, total: 8, life: 0.22, lifeVar: 0.06,
+    angle: 0, angleVar: 28, startSize: 58, startSizeVar: 14, endSize: 22, endSizeVar: 8,
+    speed: 28, speedVar: 12, gx: 0, gy: 0, posVarX: 4, posVarY: 4,
+    startSpinVar: 14, endSpinVar: 20,
     startColor: [255, 255, 255, 230], endColor: [255, 255, 255, 0]
+  });
+
+  n = b.node({ name: "Glow", parent: root, w: 80, h: 80 });
+  b.particle(n, {
+    frame: "particle_glow", blend: "alpha", playOnLoad: true, duration: 0.05,
+    rate: 30, total: 6, life: 0.22, lifeVar: 0.06,
+    angle: 90, angleVar: 180, startSize: 42, startSizeVar: 12, endSize: 20, endSizeVar: 8,
+    speed: 12, speedVar: 6, gx: 0, gy: 0, posVarX: 4, posVarY: 4,
+    startColor: [255, 240, 200, 210], endColor: [255, 200, 140, 0]
   });
 
   writePrefab("combat", "fx_clash", b.finish(root), 0x25);

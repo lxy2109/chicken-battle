@@ -26,7 +26,8 @@
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
-        "anisotropy": 0,
+        "premultiplyAlpha": false,
+        "anisotropy": 1,
         "isUuid": true,
         "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000004",
         "visible": false
@@ -53,9 +54,9 @@
         "trimX": 0,
         "trimY": 0,
         "width": 128,
-        "height": 128,
+        "height": 48,
         "rawWidth": 128,
-        "rawHeight": 128,
+        "rawHeight": 48,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -63,7 +64,7 @@
         "isUuid": true,
         "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000004@6c48a",
         "atlasUuid": "",
-        "packable": true,
+        "packable": false,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
         "pivotY": 0.5,
@@ -71,16 +72,16 @@
         "vertices": {
           "rawPosition": [
             -64,
-            -64,
+            -24,
             0,
             64,
-            -64,
+            -24,
             0,
             -64,
-            64,
+            24,
             0,
             64,
-            64,
+            24,
             0
           ],
           "indexes": [
@@ -93,9 +94,9 @@
           ],
           "uv": [
             0,
+            48,
             128,
-            128,
-            128,
+            48,
             0,
             0,
             128,
@@ -113,12 +114,12 @@
           ],
           "minPos": [
             -64,
-            -64,
+            -24,
             0
           ],
           "maxPos": [
             64,
-            64,
+            24,
             0
           ]
         }
@@ -127,12 +128,8 @@
   },
   "userData": {
     "type": "sprite-frame",
-    "fixAlphaTransparencyArtifacts": false,
-    "hasAlpha": true,
     "redirect": "a1b2c3d4-4004-4000-8000-000000000004@6c48a",
-    "compressSettings": {
-      "useCompressTexture": true,
-      "presetId": "chicken-web"
-    }
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": false
   }
 }

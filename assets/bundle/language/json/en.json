@@ -3,6 +3,7 @@
     "common_prompt_cancal": "cancal",
     "common_prompt_title": "System Prompt",
     "common_prompt_content": "System Prompt Cpmtemt",
+    "skill_unlock_title": "New Skill",
     "Update_tips_force": "The current version is too old and requires downloading a new installation package to play the game. Do you want to update it?",
     "Update_tipsreload_config": "Loading configuration",
     "Update_tips_load_game": "Loading game",

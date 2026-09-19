@@ -260,10 +260,23 @@ export function styleDamageMul(style: StrikeStyle, skill: boolean, signature?: S
 /**
  * 全部带特效的绝招。普攻仍自动打，这八招都要点按钮才放，冷却和攻击各自独立。
  * 短冷却低伤、长冷却高伤，按钮上标的攻击就是 atk × powerMul。
+ * 按地图逐步解锁，到第五图凑齐全部八招。
  */
 export const PLAYER_SKILLS: readonly StrikeStyle[] = [
     "peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"
 ];
+
+/** 各绝招首次可用的地图 id；抵达该图时解锁并弹窗提醒。 */
+export const SKILL_UNLOCK_MAP: Readonly<Record<StrikeStyle, number>> = {
+    peck: 1,
+    combo: 1,
+    jump: 2,
+    feint: 2,
+    charge: 3,
+    tail: 3,
+    dive: 4,
+    leap: 5
+};
 
 export const SKILL_KIT: Record<StrikeStyle, { cooldown: number; powerMul: number }> = {
     peck: { cooldown: 6, powerMul: 1.45 },
@@ -289,6 +302,18 @@ export const SKILL_ICON: Record<StrikeStyle, string> = {
 
 export function isPlayerSkill(style: StrikeStyle): boolean {
     return (PLAYER_SKILLS as readonly StrikeStyle[]).includes(style);
+}
+
+/** 当前地图及之前已解锁的绝招，顺序与 PLAYER_SKILLS 一致。 */
+export function skillsUnlockedAt(mapId: number): StrikeStyle[] {
+    const cap = Math.max(1, Math.floor(mapId) || 1);
+    return PLAYER_SKILLS.filter(style => SKILL_UNLOCK_MAP[style] <= cap);
+}
+
+/** 抵达该地图时新学的绝招（弹窗内容）。 */
+export function skillsUnlockedOnMap(mapId: number): StrikeStyle[] {
+    const id = Math.floor(mapId) || 0;
+    return PLAYER_SKILLS.filter(style => SKILL_UNLOCK_MAP[style] === id);
 }
 
 export function skillCooldownOf(style: StrikeStyle): number {

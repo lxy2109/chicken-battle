@@ -825,6 +825,67 @@ function makeShelfItem(name, width, height) {
 }
 
 /** 三选一奖励卡：整行大卡。 */
+/**
+ * 绝招解锁弹窗：Dialog 层全屏蒙版 + 奶油卡 + 两个技能槽位。
+ * 设计坐标 720×1280；打开时按画布高度 /1280 缩放，与全屏界面一致。
+ * 槽位图标/名字由 SkillUnlockViewComp 填充，未用槽隐藏。
+ */
+function makeSkillUnlock() {
+    const b = new Builder("skill_unlock");
+    const root = b.node({ name: "skill_unlock", w: 720, h: 1280 });
+    b.widget(root, 45, { w: 720, h: 1280 });
+    b.addComp(root, null, { type: "cc.BlockInputEvents" });
+    b.opacity(root, 255);
+
+    // Dim 四边贴根节点，Sprite 随 UITransform 拉满，避免 Graphics 固定矩形盖不全。
+    const dim = b.node({ name: "Dim", parent: root, w: 720, h: 1280 });
+    b.widget(dim, 45, { w: 720, h: 1280 });
+    b.sprite(dim, [16, 10, 6, 210], 0, WHITE);
+
+    // 标题 / 提示 / 图标分区拉开，避免叠字。
+    const board = card(b, root, "Card", 0, 36, 600, 580, SF.panel_cream);
+    textNode(b, board, "LabTitle", "新绝招解锁", 0, 220, {
+        font: 44, w: 540, h: 58, color: INK.dark, bold: true
+    });
+    textNode(b, board, "LabHint", "已学会以下绝招，对战中点按钮释放", 0, 152, {
+        font: 26, w: 520, h: 44, color: INK.mute, bold: false
+    });
+
+    for (let i = 0; i < 2; i++) {
+        const x = i === 0 ? -138 : 138;
+        // 全树节点名唯一：getNode / 预制体校验都按名索引。
+        const slot = b.node({ name: "SkillSlot" + i, parent: board, x, y: -8, w: 200, h: 230 });
+        // Disc 仅作描边锚点（无 Sprite）；Icon 与 Disc 同级，避免父级透明 Sprite 把图标吃掉。
+        const disc = b.node({ name: "SkillDisc" + i, parent: slot, y: 36, w: 132, h: 132 });
+        const icon = b.node({ name: "SkillIcon" + i, parent: slot, y: 36, w: 112, h: 112 });
+        b.sprite(icon, [255, 255, 255, 255], 0, WHITE);
+        textNode(b, slot, "SkillName" + i, "绝招", 0, -96, {
+            font: 28, w: 190, h: 40, color: INK.dark, bold: true
+        });
+    }
+
+    labBtn(b, board, "BtnOk", "太棒了", 0, -220, 300, 100, "green");
+
+    const rel = "assets/bundle/gui/skill_unlock/skill_unlock.prefab";
+    // 布局改了就强制覆写，不能只靠 fileId 忽略。
+    const full = path.join(ROOT, rel);
+    if (fs.existsSync(full)) fs.unlinkSync(full);
+    writePrefab(rel, b.finish(root));
+    writePrefabMeta(rel, "skill_unlock", "a1b2c3d4-6010-4000-8000-000000000001");
+    const dirMeta = path.join(ROOT, "assets/bundle/gui/skill_unlock.meta");
+    if (!fs.existsSync(dirMeta)) {
+        fs.writeFileSync(dirMeta, JSON.stringify({
+            ver: "1.2.0",
+            importer: "directory",
+            imported: true,
+            uuid: "a1b2c3d4-6010-4000-8000-000000000000",
+            files: [],
+            subMetas: {},
+            userData: {}
+        }, null, 2) + "\n");
+    }
+}
+
 function makeRewardCard() {
     const b = new Builder("reward_card");
     const root = b.node({ name: "reward_card", w: 208, h: 623.333 });
@@ -1063,6 +1124,7 @@ emit("ending", makeEnding);
 emit("chicken", makeChicken);
 emit("skill", makeSkillSplashes);
 emit("reward_card", makeRewardCard);
+emit("skill_unlock", makeSkillUnlock);
 if (!ONLY) {
     // 战斗飘字/命中/彩带/火焰边框改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
     makeTauntBubble();

@@ -35,6 +35,7 @@ const TARGETS = [
     "assets/bundle/gui/reward/reward.prefab",
     "assets/bundle/gui/shop/shop.prefab",
     "assets/bundle/gui/ending/ending.prefab",
+    "assets/bundle/gui/skill_unlock/skill_unlock.prefab",
     "assets/bundle/game/prefab/actor/chicken.prefab",
     "assets/bundle/game/prefab/ui/shop_item.prefab",
     "assets/bundle/game/prefab/ui/reward_card.prefab",

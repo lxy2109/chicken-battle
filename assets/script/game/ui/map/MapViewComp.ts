@@ -1,7 +1,8 @@
 import { gameText, gameTextOr } from "../../domain/GameConfig";
-import { BlockInputEvents, Color, Graphics, Label, Node, UIOpacity, UITransform, tween, view, _decorator } from "cc";
+import { BlockInputEvents, Color, Graphics, Label, Node, UITransform, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
+import { LayerUIElement } from "db://oops-framework/core/gui/layer/LayerUIElement";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { GameUIBase } from "../../shared/GameUIBase";
 import { ChickenRun } from "../../run/ChickenRun";
@@ -10,7 +11,9 @@ import { combatPower } from "../../domain/EquipMath";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { openRunView } from "../shared/RunGui";
 import { playScreenMusic } from "../shared/GameAudio";
+import { mapTravelDir, playSlideCut } from "../shared/ScreenTransition";
 import { spawnChicken } from "../shared/ChickenBinder";
+import { showSkillUnlockModal } from "../shared/SkillUnlockModal";
 import { bindClick, setLabel, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -34,10 +37,13 @@ const MAP_FEET: Record<string, [number, number]> = {
 @gui.register("MapView", { layer: LayerType.UI, prefab: "gui/map/map_1" })
 export class MapViewComp extends GameUIBase<ChickenRun> {
     private switchingMap = false;
+    /** 双图对切进行中：新图 start 不抢弹解锁提示，由切图结束再提示。 */
+    private static transitioning = false;
 
     async start() {
         this.nodeTreeInfoLite();
         await this.refreshMap();
+        if (!MapViewComp.transitioning) await this.promptSkillUnlock();
     }
 
     private async refreshMap() {
@@ -176,7 +182,7 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
     }
 
     private restoreHint = () => {
-        if (this.node && this.node.isValid) setLabel(this, "LabHint", this.ent.run.mapHint());
+        if (this.node?.isValid && this.ent) setLabel(this, "LabHint", this.ent.run.mapHint());
     };
 
     private async onCharacter() {
@@ -184,51 +190,70 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         await goScreen(this, "character");
     }
 
+    /** 抵达新地图时弹出带图标的绝招解锁面板（奶油底板 + 深色字，对齐商店确认弹窗）。 */
+    private async promptSkillUnlock() {
+        if (!this.node?.isValid || !this.ent) return;
+        const skills = this.ent.run.takeSkillUnlockNotice();
+        if (!skills.length) return;
+        await showSkillUnlockModal(skills);
+    }
+
     private async onNextMap() {
         const run = this.ent.run;
         const next = run.nextMap;
         if (!next || this.switchingMap) return;
         this.switchingMap = true;
+        MapViewComp.transitioning = true;
         const ent = this.ent;
-        const curtain = new Node("MapTransition");
-        curtain.layer = this.node.layer;
-        curtain.parent = this.node.parent;
-        curtain.setPosition(this.node.position);
-        curtain.setScale(this.node.scale);
-        const size = view.getVisibleSize();
-        const width = Math.max(720, size.width / this.node.scale.x);
-        const height = Math.max(1280, size.height / this.node.scale.y);
-        curtain.addComponent(UITransform).setContentSize(width, height);
-        curtain.addComponent(BlockInputEvents);
-        const graphics = curtain.addComponent(Graphics);
-        graphics.fillColor = new Color(24, 35, 27);
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        const title = new Node("MapName");
-        title.layer = curtain.layer;
-        title.parent = curtain;
-        title.addComponent(UITransform).setContentSize(640, 100);
-        const label = title.addComponent(Label);
-        label.string = gameText("MapViewComp_010", next.name);
-        label.fontSize = 42;
-        label.lineHeight = 56;
-        label.horizontalAlign = Label.HorizontalAlign.CENTER;
-        label.color = new Color(255, 228, 145);
-        const opacity = curtain.addComponent(UIOpacity);
-        opacity.opacity = 0;
+        const fromId = run.currentMap().id;
+        const oldNode = this.node;
+        const dir = mapTravelDir(fromId);
+        if (!oldNode.getComponent(BlockInputEvents)) oldNode.addComponent(BlockInputEvents);
+        let newNode: Node | null = null;
         try {
-            await new Promise<void>(resolve => tween(opacity).to(0.4, { opacity: 255 }).call(() => resolve()).start());
             if (!run.enterNextMap()) return;
-            this.remove();
-            await openRunView(ent, MapViewComp);
+            // MapView 同一 tid 只能挂一个：先从实体卸下旧图（不 reset/销毁节点），再开新图做对切。
+            this.detachFromEntity();
+            newNode = await openRunView(ent, MapViewComp, { entrance: false });
             playScreenMusic("map");
-            await new Promise<void>(resolve => tween(opacity).delay(0.3).to(0.45, { opacity: 0 }).call(() => resolve()).start());
+            if (oldNode.isValid && newNode.isValid) {
+                await playSlideCut(oldNode, newNode, dir);
+            }
+            this.destroyDetachedMap(oldNode);
         } catch (error) {
             console.error("[MapView] 切换地图失败", error);
-            if (this.node?.isValid) this.warn(gameText("MapViewComp_011"));
+            try {
+                if (!ent.has(MapViewComp as any)) {
+                    newNode = await openRunView(ent, MapViewComp);
+                    playScreenMusic("map");
+                }
+            } catch (retryError) {
+                console.error("[MapView] 切换地图重开失败", retryError);
+            }
+            this.destroyDetachedMap(oldNode);
         } finally {
-            if (curtain.isValid) curtain.destroy();
+            MapViewComp.transitioning = false;
+            this.switchingMap = false;
+            const arrived = newNode?.isValid ? newNode.getComponent(MapViewComp) : null;
+            if (arrived) await arrived.promptSkillUnlock();
         }
+    }
+
+    /** 卸下 ECS 绑定且不走 reset（reset 会 destroy 节点），以便旧图留在舞台上做滑动。 */
+    private detachFromEntity() {
+        const ent = this.ent;
+        if (!ent) return;
+        const ctor = this.constructor as typeof MapViewComp & { tid: number; compName: string };
+        ent.remove(ctor as any, false);
+        const cache = (ent as any).compTid2Obj as Map<number, unknown> | undefined;
+        cache?.delete(ctor.tid);
+    }
+
+    private destroyDetachedMap(node: Node) {
+        if (!node?.isValid) return;
+        const el = node.getComponent(LayerUIElement);
+        if (el) el.remove(true);
+        else node.destroy();
     }
 
     reset() {

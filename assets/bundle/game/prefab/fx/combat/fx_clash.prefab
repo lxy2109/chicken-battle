@@ -26,6 +26,9 @@
       },
       {
         "__id__": 16
+      },
+      {
+        "__id__": 21
       }
     ],
     "_active": true,
@@ -38,7 +41,7 @@
       }
     ],
     "_prefab": {
-      "__id__": 21
+      "__id__": 26
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -83,8 +86,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 200,
-      "height": 200
+      "width": 220,
+      "height": 220
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -94,7 +97,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "yP6nEVctK1izQ7oFWduL2j"
+    "fileId": "BS9qHYfwN4lCTarIZgxO5m"
   },
   {
     "__type__": "cc.UIOpacity",
@@ -112,7 +115,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "FWduL2jAR8pGXevM3kBS9q"
+    "fileId": "IZgxO5mDUbsJ0hyP6nEVct"
   },
   {
     "__type__": "cc.Node",
@@ -133,7 +136,7 @@
       }
     ],
     "_prefab": {
-      "__id__": 22
+      "__id__": 27
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -178,8 +181,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 90,
-      "height": 90
+      "width": 96,
+      "height": 96
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -189,7 +192,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "M3kBS9qHYfwN4lCTarIZgx"
+    "fileId": "P6nEVctK1izQ7oFWduL2jA"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -215,12 +218,12 @@
       "a": 255
     },
     "duration": 0.08,
-    "emissionRate": 90,
-    "life": 0.28,
+    "emissionRate": 110,
+    "life": 0.3,
     "lifeVar": 0.1,
     "angle": 90,
     "angleVar": 180,
-    "startSize": 32,
+    "startSize": 34,
     "startSizeVar": 10,
     "endSize": 12,
     "endSizeVar": 4,
@@ -235,8 +238,8 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 5,
-      "y": 5
+      "x": 6,
+      "y": 6
     },
     "emitterMode": 0,
     "gravity": {
@@ -244,8 +247,8 @@
       "x": 0,
       "y": 0
     },
-    "speed": 140,
-    "speedVar": 50,
+    "speed": 150,
+    "speedVar": 55,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -265,7 +268,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000037@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 20,
+    "_totalParticles": 24,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -298,7 +301,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "TarIZgxO5mDUbsJ0hyP6nE"
+    "fileId": "WduL2jAR8pGXevM3kBS9qH"
   },
   {
     "__type__": "cc.Node",
@@ -319,7 +322,7 @@
       }
     ],
     "_prefab": {
-      "__id__": 23
+      "__id__": 28
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -364,8 +367,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 90,
-      "height": 90
+      "width": 96,
+      "height": 96
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -375,7 +378,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "0hyP6nEVctK1izQ7oFWduL"
+    "fileId": "3kBS9qHYfwN4lCTarIZgxO"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -401,14 +404,14 @@
       "a": 255
     },
     "duration": 0.1,
-    "emissionRate": 56,
-    "life": 0.32,
+    "emissionRate": 80,
+    "life": 0.34,
     "lifeVar": 0.1,
     "angle": 90,
     "angleVar": 180,
     "startSize": 16,
     "startSizeVar": 6,
-    "endSize": 8,
+    "endSize": 7,
     "endSizeVar": 3,
     "startSpin": 0,
     "startSpinVar": 40,
@@ -421,8 +424,8 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 6,
-      "y": 6
+      "x": 8,
+      "y": 8
     },
     "emitterMode": 0,
     "gravity": {
@@ -430,8 +433,8 @@
       "x": 0,
       "y": -30
     },
-    "speed": 160,
-    "speedVar": 60,
+    "speed": 180,
+    "speedVar": 70,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -451,7 +454,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000032@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 20,
+    "_totalParticles": 26,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -484,7 +487,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "7oFWduL2jAR8pGXevM3kBS"
+    "fileId": "arIZgxO5mDUbsJ0hyP6nEV"
   },
   {
     "__type__": "cc.Node",
@@ -505,7 +508,7 @@
       }
     ],
     "_prefab": {
-      "__id__": 24
+      "__id__": 29
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -550,8 +553,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 90,
-      "height": 90
+      "width": 100,
+      "height": 100
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -561,7 +564,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "evM3kBS9qHYfwN4lCTarIZ"
+    "fileId": "hyP6nEVctK1izQ7oFWduL2"
   },
   {
     "__type__": "cc.ParticleSystem2D",
@@ -586,20 +589,20 @@
       "b": 255,
       "a": 255
     },
-    "duration": 0.05,
-    "emissionRate": 22,
-    "life": 0.2,
+    "duration": 0.06,
+    "emissionRate": 36,
+    "life": 0.22,
     "lifeVar": 0.06,
     "angle": 0,
-    "angleVar": 22,
-    "startSize": 56,
+    "angleVar": 28,
+    "startSize": 58,
     "startSizeVar": 14,
     "endSize": 22,
     "endSizeVar": 8,
     "startSpin": 0,
-    "startSpinVar": 12,
+    "startSpinVar": 14,
     "endSpin": 0,
-    "endSpinVar": 18,
+    "endSpinVar": 20,
     "sourcePos": {
       "__type__": "cc.Vec2",
       "x": 0,
@@ -607,8 +610,8 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 3,
-      "y": 3
+      "x": 4,
+      "y": 4
     },
     "emitterMode": 0,
     "gravity": {
@@ -616,8 +619,8 @@
       "x": 0,
       "y": 0
     },
-    "speed": 20,
-    "speedVar": 10,
+    "speed": 28,
+    "speedVar": 12,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -637,7 +640,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000039@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 5,
+    "_totalParticles": 8,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -670,7 +673,193 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "lCTarIZgxO5mDUbsJ0hyP6"
+    "fileId": "oFWduL2jAR8pGXevM3kBS9"
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "Glow",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "_parent": {
+      "__id__": 1
+    },
+    "_children": [],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 22
+      },
+      {
+        "__id__": 24
+      }
+    ],
+    "_prefab": {
+      "__id__": 30
+    },
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_mobility": 0,
+    "_layer": 33554432,
+    "_euler": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_id": ""
+  },
+  {
+    "__type__": "cc.UITransform",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 21
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 23
+    },
+    "_contentSize": {
+      "__type__": "cc.Size",
+      "width": 80,
+      "height": 80
+    },
+    "_anchorPoint": {
+      "__type__": "cc.Vec2",
+      "x": 0.5,
+      "y": 0.5
+    }
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "vM3kBS9qHYfwN4lCTarIZg"
+  },
+  {
+    "__type__": "cc.ParticleSystem2D",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 21
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 25
+    },
+    "_visFlags": 0,
+    "_customMaterial": null,
+    "_srcBlendFactor": 2,
+    "_dstBlendFactor": 4,
+    "_color": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "a": 255
+    },
+    "duration": 0.05,
+    "emissionRate": 30,
+    "life": 0.22,
+    "lifeVar": 0.06,
+    "angle": 90,
+    "angleVar": 180,
+    "startSize": 42,
+    "startSizeVar": 12,
+    "endSize": 20,
+    "endSizeVar": 8,
+    "startSpin": 0,
+    "startSpinVar": 40,
+    "endSpin": 0,
+    "endSpinVar": 60,
+    "sourcePos": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 0
+    },
+    "posVar": {
+      "__type__": "cc.Vec2",
+      "x": 4,
+      "y": 4
+    },
+    "emitterMode": 0,
+    "gravity": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 0
+    },
+    "speed": 12,
+    "speedVar": 6,
+    "tangentialAccel": 0,
+    "tangentialAccelVar": 12,
+    "radialAccel": 0,
+    "radialAccelVar": 8,
+    "rotationIsDir": false,
+    "startRadius": 0,
+    "startRadiusVar": 0,
+    "endRadius": 0,
+    "endRadiusVar": 0,
+    "rotatePerS": 0,
+    "rotatePerSVar": 0,
+    "playOnLoad": true,
+    "autoRemoveOnFinish": false,
+    "_custom": true,
+    "_file": null,
+    "_spriteFrame": {
+      "__uuid__": "a1b2c3d4-4004-4000-8000-000000000036@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "_totalParticles": 6,
+    "_startColor": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 240,
+      "b": 200,
+      "a": 210
+    },
+    "_startColorVar": {
+      "__type__": "cc.Color",
+      "r": 40,
+      "g": 40,
+      "b": 20,
+      "a": 40
+    },
+    "_endColor": {
+      "__type__": "cc.Color",
+      "r": 255,
+      "g": 200,
+      "b": 140,
+      "a": 0
+    },
+    "_endColorVar": {
+      "__type__": "cc.Color",
+      "r": 30,
+      "g": 20,
+      "b": 10,
+      "a": 0
+    },
+    "_positionType": 0
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "CTarIZgxO5mDUbsJ0hyP6n"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -680,7 +869,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "sJ0hyP6nEVctK1izQ7oFWd",
+    "fileId": "J0hyP6nEVctK1izQ7oFWdu",
     "instance": null,
     "targetOverrides": null
   },
@@ -692,7 +881,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "zQ7oFWduL2jAR8pGXevM3k",
+    "fileId": "Q7oFWduL2jAR8pGXevM3kB",
     "instance": null,
     "targetOverrides": null
   },
@@ -704,7 +893,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "GXevM3kBS9qHYfwN4lCTar",
+    "fileId": "XevM3kBS9qHYfwN4lCTarI",
     "instance": null,
     "targetOverrides": null
   },
@@ -716,7 +905,19 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "N4lCTarIZgxO5mDUbsJ0hy",
+    "fileId": "4lCTarIZgxO5mDUbsJ0hyP",
+    "instance": null,
+    "targetOverrides": null
+  },
+  {
+    "__type__": "cc.PrefabInfo",
+    "root": {
+      "__id__": 1
+    },
+    "asset": {
+      "__id__": 0
+    },
+    "fileId": "bsJ0hyP6nEVctK1izQ7oFW",
     "instance": null,
     "targetOverrides": null
   }

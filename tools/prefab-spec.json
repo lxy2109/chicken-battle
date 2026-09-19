@@ -14,7 +14,8 @@
     "db://assets/bundle/gui/result/result.prefab",
     "db://assets/bundle/gui/reward/reward.prefab",
     "db://assets/bundle/gui/shop/shop.prefab",
-    "db://assets/bundle/gui/ending/ending.prefab"
+    "db://assets/bundle/gui/ending/ending.prefab",
+    "db://assets/bundle/gui/skill_unlock/skill_unlock.prefab"
   ],
   "game": [
     "db://assets/bundle/game/prefab/actor/chicken.prefab",
@@ -68,6 +69,7 @@
     "gui/result/result": "ResultViewComp",
     "gui/reward/reward": "RewardViewComp",
     "gui/shop/shop": "ShopViewComp",
-    "gui/ending/ending": "EndingViewComp"
+    "gui/ending/ending": "EndingViewComp",
+    "gui/skill_unlock/skill_unlock": "SkillUnlockViewComp"
   }
 }

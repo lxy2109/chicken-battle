@@ -1,5 +1,5 @@
 import { gameText, gameTextOr } from "../../domain/GameConfig";
-import { Color, JsonAsset, Label, Node, ParticleSystem2D, Prefab, Sprite, SpriteFrame, UIOpacity, UITransform, Vec3, _decorator, tween, v3 } from "cc";
+import { Color, JsonAsset, Label, Node, ParticleSystem2D, Prefab, Sprite, SpriteFrame, UIOpacity, UITransform, Vec2, Vec3, _decorator, tween, v3 } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
@@ -14,7 +14,7 @@ import { PREFAB_PATH } from "../../domain/Catalog";
 import { BattleSession } from "../../domain/BattleSession";
 import { DanmakuPool } from "../../domain/Danmaku";
 import { BattleDanmaku } from "./BattleDanmaku";
-import { AmbientKind, BattleFx } from "./BattleFx";
+import { AmbientKind, BattleFx, strikeFxColor } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
 import { BattleSkillBar } from "./BattleSkillBar";
@@ -24,7 +24,7 @@ import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { preloadResultSuitGif } from "../shared/SlotVideo";
 import { hexColor, setLabel } from "../shared/UiUtil";
-import { playGameEffect } from "../shared/GameAudio";
+import { playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
 
 const { ccclass, executionOrder } = _decorator;
 
@@ -41,7 +41,28 @@ const BAR_RED = new Color(255, 64, 48, 255);
 const BAR_ORANGE_HP = 0.5;
 const BAR_RED_HP = 0.22;
 
-/** 绝招战报用的招式名，和全屏/半屏特效绑在一起。 */
+/**
+ * 局内飘字颜色：不同效果一眼能分清。
+ * 普攻红 / 重击橙 / 绝招跟招式色 / 暴击金 / 治疗绿 / 闪避青 / 落空灰。
+ */
+const FLOAT_TINT = {
+    hit: new Color(255, 88, 68, 255),
+    heavy: new Color(255, 148, 48, 255),
+    skill: new Color(120, 168, 255, 255),
+    crit: new Color(255, 214, 48, 255),
+    heal: new Color(64, 236, 128, 255),
+    revive: new Color(90, 255, 196, 255),
+    miss: new Color(168, 172, 180, 255),
+    dodge: new Color(80, 210, 255, 255),
+    lock: new Color(255, 186, 72, 255),
+    cast: new Color(255, 228, 120, 255),
+    start: new Color(255, 242, 170, 255),
+    taunt: new Color(255, 245, 220, 255)
+} as const;
+
+type FloatKind = keyof typeof FLOAT_TINT;
+
+/** 绝招战报 / 场上飘字用的招式名。 */
 const STYLE_TEXT: Record<StrikeStyle, string> = {
     get peck() { return gameText("BattleViewComp_001"); },
     get jump() { return gameText("BattleViewComp_002"); },
@@ -81,7 +102,7 @@ const HIT_QUAKE: Record<StrikeStyle, number> = {
  * 即时战斗界面。
  *
  * 逻辑层按时间推进，双方谁的冷却先走完谁就出手；这里每帧把新事件取出来分发。
- * 普攻演出各跑各的，场上可以两只鸡同时扑上去；绝招立绘会错开，叠上时只喊自己的招。
+ * 普攻演出各跑各的，场上可以两只鸡同时扑上去；绝招在场上蓄力→冲刺→命中，逻辑层仍错开绝招以免叠音。
  */
 @ccclass("BattleViewComp")
 @executionOrder(-100)
@@ -185,10 +206,11 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
         // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
         const brain = new BattleBrain();
+        const unlocked = run.unlockedSkills();
         this.session = new BattleSession(
             me, foe, run.rng().int(1, 999999), run.phase === "boss",
             (self, opponent) => brain.think(self, opponent),
-            { playerManualSkills: true }
+            { playerManualSkills: true, playerSkills: unlocked }
         );
         this.anim = this.node.getComponent(BattleAnimator) || this.node.addComponent(BattleAnimator);
         const json = await this.load("bundle", "game/animator/chicken_battle", JsonAsset);
@@ -210,7 +232,6 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (this.closed) return;
         this.screenEffects = new BattleScreenEffects(this.node, oops.gui.camera);
         const fxKeys = ["comic_slash", "comic_star", "shock_ring", "speed_line", "focus_burst", "ground_crack", "ink_burst", "charge_ring"] as const;
-        const skillKeys = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"] as const;
         const fxFrames = await Promise.all(fxKeys.map(name => stampFrame(name)));
         const impactPrefab = await this.load("bundle", PREFAB_PATH.fxImpact, Prefab).catch(() => null);
         const clashPrefab = await this.load("bundle", PREFAB_PATH.fxClash, Prefab).catch(() => null);
@@ -233,30 +254,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 return null;
             }
         }));
-        const skillPrefabs = await Promise.all(skillKeys.map(async name => {
-            try {
-                return await this.load("bundle", PREFAB_PATH.skillFull(name), Prefab);
-            }
-            catch {
-                return null;
-            }
-        }));
-        const skillMiniPrefabs = await Promise.all(skillKeys.map(async name => {
-            try {
-                return await this.load("bundle", PREFAB_PATH.skillHalf(name), Prefab);
-            }
-            catch {
-                return null;
-            }
-        }));
         if (this.closed) return;
         if (arena) {
-            const fulls: Partial<Record<StrikeStyle, Prefab>> = {};
-            const halves: Partial<Record<StrikeStyle, Prefab>> = {};
-            skillKeys.forEach((key, i) => {
-                if (skillPrefabs[i]) fulls[key] = skillPrefabs[i]!;
-                if (skillMiniPrefabs[i]) halves[key] = skillMiniPrefabs[i]!;
-            });
+            // 绝招不再播全屏/半屏立绘，只加载场上斩痕与氛围；招名靠飘字 + 喊招音效。
             const ambientPrefabs: Partial<Record<AmbientKind, Prefab>> = {};
             ambientKinds.forEach((kind, i) => {
                 if (ambientPrefabList[i]) ambientPrefabs[kind] = ambientPrefabList[i]!;
@@ -271,9 +271,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 ink: fxFrames[6] || undefined,
                 charge: fxFrames[7] || undefined,
                 flameBorder: flameBorder || undefined,
-                ambientPrefabs,
-                skillPrefabs: fulls,
-                skillMiniPrefabs: halves
+                ambientPrefabs
             });
             this.fx.paint(mood.dust);
             // 地图底味 + BOSS/决战叠加全屏氛围（雨/灰烬），不再铺贴边黄框。
@@ -286,7 +284,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             this.fx.ambience(layers);
         }
         this.skillBar = new BattleSkillBar(this, this.node);
-        await this.skillBar.mount(style => this.onCastSkill(style));
+        await this.skillBar.mount(unlocked, style => this.onCastSkill(style));
         if (this.closed) return;
         this.skillBar.tick(this.session);
         this.skillBar.raise();
@@ -313,14 +311,14 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const ev = taunts[i];
             if (this.closed || ev.type !== "taunt") return;
             this.actor(ev.side)?.hop();
-            void this.spawnFx(PREFAB_PATH.taunt, ev.side, ev.text, 1.1);
+            void this.spawnFx(PREFAB_PATH.taunt, ev.side, ev.text, 1.1, 1, "taunt");
             if (i < taunts.length - 1) await this.wait(0.3);
         }
         await this.wait(0.95);
         if (this.closed) return;
         this.trig("toStart");
         playGameEffect("start");
-        await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.55);
+        await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.55, 1, "start");
         this.trig("toCombat");
     }
 
@@ -357,21 +355,21 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         else if (ev.type === "heal") {
             playGameEffect("heal");
             this.actor(ev.side)?.hop();
-            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, `+${ev.amount}`, 0.5);
+            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, `+${ev.amount}`, 0.5, 1, "heal");
             this.log(ev.side, gameText("BattleViewComp_011"));
         }
         else if (ev.type === "revive") {
-            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, gameText("BattleViewComp_012"), 0.7);
+            void this.spawnFx(PREFAB_PATH.fxHeal, ev.side, gameText("BattleViewComp_012"), 0.7, 1.15, "revive");
             this.actor(ev.side)?.hop();
             this.screenEffects?.play(14, true);
             this.log(ev.side, gameText("BattleViewComp_013"));
         }
         else if (ev.type === "lock") {
-            void this.spawnFx(PREFAB_PATH.fxSkill, ev.side, gameText("BattleViewComp_014"), 0.6);
+            void this.spawnFx(PREFAB_PATH.fxSkill, ev.side, gameText("BattleViewComp_014"), 0.6, 1, "lock");
             this.log(ev.side, gameText("BattleViewComp_015"));
         }
         else if (ev.type === "miss") {
-            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameText("BattleViewComp_016"), 0.4);
+            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameText("BattleViewComp_016"), 0.4, 1, "miss");
         }
         else if (ev.type === "dodge") {
             playGameEffect("wing");
@@ -379,7 +377,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const dir = ev.side === "player" ? -1 : 1;
             this.fx?.dodge(who, dir);
             who?.hop();
-            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameTextOr("BattleViewComp_025", "躲开了"), 0.45, 1.2);
+            void this.spawnFx(PREFAB_PATH.fxHit, ev.side, gameTextOr("BattleViewComp_025", "躲开了"), 0.45, 1.2, "dodge");
             this.log(ev.side, gameTextOr("BattleViewComp_025", "躲开了"));
         }
         else if (ev.type === "clash") {
@@ -425,10 +423,10 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     /**
      * 一次出招的完整演出。命中判定交给碰撞，结果回给逻辑层结算。
      *
-     * 绝招时序必须错开全屏立绘：
-     * 1) 场地仍可见 → 蓄力圈、镜头推近、鸡蹲蓄
-     * 2) 立绘盖屏 → 只播喊招，不再叠场地动作
-     * 3) 立绘开始让开 → 再冲刺出手，命中顿帧/震屏才看得见
+     * 绝招全在场上走完，不再全屏/半屏立绘打断：
+     * 1) 蓄力圈 + 镜头推近 + 鸡蹲蓄 + 招名飘字/喊招音
+     * 2) 立刻冲刺出手，速度线叠在鸡身上
+     * 3) 命中顿帧/震屏/斩痕接在同一条视觉线上
      */
     private async runStrike(side: BattleSide, style: StrikeStyle, skill: boolean) {
         const self = this.actor(side);
@@ -443,26 +441,21 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.log(side, skill ? gameText("BattleViewComp_017", STYLE_TEXT[style]) : BASIC_TEXT[style]);
         if (skill) {
             const title = gameText("BattleViewComp_017", STYLE_TEXT[style]);
-            const mode = side === "enemy" ? "half" : "full";
-            const full = mode === "full";
+            const fromRight = side === "enemy";
             playGameEffect("skill");
-            // —— 盖屏前：观众看得到的蓄力 ——
-            this.fx?.skillCharge(self);
-            this.screenEffects?.skillCast(side === "player" ? 1 : -1, full);
+            playSkillAnnounce(style);
+            this.fx?.skillCharge(self, style);
+            this.screenEffects?.skillCast(side === "player" ? 1 : -1, true);
             self.pulse();
-            void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.55, full ? 1.35 : 1.2);
+            // 招名贴在出手鸡上方，不挡场地中间；字色跟招式主色。
+            void this.spawnFx(PREFAB_PATH.fxSkill, side, title, 0.7, 1.35, "cast", strikeFxColor(style));
             await self.prepareSkill(style);
             if (this.closed) return;
-            // —— 盖屏中：只喊招 ——
-            this.fx?.skillAnnounce(style, title, side === "enemy", mode);
-            const cover = this.fx?.skillCoverSec(style, mode) ?? (full ? 0.7 : 0.45);
-            await this.wait(cover);
-            if (this.closed) return;
+            this.fx?.skillLaunch(self, style, fromRight);
         }
         else {
             this.fx?.basicWindup(self, style, side === "enemy");
         }
-        // —— 立绘淡出后：冲刺与命中反馈露在场地上 ——
         await self.strike(foe, style, (hit) => {
             this.applyResult(this.session.resolveStrike(side, hit));
         }, skill);
@@ -484,18 +477,24 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
         this.actor(to)?.flinch(crit ? 1.75 : skill ? 1.55 : heavy ? 1.3 : 1, direction);
         if (target) {
-            this.impact?.play(target, direction, heavy || skill, crit, this.featherColors[to], this.actor(to)?.home.y);
+            this.impact?.play(target, direction, heavy || skill, crit, this.featherColors[to], this.actor(to)?.home.y, skill);
             const p = target.worldPosition;
             this.fx?.hit(p.x, p.y, direction, style, heavy, crit, skill);
         }
+        const floatKind: FloatKind = crit ? "crit" : skill ? "skill" : heavy ? "heavy" : "hit";
+        const floatTint = crit ? FLOAT_TINT.crit
+            : skill ? strikeFxColor(style)
+            : FLOAT_TINT[floatKind];
         void this.spawnFx(
             crit || skill ? PREFAB_PATH.fxSkill : PREFAB_PATH.fxHit, to,
             crit ? gameText("BattleViewComp_018", dmg) : `-${dmg}`,
-            crit ? 0.8 : skill ? 0.7 : 0.6,
-            crit ? 1.65 : skill ? 1.4 : heavy ? 1.25 : 1.1
+            crit ? 0.85 : skill ? 0.78 : 0.6,
+            crit ? 1.7 : skill ? 1.55 : heavy ? 1.25 : 1.1,
+            floatKind,
+            floatTint
         );
-        // 整只砸下来和啄一口不该抖得一样重；绝招在招式底上再抬一档，暴击再往上加。
-        const quake = HIT_QUAKE[style] + (crit ? 11 : skill ? 8 : heavy ? 4 : 2);
+        // 绝招没有立绘抢戏，命中震幅再抬一档，让“打中”成为主反馈。
+        const quake = HIT_QUAKE[style] + (crit ? 12 : skill ? 11 : heavy ? 4 : 2);
         this.screenEffects?.play(quake, heavy || skill, crit || skill, direction);
         if (crit) this.log(to === "player" ? "enemy" : "player", gameText("BattleViewComp_019"));
         this.refreshHp(false);
@@ -571,8 +570,17 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     /**
      * 飘字挂在 FxLayer 而不是鸡身上：鸡一直在跑，挂它身上字会跟着满场飞。
+     * tint / kind 决定字色与粒子色，区分普攻、暴击、绝招、治疗等。
      */
-    private async spawnFx(path: string, side: BattleSide, text: string, life: number, scale = 1) {
+    private async spawnFx(
+        path: string,
+        side: BattleSide,
+        text: string,
+        life: number,
+        scale = 1,
+        kind: FloatKind = "hit",
+        tint?: Color
+    ) {
         const layer = this.getNode("FxLayer") || this.node;
         const src = this.chicken(side);
         const box = layer.getComponent(UITransform);
@@ -603,15 +611,46 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             tween(node).to(0.055, { scale: v3(scale * 1.25, scale * 1.25, 1) }, { easing: "quadOut" })
                 .to(0.1, { scale: v3(scale, scale, 1) }).start();
         }
+        const color = tint || FLOAT_TINT[kind];
         const lab = node.getComponentInChildren(Label);
-        if (lab) lab.string = text;
-        // 飘字预制体上的 ParticleSystem2D：强制播一次
+        if (lab) {
+            lab.string = text;
+            lab.color = color;
+            if (kind === "crit" || kind === "skill" || kind === "cast") {
+                lab.enableOutline = true;
+                lab.outlineColor = new Color(40, 18, 8, 255);
+                lab.outlineWidth = kind === "crit" ? 4 : 3;
+            }
+            else if (kind === "miss" || kind === "dodge") {
+                lab.enableOutline = true;
+                lab.outlineColor = new Color(24, 28, 36, 220);
+                lab.outlineWidth = 2;
+            }
+        }
+        // 飘字预制体粒子：跟字同色，强制播一次
         for (const ps of node.getComponentsInChildren(ParticleSystem2D)) {
             ps.playOnLoad = false;
+            ps.startColor = new Color(color.r, color.g, color.b, 255);
+            ps.startColorVar = new Color(24, 24, 24, 30);
+            ps.endColor = new Color(color.r, color.g, color.b, 0);
+            ps.endColorVar = new Color(0, 0, 0, 0);
+            if (kind === "crit") {
+                ps.startSize *= 1.25;
+                ps.endSize *= 1.2;
+                ps.speed *= 1.15;
+            }
+            else if (kind === "heal" || kind === "revive") {
+                ps.gravity = new Vec2(ps.gravity.x, Math.max(ps.gravity.y, 40));
+            }
+            else if (kind === "miss") {
+                ps.startSize *= 0.75;
+                ps.speed *= 0.7;
+            }
             ps.resetSystem();
         }
         const op = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
-        tween(node).by(life, { position: v3(0, 70, 0) }).start();
+        const rise = kind === "crit" ? 92 : kind === "heal" || kind === "revive" ? 84 : 70;
+        tween(node).by(life, { position: v3(0, rise, 0) }).start();
         tween(op).delay(life * 0.55).to(life * 0.45, { opacity: 0 }).start();
         await this.wait(life);
         if (node.isValid) node.destroy();

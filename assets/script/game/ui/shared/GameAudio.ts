@@ -17,7 +17,7 @@ export const GAME_AUDIO = {
         critical: "game/audio/critical", heal: "", start: "game/audio/start",
         win: "game/audio/win", lose: "game/audio/lose"
     },
-    /** 绝招立绘同步播的招式名，按动作映射，不跟界面文案走。 */
+    /** 绝招起手喊招式名，按动作映射，不跟界面文案走。 */
     skillAnnounce: {
         peck: "game/audio/skill_effect/鸡啄米",
         jump: "game/audio/skill_effect/金鸡独立",
@@ -57,7 +57,7 @@ export function playGameEffect(key: keyof typeof GAME_AUDIO.effects) {
     playClip(GAME_AUDIO.effects[key], key);
 }
 
-/** 绝招立绘开播时喊招式名。叠在一起时只留自己这一句。 */
+/** 绝招起手喊招式名（场上一体演出时与蓄力同步）。 */
 export function playSkillAnnounce(style: StrikeStyle) {
     playClip(GAME_AUDIO.skillAnnounce[style], style);
 }

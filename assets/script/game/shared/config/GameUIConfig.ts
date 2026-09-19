@@ -13,10 +13,13 @@ export enum UIID {
     Alert,
     /** 确认弹出窗口 */
     Confirm,
+    /** 绝招解锁弹窗 */
+    SkillUnlock,
 }
 
 /** 打开界面方式的配置数据 */
 export var UIConfigData: { [key: number]: UIConfig } = {
-    [UIID.Alert]: { layer: LayerType.Dialog, prefab: "common/prefab/alert" },
-    [UIID.Confirm]: { layer: LayerType.Dialog, prefab: "common/prefab/confirm" },
+    [UIID.Alert]: { layer: LayerType.Dialog, prefab: "common/prefab/alert", mask: true },
+    [UIID.Confirm]: { layer: LayerType.Dialog, prefab: "common/prefab/confirm", mask: true },
+    [UIID.SkillUnlock]: { layer: LayerType.Dialog, prefab: "gui/skill_unlock/skill_unlock", mask: true },
 }

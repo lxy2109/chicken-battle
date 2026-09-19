@@ -39,7 +39,7 @@ export class ChickenActor {
     private sheets: StrikeSheetPlayer | null = null;
     /** 绝招演出放大系数：压扁、后仰、接触反馈都乘它，普攻保持 1。 */
     private skillAmp = 1;
-    /** 立绘盖屏前已经演过蓄力，出手时跳过 skillPose，避免挡在特效后面白演。 */
+    /** prepareSkill 已演过蓄力时，出手跳过 skillPose，避免蹲蓄演两遍。 */
     private skillPrimed = false;
 
     constructor(readonly node: Node, home: Vec3, style: FightStyle = "brawler", private mood?: ArenaMood) {
@@ -76,18 +76,17 @@ export class ChickenActor {
     }
 
     /**
-     * 绝招立绘出现前的可见蓄力。全屏特效会挡住场地，这段必须提前演完。
-     * 演完停在蓄力姿，等立绘播完再 strike；skillPrimed 让出手不再重演一遍 pose。
+     * 绝招可见蓄力：蹲压、残影、拉高压扁，全部发生在场地上。
+     * 演完保持蓄力姿立刻 strike；skillPrimed 避免出手再演一遍 pose。
      */
     async prepareSkill(style: StrikeStyle) {
         this.roaming = false;
         const tk = this.begin();
         this.resetPose();
-        this.skillAmp = 1.28;
+        this.skillAmp = 1.42;
         this.skillPrimed = true;
         this.windup(style, true);
         await this.skillPose(style, tk);
-        // 盖屏期间保持蹲蓄，不回漫步；被抢占则 skillPrimed 仍在，出手侧会清掉。
         if (!this.alive(tk)) this.skillPrimed = false;
     }
 
@@ -99,7 +98,7 @@ export class ChickenActor {
      * 收招和回位是之后的事，不该让对手多挨那半秒。所以它由各招式在接触瞬间自己叫，
      * 这里只负责兜底：一整套演完都没碰到，才补一个没打中。
      *
-     * skill=true 时动作更夸张；若已 prepareSkill，不再在盖屏后重演蓄力。
+     * skill=true 时动作更夸张；若已 prepareSkill，不再重演蓄力。
      */
     async strike(target: Node, style: StrikeStyle, onContact?: (hit: boolean) => void, skill = false): Promise<boolean> {
         const primed = skill && this.skillPrimed;
@@ -109,10 +108,10 @@ export class ChickenActor {
         // begin 只是把旧动作的 tween 掐断，掐在哪一帧就停在哪一帧。上一招要是被抢占在
         // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
         this.resetPose();
-        this.skillAmp = skill ? 1.28 : 1;
+        this.skillAmp = skill ? 1.42 : 1;
         this.sheets?.play(style);
         this.windup(style, skill);
-        // 没预先蓄力时才现场 pose（例如测试直接 strike）；正常绝招已在立绘前演过。
+        // 没预先蓄力时才现场 pose（例如测试直接 strike）；正常绝招已在 prepareSkill 演过。
         if (skill && !primed) await this.skillPose(style, tk);
         let told = false;
         const contact = (hit: boolean) => {
@@ -481,40 +480,39 @@ export class ChickenActor {
     }
 
     /**
-     * 绝招起手定格：先拉高再压扁蓄力，给全屏/半屏立绘留出读招窗口。
-     * 时长卡在 0.25 秒上下，不把接触前预算吃穿。
+     * 绝招起手定格：先拉高再压扁蓄力，场上读招约 0.22 秒，随即冲刺。
      */
     private async skillPose(style: StrikeStyle, tk: number) {
         if (!this.alive(tk)) return;
         const air = style === "jump" || style === "dive" || style === "leap";
         const rush = style === "charge" || style === "peck" || style === "combo";
-        this.flap(air ? 7 : 4);
+        this.flap(air ? 8 : 5);
         this.ghost(new Color(255, 245, 210));
         this.ghost(new Color(255, 190, 90));
         if (air) {
-            this.tuckLegs(-28, 0.08, 0.2);
-            this.scaleTo(this.sx * 0.74, this.sy * 1.32, 0.1);
-            this.lean(-14, 0.1);
+            this.tuckLegs(-32, 0.08, 0.2);
+            this.scaleTo(this.sx * 0.68, this.sy * 1.4, 0.1);
+            this.lean(-16, 0.1);
         }
         else if (rush) {
             this.squat(true, tk);
-            this.lean(20, 0.1);
-            this.scaleTo(this.sx * 1.2, this.sy * 0.72, 0.1);
+            this.lean(24, 0.1);
+            this.scaleTo(this.sx * 1.28, this.sy * 0.66, 0.1);
         }
         else if (style === "tail") {
-            this.lean(-26, 0.1);
-            this.scaleTo(this.sx * 0.86, this.sy * 1.18, 0.1);
+            this.lean(-30, 0.1);
+            this.scaleTo(this.sx * 0.82, this.sy * 1.24, 0.1);
         }
         else {
-            this.lean(-18, 0.1);
-            this.scaleTo(this.sx * 1.16, this.sy * 0.8, 0.1);
+            this.lean(-20, 0.1);
+            this.scaleTo(this.sx * 1.22, this.sy * 0.74, 0.1);
         }
-        await this.delay(0.14, tk);
+        await this.delay(0.12, tk);
         if (!this.alive(tk)) return;
         // 弹簧压到底再弹，观众能感到“这一下要砸过来了”。
-        this.scaleTo(this.sx * 1.24, this.sy * 0.7, 0.07);
+        this.scaleTo(this.sx * 1.3, this.sy * 0.64, 0.07);
         this.ghost(new Color(255, 250, 220));
-        await this.delay(0.08, tk);
+        await this.delay(0.07, tk);
         if (rush) this.squat(false, tk);
     }
 

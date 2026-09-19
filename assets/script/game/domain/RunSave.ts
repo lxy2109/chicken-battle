@@ -6,7 +6,11 @@ export const RUN_SAVE_KEY = "chicken_battle_save_v1";
 
 export interface RunSaveData {
     version: 1 | 2 | 3;
-    permanent: Pick<RunState, "gold" | "claimedGoldNodes" | "completedMaps" | "appearance" | "playerName" | "ownedIds" | "bonus" | "partLevels"> & { equippedIds?: string[]; hideEquippedAppearance?: boolean };
+    permanent: Pick<RunState, "gold" | "claimedGoldNodes" | "completedMaps" | "appearance" | "playerName" | "ownedIds" | "bonus" | "partLevels"> & {
+        equippedIds?: string[];
+        hideEquippedAppearance?: boolean;
+        skillUnlockNotified?: number[];
+    };
     progress: Pick<RunState, "routeNode" | "screen" | "lastWin" | "lastGoldGain" | "lastBattleNode" | "lastFirstClear" | "upgrades" | "rewards" | "rewardRolls" | "seed" | "shopLoadedAt"> & { shopItemIds: string[]; shopPending?: boolean };
 }
 
@@ -18,6 +22,7 @@ export function encodeRun(run: RunState): string {
             gold: run.gold, claimedGoldNodes: run.claimedGoldNodes, completedMaps: run.completedMaps,
             appearance: run.appearance, playerName: run.playerName, ownedIds: run.ownedIds,
             equippedIds: run.equippedIds, hideEquippedAppearance: run.hideEquippedAppearance,
+            skillUnlockNotified: run.skillUnlockNotified,
             bonus: run.bonus, partLevels: run.partLevels
         },
         progress: {
@@ -66,6 +71,14 @@ export function decodeRun(raw: string): RunState {
     run.appearance = p.appearance;
     run.playerName = p.playerName;
     run.ownedIds = p.ownedIds;
+    // 旧档没有字段：视为当前地图及之前的解锁提示都已看过，避免中途读档连弹。
+    if (Array.isArray(p.skillUnlockNotified) && p.skillUnlockNotified.every(id => Number.isFinite(id))) {
+        run.skillUnlockNotified = [...new Set(p.skillUnlockNotified.map(id => Math.floor(Number(id))))];
+    }
+    else {
+        const mapId = node.mapId || 1;
+        run.skillUnlockNotified = Array.from({ length: mapId }, (_, i) => i + 1);
+    }
     // 确认装备仍存在于当前配置；损坏数据交给调用层提示并保留原存档。
     run.ownedIds.forEach(itemById);
     const savedSlot = (id: string) => {

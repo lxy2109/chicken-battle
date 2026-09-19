@@ -44,12 +44,12 @@ export class BattleScreenEffects {
     }
 
     /**
-     * 绝招盖屏前的镜头：贴着鸡推近再回弹。
-     * 时长卡在蓄力姿态窗口里，立绘一出来镜头已经还完，避免推镜发生在全黑/全立绘后面。
+     * 绝招蓄力镜头：贴着出手鸡推近再回弹，全程对着场地，不跟立绘抢戏。
+     * 时长对齐 skillPose（约 0.2 秒），冲刺开始时镜头已基本还完。
      */
     skillCast(direction = 1, full = true) {
         if (!this.root.isValid || !this.camera?.isValid) return;
-        const strength = full ? 10 : 6;
+        const strength = full ? 12 : 8;
         this.restoreCamera();
         this.home = this.camera.node.position.clone();
         this.height = this.camera.orthoHeight;
@@ -57,22 +57,22 @@ export class BattleScreenEffects {
         this.phase = { progress: 0 };
         const bounds = this.root.getComponent(UITransform)!;
         const width = bounds.width, height = bounds.height;
-        const zoom = (full ? 28 : 16) / Math.max(1, Math.min(width, height));
+        const zoom = (full ? 36 : 22) / Math.max(1, Math.min(width, height));
         const apply = () => {
             if (!this.camera.isValid || !this.home) return;
             const p = this.phase.progress;
-            // 前半段推近，后半段带着微震退回，读招窗口更清楚。
-            const pull = p < 0.4 ? p / 0.4 : 1 - (p - 0.4) / 0.6;
+            // 前半段推近读招，后半段微震退回，衔接下一段冲刺。
+            const pull = p < 0.45 ? p / 0.45 : 1 - (p - 0.45) / 0.55;
             const decay = pull * pull;
             this.camera.node.setPosition(
-                this.home.x + Math.cos(p * Math.PI * 3) * strength * 0.35 * decay * direction,
-                this.home.y + Math.sin(p * Math.PI * 4) * strength * 0.2 * decay,
+                this.home.x + Math.cos(p * Math.PI * 3) * strength * 0.4 * decay * direction,
+                this.home.y + Math.sin(p * Math.PI * 4) * strength * 0.22 * decay,
                 this.home.z);
             this.camera.orthoHeight = this.height / (1 + zoom * decay);
         };
         apply();
         this.motion = tween(this.phase)
-            .to(full ? 0.34 : 0.26, { progress: 1 }, { onUpdate: apply })
+            .to(full ? 0.28 : 0.22, { progress: 1 }, { onUpdate: apply })
             .call(() => this.restoreCamera()).start();
     }
 

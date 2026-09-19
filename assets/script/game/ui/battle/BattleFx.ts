@@ -57,7 +57,7 @@ interface SkillLook {
     bgTo: number;
 }
 
-/** 每招自己的进出曲线，不能共用同一段 quadOut。 */
+/** 每招主色与进出曲线；场地绝招特效 / 飘字都跟这套色。 */
 const SKILL_LOOK: Record<StrikeStyle, SkillLook> = {
     peck: { rgb: [255, 196, 72], enter: "zoom", inTime: 0.22, hold: 0.36, outTime: 0.16, inEase: "backOut", bgFrom: 1.02, bgTo: 1.06 },
     jump: { rgb: [255, 220, 110], enter: "up", inTime: 0.3, hold: 0.62, outTime: 0.2, inEase: "sineOut", bgFrom: 1.08, bgTo: 1 },
@@ -69,14 +69,22 @@ const SKILL_LOOK: Record<StrikeStyle, SkillLook> = {
     feint: { rgb: [180, 120, 255], enter: "feint", inTime: 0.24, hold: 0.46, outTime: 0.18, inEase: "expoOut", bgFrom: 1.1, bgTo: 1 }
 };
 
+/** 招式主色，给飘字 / 命中染色。 */
+export function strikeFxColor(style: StrikeStyle): Color {
+    const [r, g, b] = SKILL_LOOK[style].rgb;
+    return new Color(r, g, b, 255);
+}
+
 /**
- * 战斗电影感：斩痕贴图、冲击波、残影、竖屏招式立绘。
- * 玩家绝招走全屏预制体，敌人绝招走半屏预制体。标题位置改 prefab，不要再代码里逐字摆。
+ * 战斗电影感：斩痕、冲击波、残影、绝招场上爆发。
+ * 绝招不再播全屏/半屏立绘，反馈压在鸡与场地粒子上；招名由界面飘字 + 喊招音效承担。
  */
 /** 敌人血量低于此比例时亮起火焰边框。 */
 const FLAME_HP = 0.28;
 /** 极低压血时火焰更高、更亮。 */
 const FLAME_CRIT_HP = 0.12;
+/** 同时在场的粒子爆发上限。 */
+const BURST_CAP = 28;
 
 export class BattleFx {
     private overlay: Node;
@@ -137,7 +145,7 @@ export class BattleFx {
 
     /**
      * 普攻起手：一小圈蓄力、一两道速度线、一层残影。
-     * 绝招才上全屏立绘，这里只把这一口的方向和颜色交代清楚。
+     * 绝招走 skillCharge / skillLaunch，这里只交代普攻方向和颜色。
      */
     basicWindup(actor: ChickenActor | null, style: StrikeStyle, fromRight = false) {
         const look = SKILL_LOOK[style];
@@ -185,7 +193,7 @@ export class BattleFx {
             g.fill();
         }
         this.veilHold = this.ambients.length ? (heavy ? 255 : 200) : 0;
-        this.veilFade.opacity = this.liveSplash.full ? 0 : this.veilHold;
+        this.veilFade.opacity = this.veilHold;
         this.mountAmbientPrefabs();
         this.layoutAmbientEmitters();
     }
@@ -195,49 +203,89 @@ export class BattleFx {
         this.ambience(heavy ? ["rain", "mist"] : ["mist"]);
     }
 
-    /** 氛围由 ParticleSystem2D 自模拟，这里只按盖屏状态调发射率。 */
+    /** 氛围由 ParticleSystem2D 自模拟；旧全屏立绘盖屏时曾压发射率，现始终全开。 */
     tickAmbient(_dt: number) {
         if (!this.veil.isValid || !this.ambientSlots.length) return;
-        const cover = this.liveSplash.full ? 0.2 : 1;
         for (const slot of this.ambientSlots) {
             if (!slot.ps.isValid) continue;
-            slot.ps.emissionRate = slot.baseRate * slot.weight * cover;
+            slot.ps.emissionRate = slot.baseRate * slot.weight;
         }
     }
 
     /**
-     * 立绘盖屏前的场地蓄力圈。必须在 skillAnnounce 之前播，否则全屏立绘一盖就看不见。
+     * 绝招起手：招式色蓄力圈 + 双残影 + 焦点，全部贴在鸡身上，场地全程可见。
      */
-    skillCharge(actor: ChickenActor | null) {
-        actor?.ghost(new Color(255, 230, 180));
-        actor?.ghost(new Color(255, 190, 90));
+    skillCharge(actor: ChickenActor | null, style: StrikeStyle = "peck") {
+        const look = SKILL_LOOK[style];
+        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
+        const hot = new Color(
+            Math.min(255, look.rgb[0] + 40),
+            Math.min(255, look.rgb[1] + 28),
+            Math.min(255, look.rgb[2] + 18)
+        );
+        actor?.ghost(hot);
+        actor?.ghost(tint);
         const p = actor?.node.worldPosition;
         if (!p) return;
         const local = this.toArena(p.x, p.y);
-        this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y + 8, 90, 90, 0.28, { grow: 1.7, squash: 0.75 });
-        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 28, 110, 36, 0.22, {
-            grow: 1.9, squash: 0.5, color: new Color(255, 220, 140)
+        this.stamp(this.arenaFx, this.sheet.charge, local.x, local.y + 8, 110, 110, 0.32, {
+            grow: 1.9, squash: 0.7, color: tint
         });
-        this.stamp(this.arenaFx, this.sheet.focus, local.x, local.y + 12, 160, 160, 0.26, {
-            grow: 1.35, color: new Color(255, 236, 180)
+        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 28, 130, 42, 0.26, {
+            grow: 2.15, squash: 0.46, color: hot
+        });
+        this.stamp(this.arenaFx, this.sheet.focus, local.x, local.y + 14, 190, 190, 0.3, {
+            grow: 1.45, color: new Color(look.rgb[0], look.rgb[1], look.rgb[2], 230)
+        });
+        this.stamp(this.arenaFx, this.sheet.star, local.x, local.y + 22, 100, 100, 0.22, {
+            grow: 1.4, color: tint, angle: (Math.random() - 0.5) * 36
+        });
+        // 第二圈稍晚炸开，蓄力有“压弹簧”层次。
+        this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 22, 72, 26, 0.2, {
+            grow: 2.5, squash: 0.4, color: hot, delay: 0.1
         });
     }
 
     /**
-     * 立绘挡视野的等待时长，与 skillSplash 的淡出曲线对齐。
-     * 全屏要等淡出过半再出手，砸中/震屏才露得出；半屏挡得少，hold 过半就可冲。
+     * 冲刺出手瞬间：速度线 + 焦点从鸡身上甩出去，和随后的命中连成一条线。
      */
-    skillCoverSec(style: StrikeStyle, mode: SplashMode = "full") {
+    skillLaunch(actor: ChickenActor | null, style: StrikeStyle, fromRight = false) {
         const look = SKILL_LOOK[style];
-        if (mode === "half") return look.inTime + look.hold * 0.5;
-        // skillSplash：delay(in+hold+extra) 后 outTime 淡出；extra 全屏 0.12
-        const fadeDelay = 0.12;
-        return look.inTime + look.hold + fadeDelay + look.outTime * 0.65;
+        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
+        actor?.ghost(tint);
+        actor?.ghost(new Color(255, 245, 220));
+        const p = actor?.node.worldPosition;
+        if (!p) return;
+        const local = this.toArena(p.x, p.y);
+        const dir = fromRight ? 1 : -1;
+        const rush = style === "charge" || style === "leap" || style === "dive";
+        this.streaksAt(local.x, local.y + 8, -dir, rush ? 7 : 5);
+        this.stamp(this.arenaFx, this.sheet.focus, local.x, local.y + 10, 150, 150, 0.18, {
+            grow: 1.55, color: tint
+        });
+        this.stamp(this.arenaFx, this.sheet.charge, local.x - dir * 14, local.y, 78, 78, 0.16, {
+            grow: 1.65, color: tint
+        });
+        if (style === "leap" || style === "dive" || style === "jump") {
+            this.stamp(this.arenaFx, this.sheet.ring, local.x, local.y - 32, 110, 36, 0.18, {
+                grow: 1.9, squash: 0.44, color: new Color(this.dust[0], this.dust[1], this.dust[2])
+            });
+        }
+        if (style === "combo" || style === "peck") {
+            this.streaksAt(local.x + dir * 8, local.y + 18, -dir, 3);
+        }
     }
 
     /**
-     * 只播喊招立绘。蓄力圈/镜头/动作要在场地仍可见时先做完，不要和这一段叠在盖屏里。
-     * 盖屏期间不再压时间轴：观众看的是立绘本身，慢动作浪费在看不见的场地上。
+     * @deprecated 场上一体演出不再等立绘；保留 0 兼容旧调用。
+     */
+    skillCoverSec(_style: StrikeStyle, _mode: SplashMode = "full") {
+        return 0;
+    }
+
+    /**
+     * @deprecated 立绘盖屏已废弃；若仍传入会尝试播预制体，缺资源则静默。
+     * 正常路径请用 skillCharge → skillLaunch，喊招音效由界面直接 playSkillAnnounce。
      */
     skillAnnounce(style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
         try {
@@ -249,36 +297,46 @@ export class BattleFx {
     }
 
     /**
-     * @deprecated 拆成 skillCharge → 动作蓄力 → skillAnnounce → 再出手；保留给旧调用。
+     * @deprecated 拆成 skillCharge → prepareSkill → skillLaunch。
      */
-    skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, mode: SplashMode = "full") {
-        this.skillCharge(actor);
-        this.skillAnnounce(style, title, fromRight, mode);
+    skillWindup(actor: ChickenActor | null, style: StrikeStyle, title: string, fromRight = false, _mode: SplashMode = "full") {
+        this.skillCharge(actor, style);
+        playSkillAnnounce(style);
+        this.skillLaunch(actor, style, fromRight);
     }
 
     hit(worldX: number, worldY: number, direction: number, style: StrikeStyle, heavy: boolean, crit: boolean, skill = false) {
         const p = this.toArena(worldX, worldY);
+        const look = SKILL_LOOK[style];
+        const tint = new Color(look.rgb[0], look.rgb[1], look.rgb[2]);
         this.slashAt(p.x, p.y, direction, style, heavy || crit || skill);
-        this.shockAt(p.x, p.y - 36, crit ? 1.35 : skill ? 1.25 : heavy ? 1.1 : 0.7);
-        this.stamp(this.arenaFx, this.sheet.ring, p.x, p.y - 42, 78, 26, 0.16, {
-            grow: 1.7, squash: 0.45, color: new Color(this.dust[0], this.dust[1], this.dust[2])
+        this.shockAt(p.x, p.y - 36, crit ? 1.45 : skill ? 1.4 : heavy ? 1.1 : 0.7);
+        this.stamp(this.arenaFx, this.sheet.ring, p.x, p.y - 42, skill ? 96 : 78, skill ? 32 : 26, 0.18, {
+            grow: skill ? 2.0 : 1.7, squash: 0.45, color: skill ? tint : new Color(this.dust[0], this.dust[1], this.dust[2])
         });
         if (crit) {
-            this.punch(0.12, 0.26);
-            this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 170, 170, 0.22, { grow: 1.25, angle: (Math.random() - 0.5) * 40 });
-            this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 18, p.y, 140, 140, 0.2, { sx: direction, grow: 1.2 });
+            this.punch(0.1, 0.28);
+            this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 180, 180, 0.24, { grow: 1.3, angle: (Math.random() - 0.5) * 40 });
+            this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 18, p.y, 150, 150, 0.22, { sx: direction, grow: 1.25 });
             this.cracksAt(p.x, p.y - 48, direction, 3);
+            if (skill) this.streaksAt(p.x, p.y + 6, direction, 4);
         }
         else if (skill) {
-            // 绝招命中单独拉长顿帧，和“重普攻”区分开。
-            this.punch(0.1, 0.2);
-            this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 10, 150, 150, 0.22, { grow: 1.28, angle: (Math.random() - 0.5) * 48 });
-            this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 14, p.y, 120, 120, 0.18, { sx: direction, grow: 1.15 });
-            this.stamp(this.arenaFx, this.sheet.focus, p.x, p.y + 8, 200, 200, 0.2, {
-                grow: 1.2, color: new Color(SKILL_LOOK[style].rgb[0], SKILL_LOOK[style].rgb[1], SKILL_LOOK[style].rgb[2])
+            // 绝招命中是主反馈：更长顿帧、双冲击波、招式色焦点。
+            this.punch(0.08, 0.26);
+            this.stamp(this.arenaFx, this.sheet.star, p.x, p.y + 12, 170, 170, 0.26, {
+                grow: 1.38, angle: (Math.random() - 0.5) * 50, color: tint
             });
-            this.cracksAt(p.x, p.y - 48, direction, 3);
-            this.shockAt(p.x, p.y - 36, 0.9, 0.05);
+            this.stamp(this.arenaFx, this.sheet.ink, p.x + direction * 16, p.y, 140, 140, 0.22, {
+                sx: direction, grow: 1.22, color: tint
+            });
+            this.stamp(this.arenaFx, this.sheet.focus, p.x, p.y + 8, 230, 230, 0.24, {
+                grow: 1.3, color: tint
+            });
+            this.cracksAt(p.x, p.y - 48, direction, 4);
+            this.shockAt(p.x, p.y - 36, 1.05, 0.04);
+            this.shockAt(p.x, p.y - 28, 0.7, 0.1);
+            this.streaksAt(p.x - direction * 10, p.y + 4, direction, 5);
         }
         else if (heavy) {
             this.punch(0.28, 0.09);
@@ -347,11 +405,10 @@ export class BattleFx {
             return;
         }
         this.layout();
-        const cover = this.liveSplash.full ? 0.15 : 1;
         const pulse = 0.88 + 0.12 * Math.sin(this.flameTime * (crit ? 9.5 : 6.2));
-        this.flameFade.opacity = Math.round(Math.min(255, 255 * this.flameLevel * pulse * cover));
+        this.flameFade.opacity = Math.round(Math.min(255, 255 * this.flameLevel * pulse));
         this.setFlamePlaying(true);
-        const rateMul = (0.45 + this.flameLevel * 0.85 + (crit ? 0.25 : 0)) * cover;
+        const rateMul = 0.45 + this.flameLevel * 0.85 + (crit ? 0.25 : 0);
         for (const e of this.flameEmitters) {
             if (!e.ps.isValid) continue;
             e.ps.emissionRate = e.baseRate * rateMul;
@@ -393,7 +450,7 @@ export class BattleFx {
         }
     }
 
-    //#region 贴图
+    //#region 场地粒子爆发（替代 Sprite 贴图戳）
 
     private slashAt(x: number, y: number, direction: number, style: StrikeStyle, heavy: boolean) {
         const dir = direction >= 0 ? 1 : -1;
@@ -401,11 +458,12 @@ export class BattleFx {
         const thick = heavy ? 120 : style === "jump" ? 64 : 78;
         const tilt = style === "leap" || style === "dive" ? -48 : style === "tail" ? 28 : style === "charge" ? 4 : 8;
         const [dr, dg, db] = this.dust;
-        this.stamp(this.arenaFx, this.sheet.slash, x, y + 16, long, thick, 0.2, {
-            sx: dir,
-            angle: dir * tilt,
-            grow: 1.18,
-            squash: 0.72,
+        this.burst(this.arenaFx, this.sheet.slash, x, y + 16, long, thick, 0.22, {
+            count: heavy ? 5 : 3,
+            angle: dir >= 0 ? tilt : 180 - tilt,
+            angleVar: heavy ? 22 : 14,
+            speed: heavy ? 42 : 26,
+            grow: 1.25,
             color: new Color(
                 Math.round(255 * 0.4 + dr * 0.6),
                 Math.round(248 * 0.4 + dg * 0.6),
@@ -416,10 +474,14 @@ export class BattleFx {
 
     private shockAt(x: number, y: number, power: number, delay = 0) {
         const s = 90 * power;
-        this.stamp(this.arenaFx, this.sheet.ring, x, y, s, s * 0.38, 0.22 * power, {
+        this.burst(this.arenaFx, this.sheet.ring, x, y, s, s * 0.42, 0.24 * Math.max(0.6, power), {
             delay,
-            grow: 1.85,
-            squash: 0.55
+            count: power > 1.1 ? 5 : 3,
+            angle: 90,
+            angleVar: 180,
+            speed: 22 + power * 32,
+            grow: 1.9,
+            color: new Color(this.dust[0], this.dust[1], this.dust[2], 230)
         });
     }
 
@@ -428,27 +490,116 @@ export class BattleFx {
         for (let i = 0; i < n; i++) {
             const ox = dir * (20 + i * 36 + Math.random() * 24);
             const oy = (Math.random() - 0.5) * 28;
-            this.stamp(this.arenaFx, this.sheet.crack, x + ox, y + oy, 160 + Math.random() * 80, 70, 0.42, {
-                sx: dir,
-                angle: (Math.random() - 0.5) * 24,
-                delay: i * 0.03
+            this.burst(this.arenaFx, this.sheet.crack, x + ox, y + oy, 160 + Math.random() * 80, 70, 0.45, {
+                count: 1,
+                angle: dir >= 0 ? (Math.random() - 0.5) * 24 : 180 + (Math.random() - 0.5) * 24,
+                angleVar: 8,
+                speed: 12,
+                grow: 1.1,
+                delay: i * 0.03,
+                color: new Color(210, 190, 160, 230)
             });
         }
     }
 
     private streaksAt(x: number, y: number, direction: number, count: number) {
         const dir = direction >= 0 ? 1 : -1;
+        const shoot = dir >= 0 ? 0 : 180;
         for (let i = 0; i < count; i++) {
             const oy = (i - (count - 1) / 2) * 18 + (Math.random() - 0.5) * 8;
             const w = 140 + Math.random() * 80;
-            this.stamp(this.arenaFx, this.sheet.streak, x - dir * 20, y + oy, w, 36, 0.14, {
-                sx: -dir,
-                drift: -dir * 48,
-                delay: i * 0.012
+            this.burst(this.arenaFx, this.sheet.streak, x - dir * 20, y + oy, w, 36, 0.16, {
+                count: 1,
+                angle: shoot + (Math.random() - 0.5) * 10,
+                angleVar: 4,
+                speed: 90 + Math.random() * 40,
+                grow: 1.15,
+                delay: i * 0.012,
+                gravityY: 0,
+                color: new Color(255, 245, 220, 240)
             });
         }
     }
 
+    /**
+     * 一次性 ParticleSystem2D 爆发。斩痕/星芒/冲击环等都走这里。
+     */
+    private burst(
+        parent: Node,
+        frame: SpriteFrame | undefined,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        life: number,
+        opt: {
+            angle?: number; angleVar?: number; count?: number; grow?: number;
+            delay?: number; speed?: number; gravityY?: number; color?: Color;
+        } = {}
+    ) {
+        if (!frame || !parent.isValid || this.closed || this.live >= BURST_CAP) return;
+        const node = new Node("FxBurst");
+        node.layer = parent.layer;
+        node.parent = parent;
+        node.setPosition(x, y, 0);
+        const size = Math.max(48, Math.max(w, h) * 0.55);
+        node.addComponent(UITransform).setContentSize(size, size);
+
+        const ps = node.addComponent(ParticleSystem2D);
+        (ps as ParticleSystem2D & { custom: boolean }).custom = true;
+        ps.playOnLoad = false;
+        ps.autoRemoveOnFinish = false;
+        ps.spriteFrame = frame;
+        // 单张 stamp 贴图 × 多粒子，漫画爆发感
+        const count = Math.max(1, Math.min(14, opt.count ?? 3));
+        ps.totalParticles = count + 4;
+        ps.duration = 0.06;
+        ps.emissionRate = count / 0.06;
+        ps.life = Math.max(0.08, life * 0.85);
+        ps.lifeVar = life * 0.18;
+        const start = Math.max(16, Math.min(w, h) * 0.48);
+        const grow = opt.grow ?? 1.2;
+        ps.startSize = start;
+        ps.startSizeVar = start * 0.22;
+        ps.endSize = start * grow;
+        ps.endSizeVar = start * 0.14;
+        ps.angle = opt.angle ?? 90;
+        ps.angleVar = opt.angleVar ?? 16;
+        ps.speed = opt.speed ?? 28;
+        ps.speedVar = (opt.speed ?? 28) * 0.4;
+        ps.gravity = new Vec2(0, opt.gravityY ?? -20);
+        ps.posVar = new Vec2(Math.min(22, w * 0.1), Math.min(16, h * 0.1));
+        ps.startSpin = 0;
+        ps.startSpinVar = 22;
+        ps.endSpin = 0;
+        ps.endSpinVar = 36;
+        const tint = opt.color || new Color(255, 255, 255, 255);
+        ps.startColor = new Color(tint.r, tint.g, tint.b, tint.a);
+        ps.startColorVar = new Color(18, 18, 18, 20);
+        ps.endColor = new Color(tint.r, tint.g, tint.b, 0);
+        ps.endColorVar = new Color(0, 0, 0, 0);
+
+        this.live += 1;
+        const delay = opt.delay ?? 0;
+        const ttl = delay + life + 0.12;
+        const arm = () => {
+            if (!node.isValid || !ps.isValid || this.closed) {
+                this.live = Math.max(0, this.live - 1);
+                if (node.isValid) node.destroy();
+                return;
+            }
+            ps.resetSystem();
+        };
+        if (delay > 0.001) tween(node).delay(delay).call(arm).start();
+        else arm();
+        tween(node).delay(ttl).call(() => {
+            this.live = Math.max(0, this.live - 1);
+            if (ps.isValid) ps.stopSystem();
+            if (node.isValid) node.destroy();
+        }).start();
+    }
+
+    /** 兼容旧 stamp 调用：映射到粒子爆发。 */
     private stamp(
         parent: Node,
         frame: SpriteFrame | undefined,
@@ -462,37 +613,17 @@ export class BattleFx {
             delay?: number; drift?: number; color?: Color;
         } = {}
     ) {
-        if (!frame || !parent.isValid || this.closed || this.live >= 18) return;
-        const node = new Node("FxStamp");
-        node.layer = parent.layer;
-        node.parent = parent;
-        node.setPosition(x, y, 0);
         const sx = opt.sx ?? 1;
-        node.setScale(sx * 0.55, 0.55, 1);
-        node.angle = opt.angle ?? 0;
-        const ui = node.addComponent(UITransform);
-        ui.setContentSize(w, h);
-        const sp = node.addComponent(Sprite);
-        sp.sizeMode = Sprite.SizeMode.CUSTOM;
-        sp.spriteFrame = frame;
-        if (opt.color) sp.color = opt.color;
-        const op = node.addComponent(UIOpacity);
-        op.opacity = 0;
-        this.live += 1;
-        const grow = opt.grow ?? 1.12;
-        const squash = opt.squash ?? 1;
-        const delay = opt.delay ?? 0;
-        const drift = opt.drift ?? 0;
-        tween(op).delay(delay).to(0.04, { opacity: 255 })
-            .delay(life * 0.35).to(life * 0.6, { opacity: 0 }).start();
-        const motion = tween(node).delay(delay)
-            .to(life * 0.35, { scale: v3(sx * grow, grow * squash, 1) }, { easing: "quadOut" });
-        if (drift) motion.by(life * 0.65, { position: v3(drift, 0, 0) }, { easing: "quadOut" });
-        else motion.to(life * 0.65, { scale: v3(sx * grow * 1.08, grow * squash * 0.85, 1) });
-        motion.call(() => {
-            this.live = Math.max(0, this.live - 1);
-            if (node.isValid) node.destroy();
-        }).start();
+        const face = sx < 0 ? 180 : 0;
+        this.burst(parent, frame, x, y, w, h, life, {
+            angle: (opt.angle ?? 0) + face,
+            angleVar: Math.abs(opt.drift || 0) > 1 ? 6 : 14,
+            count: Math.abs(opt.drift || 0) > 1 ? 3 : Math.max(2, Math.round((opt.grow ?? 1.1) > 1.3 ? 5 : 3)),
+            grow: opt.grow ?? 1.2,
+            delay: opt.delay,
+            speed: Math.abs(opt.drift || 0) > 1 ? Math.abs(opt.drift!) * 1.6 : 24,
+            color: opt.color
+        });
     }
 
     /**

@@ -1,55 +1,19 @@
 /**
- * 把 Imagine 生图（temp/particle-src/gen/*.png）抠黑、居中、缩放到
- * texture/fx/common 与 stamp。不做算法画图，只做抠图与尺寸适配。
+ * 把 Imagine 生图（temp/particle-src/gen/*.png，已抠真 Alpha）
+ * 居中缩放到 texture/fx/common 与 stamp。
  *
- * 生图来源：会话 images → temp/particle-src/gen（先 JPG 转 PNG）
- * 用法: node tools/import-gen-fx.cjs
+ * 前置：node tools/art/knock-alpha.cjs --via-magenta --trim 8 temp/particle-src/gen/*.png
+ * 用法: node tools/import/import-gen-fx.cjs
  */
 const fs = require("fs");
 const path = require("path");
-const png = require('../art/png.cjs');
-const uuids = require('../art/art-uuids.cjs');
+const png = require("../art/png.cjs");
+const uuids = require("../art/art-uuids.cjs");
 
-const ROOT = path.resolve(__dirname, '../..');
+const ROOT = path.resolve(__dirname, "../..");
 const GEN = path.join(ROOT, "temp/particle-src/gen");
 const OUT_P = path.join(ROOT, "assets/bundle/game/image/texture/common");
 const STAMP = path.join(ROOT, "assets/bundle/game/image/texture/stamp");
-
-function knockBlack(img, hard = 12, soft = 42) {
-  const { width: w, height: h, data } = img;
-  for (let i = 0; i < w * h; i++) {
-    const o = i * 4;
-    const r = data[o], g = data[o + 1], b = data[o + 2];
-    const mx = Math.max(r, g, b);
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    const sat = mx - Math.min(r, g, b);
-    let a;
-    if (mx <= hard && lum <= hard) a = 0;
-    else if (mx < soft) a = Math.round(255 * (mx - hard) / (soft - hard));
-    else a = 255;
-    // 低饱和暗灰晕也压掉
-    if (sat < 10 && lum < 36) a = Math.min(a, Math.round(lum * 5));
-    const oa = data[o + 3];
-    if (oa < 255) a = Math.round(a * (oa / 255));
-    data[o + 3] = a;
-    if (a === 0) data[o] = data[o + 1] = data[o + 2] = 0;
-  }
-  return img;
-}
-
-/** 白/浅色剪影：亮度→alpha，RGB 填白（羽/星/光便于着色）。 */
-function toWhiteSilhouette(img, floor = 8) {
-  const { width: w, height: h, data } = img;
-  for (let i = 0; i < w * h; i++) {
-    const o = i * 4;
-    const lum = Math.round(0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2]);
-    let a = data[o + 3] < 255 ? Math.round(lum * data[o + 3] / 255) : lum;
-    if (a < floor) a = 0;
-    data[o] = data[o + 1] = data[o + 2] = 255;
-    data[o + 3] = a;
-  }
-  return img;
-}
 
 function pad(img, px) {
   const w = img.width + px * 2, h = img.height + px * 2;
@@ -58,20 +22,6 @@ function pad(img, px) {
     img.data.copy(data, ((y + px) * w + px) * 4, y * img.width * 4, (y + 1) * img.width * 4);
   }
   return { width: w, height: h, data };
-}
-
-function centerFit(img, tw, th, fill = 0.9) {
-  const scale = Math.min(tw / img.width, th / img.height) * fill;
-  const rw = Math.max(1, Math.round(img.width * scale));
-  const rh = Math.max(1, Math.round(img.height * scale));
-  const resized = png.resize(img, rw, rh);
-  const data = Buffer.alloc(tw * th * 4);
-  const ox = Math.floor((tw - rw) / 2);
-  const oy = Math.floor((th - rh) / 2);
-  for (let y = 0; y < rh; y++) {
-    resized.data.copy(data, ((y + oy) * tw + ox) * 4, y * rw * 4, (y + 1) * rw * 4);
-  }
-  return { width: tw, height: th, data };
 }
 
 function centerOnAlpha(img, tw, th, fill = 0.9) {
@@ -91,7 +41,6 @@ function centerOnAlpha(img, tw, th, fill = 0.9) {
   const rw = Math.max(1, Math.round(img.width * scale));
   const rh = Math.max(1, Math.round(img.height * scale));
   const resized = png.resize(img, rw, rh);
-  // 质心也按 scale 映射
   const ncx = cx * scale;
   const ncy = cy * scale;
   const data = Buffer.alloc(tw * th * 4);
@@ -117,7 +66,14 @@ function centerOnAlpha(img, tw, th, fill = 0.9) {
 function loadGen(name) {
   const file = path.join(GEN, name + ".png");
   if (!fs.existsSync(file)) throw new Error("missing gen art " + file + " — place Imagine PNG here");
-  return png.decode(file);
+  const img = png.decode(file);
+  const n = img.width * img.height;
+  let a0 = 0;
+  for (let i = 0; i < n; i++) if (img.data[i * 4 + 3] === 0) a0++;
+  if (a0 / n < 0.05) {
+    throw new Error(name + " looks opaque (a0=" + (100 * a0 / n).toFixed(1) + "%). Run knock-alpha --via-magenta first.");
+  }
+  return img;
 }
 
 function spriteMeta(uuid, name, w, h) {
@@ -228,65 +184,135 @@ function write(outDir, name, img) {
   console.log(name, img.width + "x" + img.height, "cover%", (100 * solid / (img.width * img.height)).toFixed(1));
 }
 
-function processColor(name, tw, th, hard, soft, fill) {
-  let img = loadGen(name);
-  knockBlack(img, hard, soft);
-  let t = png.trim(img, 3) || img;
-  t = pad(t, 4);
-  return centerOnAlpha(t, tw, th, fill);
+/** 缩放到小尺寸后清掉半透明灰边与孤立噪点。 */
+function cleanScaled(img) {
+  const { width: w, height: h, data } = img;
+  const D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  // 贴透明的近白/近灰像素直接清掉
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      if (data[o + 3] < 8) continue;
+      const r = data[o], g = data[o + 1], b = data[o + 2];
+      const sat = Math.max(r, g, b) - Math.min(r, g, b);
+      const avg = (r + g + b) / 3;
+      const coolGray = sat <= 18 && avg >= 190 && (r - b) <= 12;
+      if (!coolGray && data[o + 3] >= 40) continue;
+      let next0 = false;
+      for (const [dx, dy] of D) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || data[(ny * w + nx) * 4 + 3] < 8) {
+          next0 = true;
+          break;
+        }
+      }
+      if (!next0) continue;
+      if (coolGray || data[o + 3] < 48) data.fill(0, o, o + 4);
+    }
+  }
+  // 去掉极小连通块
+  const seen = new Uint8Array(w * h);
+  const comps = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const s = y * w + x;
+      if (seen[s] || data[s * 4 + 3] < 8) continue;
+      const cells = [];
+      const q = [s];
+      seen[s] = 1;
+      while (q.length) {
+        const i = q.pop();
+        cells.push(i);
+        const cx = i % w, cy = (i - cx) / w;
+        for (const [dx, dy] of D) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const ni = ny * w + nx;
+          if (seen[ni] || data[ni * 4 + 3] < 8) continue;
+          seen[ni] = 1;
+          q.push(ni);
+        }
+      }
+      comps.push(cells);
+    }
+  }
+  comps.sort((a, b) => b.length - a.length);
+  const floor = Math.max(6, Math.floor(w * h * 0.002));
+  for (let i = 0; i < comps.length; i++) {
+    if (i < 2) continue;
+    if (comps[i].length >= floor) continue;
+    for (const p of comps[i]) data.fill(0, p * 4, p * 4 + 4);
+  }
+  return img;
 }
 
-function processSilhouette(name, tw, th, hard, soft, fill) {
+/** 已抠 Alpha 的描边卡通风：只裁切居中，不敲黑（保留棕/黑描边）。 */
+function processKeyed(name, tw, th, fill = 0.9) {
   let img = loadGen(name);
-  knockBlack(img, hard, soft);
-  toWhiteSilhouette(img);
-  let t = png.trim(img, 2) || img;
-  t = pad(t, 3);
-  return centerOnAlpha(t, tw, th, fill);
+  let t = png.trim(img, 3) || img;
+  t = pad(t, 4);
+  return cleanScaled(centerOnAlpha(t, tw, th, fill));
 }
 
 /**
- * 羽毛可染色：亮部近白（乘 startColor），深描边保留深棕。
+ * 羽毛可染色：保留描边与纹理，仅把中高亮略提白便于乘 startColor。
+ * 不做激进白剪影，避免 48px 缩下去成麻点。
  */
-function processFeatherTintable(name, tw, th) {
-  let img = loadGen(name);
-  knockBlack(img, 8, 28);
+function processFeatherTintable(srcName, tw, th) {
+  let img = loadGen(srcName);
   const { width: w, height: h, data } = img;
   for (let i = 0; i < w * h; i++) {
     const o = i * 4;
     if (data[o + 3] < 8) continue;
     const r = data[o], g = data[o + 1], b = data[o + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (lum < 90) {
-      data[o] = Math.min(r, 70);
-      data[o + 1] = Math.min(g, 50);
-      data[o + 2] = Math.min(b, 40);
+    // 深描边压实
+    if (lum < 70) {
+      data[o] = Math.min(r, 55);
+      data[o + 1] = Math.min(g, 40);
+      data[o + 2] = Math.min(b, 30);
       continue;
     }
-    const t = Math.min(1, (lum - 90) / 120);
-    const v = Math.round(200 + 55 * t);
-    data[o] = data[o + 1] = data[o + 2] = v;
+    // 亮部轻微提白，保留色相
+    if (lum > 140) {
+      const t = Math.min(1, (lum - 140) / 100);
+      data[o] = Math.min(255, Math.round(r + (255 - r) * t * 0.55));
+      data[o + 1] = Math.min(255, Math.round(g + (255 - g) * t * 0.55));
+      data[o + 2] = Math.min(255, Math.round(b + (255 - b) * t * 0.55));
+    }
   }
   let trimmed = png.trim(img, 2) || img;
-  trimmed = pad(trimmed, 3);
-  return centerOnAlpha(trimmed, tw, th, 0.88);
+  trimmed = pad(trimmed, 4);
+  return centerOnAlpha(trimmed, tw, th, 0.9);
 }
 
-// ── 描边卡通风：保留棕描边与平涂，不做白剪影 ──────────────
 fs.mkdirSync(OUT_P, { recursive: true });
 fs.mkdirSync(STAMP, { recursive: true });
 
-write(OUT_P, "particle_flame", processColor("particle_flame", 80, 112, 8, 28, 0.9));
-write(OUT_P, "particle_ember", processColor("particle_ember", 40, 40, 8, 28, 0.82));
-write(OUT_P, "particle_spark", processColor("particle_spark", 32, 32, 8, 28, 0.85));
-write(OUT_P, "particle_blood", processColor("particle_blood", 36, 48, 8, 26, 0.9));
-write(OUT_P, "particle_blood_splash", processColor("particle_blood_splash", 72, 72, 8, 26, 0.85));
-write(OUT_P, "particle_star", processColor("particle_star", 48, 48, 8, 28, 0.88));
-write(OUT_P, "particle_glow", processColor("particle_glow", 56, 56, 8, 28, 0.88));
-write(OUT_P, "particle_slash", processColor("particle_slash", 128, 48, 8, 28, 0.9));
-write(OUT_P, "particle_feather", processFeatherTintable("particle_feather", 48, 48));
-write(OUT_P, "particle_confetti", processColor("particle_confetti", 32, 28, 8, 28, 0.88));
-write(STAMP, "cartoon_blood_splash", processColor("cartoon_blood_splash", 96, 56, 8, 26, 0.9));
+// ── common 粒子单图（ParticleSystem2D 大量发射） ──────────────
+write(OUT_P, "particle_flame", processKeyed("particle_flame", 80, 112, 0.9));
+write(OUT_P, "particle_ember", processKeyed("particle_ember", 40, 40, 0.82));
+write(OUT_P, "particle_spark", processKeyed("particle_spark", 32, 32, 0.85));
+write(OUT_P, "particle_blood", processKeyed("particle_blood", 36, 48, 0.9));
+write(OUT_P, "particle_blood_splash", processKeyed("particle_blood_splash", 72, 72, 0.85));
+write(OUT_P, "particle_star", processKeyed("particle_star", 48, 48, 0.88));
+write(OUT_P, "particle_glow", processKeyed("particle_glow", 56, 56, 0.88));
+write(OUT_P, "particle_slash", processKeyed("particle_slash", 128, 96, 0.92));
+write(OUT_P, "particle_feather", processFeatherTintable("particle_feather", 56, 56));
+write(OUT_P, "particle_confetti", processKeyed("particle_confetti", 32, 28, 0.88));
+write(OUT_P, "particle_heal", processKeyed("particle_heal", 40, 40, 0.88));
+write(OUT_P, "particle_smoke", processKeyed("particle_smoke", 48, 48, 0.86));
+
+// ── stamp：场地爆发 / 绝招场上用 ─────────────────────────────
+write(STAMP, "comic_slash", processKeyed("comic_slash", 128, 128, 0.9));
+write(STAMP, "comic_star", processKeyed("comic_star", 128, 128, 0.88));
+write(STAMP, "shock_ring", processKeyed("shock_ring", 128, 128, 0.9));
+write(STAMP, "speed_line", processKeyed("speed_line", 128, 48, 0.92));
+write(STAMP, "focus_burst", processKeyed("focus_burst", 128, 128, 0.88));
+write(STAMP, "ground_crack", processKeyed("ground_crack", 128, 128, 0.9));
+write(STAMP, "ink_burst", processKeyed("ink_burst", 128, 128, 0.88));
+write(STAMP, "charge_ring", processKeyed("charge_ring", 128, 128, 0.9));
+write(STAMP, "cartoon_blood_splash", processKeyed("cartoon_blood_splash", 96, 56, 0.9));
 write(STAMP, "cartoon_feather", processFeatherTintable("particle_feather", 64, 64));
 
-console.log("import-gen-fx done (outlined cartoon) ->", OUT_P);
+console.log("import-gen-fx done (keyed cartoon) ->", OUT_P, STAMP);

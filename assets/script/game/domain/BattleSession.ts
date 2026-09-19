@@ -15,9 +15,11 @@ import {
 /** 出招决策的来源，默认是 BattleAI.decide，运行时换成行为树。 */
 export type Decider = (self: AiFighter, foe: AiFighter) => BattleDecision;
 
-/** 对战页打开时打开手动绝招：玩家普攻仍自动，全部带特效的招都要点按钮。 */
+/** 对战页打开时打开手动绝招：玩家普攻仍自动，已解锁的绝招要点按钮。 */
 export interface BattleSessionOpts {
     playerManualSkills?: boolean;
+    /** 本局玩家可点的绝招；不传则按全部八招（测试/旧调用）。 */
+    playerSkills?: readonly StrikeStyle[];
 }
 
 const SIDES: BattleSide[] = ["player", "enemy"];
@@ -142,6 +144,7 @@ export class BattleSession {
     private skillGate = 0;
     private skillSide: BattleSide | null = null;
     private playerManualSkills = false;
+    private playerSkills: readonly StrikeStyle[] = PLAYER_SKILLS;
     private queuedSkill: StrikeStyle | null = null;
 
     /**
@@ -153,6 +156,9 @@ export class BattleSession {
         this.decider = decider || decide;
         this.boss = boss;
         this.playerManualSkills = !!opts?.playerManualSkills;
+        this.playerSkills = opts?.playerSkills?.length
+            ? opts.playerSkills.filter(style => isPlayerSkill(style))
+            : PLAYER_SKILLS;
         const reference = gameNumber("battle_referenceSeconds");
         this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
@@ -162,7 +168,7 @@ export class BattleSession {
         this.enemy = toLive(enemy, this.pace, SKILL_START.enemy);
         if (this.playerManualSkills) {
             this.player.skillCds = {};
-            for (const style of PLAYER_SKILLS) this.player.skillCds[style] = 0;
+            for (const style of this.playerSkills) this.player.skillCds[style] = 0;
         }
         this.rng = new Rng(seed);
         this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : [gameText("BattleSession_001")]) });
@@ -220,7 +226,7 @@ export class BattleSession {
      */
     requestSkill(style: StrikeStyle): BattleEvent[] {
         if (!this.playerManualSkills || this.phase !== "combat") return [];
-        if (!isPlayerSkill(style)) return [];
+        if (!isPlayerSkill(style) || !this.playerSkills.includes(style)) return [];
         if (this.skillRemain(style) > 0) return [];
         this.queuedSkill = style;
         const out = this.flushPlayerSkill();
@@ -243,7 +249,7 @@ export class BattleSession {
         if (this.phase !== "combat" || dt <= 0) return out;
         this.skillGate = Math.max(0, this.skillGate - dt);
         if (this.playerManualSkills && this.player.skillCds) {
-            for (const style of PLAYER_SKILLS) {
+            for (const style of this.playerSkills) {
                 this.player.skillCds[style] = Math.max(0, (this.player.skillCds[style] || 0) - dt);
             }
         }

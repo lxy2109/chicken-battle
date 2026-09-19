@@ -35,11 +35,11 @@ export class BattleImpact {
         this.spawnPrefab(this.clashPrefab, worldX, worldY + 24, 1, null, 0.55);
     }
 
-    play(target: Node, direction: number, heavy: boolean, critical: boolean, featherColor: string, laneY?: number) {
+    play(target: Node, direction: number, heavy: boolean, critical: boolean, featherColor: string, laneY?: number, skill = false) {
         if (!this.layer.isValid || !target.isValid || this.active.size >= 6) return;
-        const scale = critical ? 1.35 : heavy ? 1.15 : 1;
+        const scale = critical ? 1.35 : skill ? 1.22 : heavy ? 1.15 : 1;
         const p = target.worldPosition;
-        this.spawnPrefab(this.hitPrefab, p.x, p.y + 40, scale, featherColor, 1.1, direction);
+        this.spawnPrefab(this.hitPrefab, p.x, p.y + 40, scale, featherColor, 1.1, direction, critical, skill);
 
         const floorUI = this.floor.getComponent(UITransform)!;
         const chest = floorUI.convertToNodeSpaceAR(target.worldPosition);
@@ -75,7 +75,9 @@ export class BattleImpact {
         scale: number,
         featherColor: string | null,
         life: number,
-        direction = 1
+        direction = 1,
+        critical = false,
+        skill = false
     ) {
         if (!prefab || !this.layer.isValid) return;
         const root = instantiate(prefab);
@@ -89,6 +91,17 @@ export class BattleImpact {
         const featherTint = featherColor
             ? Color.fromHEX(new Color(), featherColor)
             : null;
+        // 星芒：暴击金 / 绝招亮白蓝 / 普攻近白
+        const starTint = critical
+            ? new Color(255, 214, 48, 255)
+            : skill
+                ? new Color(180, 210, 255, 255)
+                : new Color(255, 255, 255, 255);
+        const sparkTint = critical
+            ? new Color(255, 180, 60, 255)
+            : skill
+                ? new Color(140, 190, 255, 255)
+                : new Color(255, 240, 210, 255);
 
         for (const ps of root.getComponentsInChildren(ParticleSystem2D)) {
             ps.playOnLoad = false;
@@ -100,6 +113,14 @@ export class BattleImpact {
             if (ps.node.name === "Feather" && featherTint) {
                 ps.startColor = new Color(featherTint.r, featherTint.g, featherTint.b, 255);
                 ps.endColor = new Color(featherTint.r, featherTint.g, featherTint.b, 0);
+            }
+            if (ps.node.name === "Star") {
+                ps.startColor = starTint;
+                ps.endColor = new Color(starTint.r, starTint.g, starTint.b, 0);
+            }
+            if (ps.node.name === "Spark") {
+                ps.startColor = sparkTint;
+                ps.endColor = new Color(sparkTint.r, sparkTint.g, sparkTint.b, 0);
             }
             if (heavyBoost(ps.node.name, scale)) {
                 ps.startSize *= scale;

@@ -3,6 +3,7 @@
     "common_prompt_cancal": "取消",
     "common_prompt_title": "系统提示",
     "common_prompt_content": "系统提示内容",
+    "skill_unlock_title": "新绝招",
     "update_tips_force": "当前版本过旧，需要下载新的安装包才能进行游戏，是否更新？",
     "update_tips_load_config": "加载配置中",
     "update_tips_load_game": "加载游戏中",

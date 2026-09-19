@@ -231,6 +231,26 @@
         "zh": "地图加载失败，请重试",
         "en": ""
     },
+    "MapViewComp_012": {
+        "zh": "一键跳过",
+        "en": ""
+    },
+    "MapViewComp_013": {
+        "zh": "新绝招解锁：{0}",
+        "en": ""
+    },
+    "MapViewComp_014": {
+        "zh": "新绝招解锁",
+        "en": ""
+    },
+    "MapViewComp_015": {
+        "zh": "已学会以下绝招，对战中点按钮释放",
+        "en": ""
+    },
+    "MapViewComp_016": {
+        "zh": "太棒了",
+        "en": ""
+    },
     "PreBattleViewComp_001": {
         "zh": "生命",
         "en": ""

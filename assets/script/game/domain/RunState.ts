@@ -1,6 +1,6 @@
 import { gameNumber, gameText, gameTextOr } from "./GameConfig";
 import { hasTables } from "./Config";
-import { inferFightStyle } from "./BattleStyle";
+import { inferFightStyle, skillsUnlockedAt, skillsUnlockedOnMap } from "./BattleStyle";
 import { getMaps, enemyToFighter, getPlayer, getRoute, itemById, playerTaunts, routeNode, setById } from "./Catalog";
 import { applySkinAppearance, buildStats, healFull, setPrice, shopStock } from "./EquipMath";
 import { PartLevels, partScale, upgradeBonus } from "./PartUpgrade";
@@ -8,7 +8,7 @@ import { rollUpgrades } from "./RewardGen";
 import { Rng } from "./Rng";
 import {
     Appearance, EquipItem, FighterSnapshot, PartId, RewardOption, RouteNode, RunScreen, StagePhase,
-    Stats, addPartial, defaultAppearance
+    Stats, StrikeStyle, addPartial, defaultAppearance
 } from "./Types";
 
 /**
@@ -23,6 +23,8 @@ export class RunState {
     /** 强化养成、金币、装备、首通领取和大关通关记录都不参与正式赛战败回退。 */
     claimedGoldNodes: number[] = [];
     completedMaps: number[] = [];
+    /** 已弹出过绝招解锁提示的地图 id，避免重复打扰。 */
+    skillUnlockNotified: number[] = [];
     lastBattleNode = 1;
     lastFirstClear = false;
     /** 由本地存档适配层订阅；逻辑测试不依赖引擎或浏览器。 */
@@ -87,6 +89,24 @@ export class RunState {
 
     currentMap() {
         return getMaps().find(map => map.id === (this.currentRoute().mapId || 1))!;
+    }
+
+    /** 当前地图已解锁的主动绝招。 */
+    unlockedSkills(): StrikeStyle[] {
+        return skillsUnlockedAt(this.currentMap().id);
+    }
+
+    /**
+     * 取出尚未提示过的本图新绝招，并立刻记入已读（弹窗是否点确定都不重复弹）。
+     * 无新招时返回空数组。
+     */
+    takeSkillUnlockNotice(): StrikeStyle[] {
+        const mapId = this.currentMap().id;
+        if (this.skillUnlockNotified.includes(mapId)) return [];
+        const skills = skillsUnlockedOnMap(mapId);
+        this.skillUnlockNotified.push(mapId);
+        this.onChanged?.();
+        return skills;
     }
 
     get nextMap() {
