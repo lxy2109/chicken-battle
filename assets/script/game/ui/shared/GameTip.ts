@@ -91,6 +91,17 @@ export function tipGain(title: string, detail?: string): void {
     showTips(tips);
 }
 
+/** 缝纫鸡胜利赠送鸡王中王套并自动穿上。 */
+export function tipChampionReward(): void {
+    const set = setById("champion");
+    const tips = [
+        gameTextOr("GameTip_007", "获得{0}，已自动穿上", set.name),
+        gameTextOr("GameTip_008", "可穿戴挑战最终BOSS坤坤")
+    ];
+    for (const effect of setEffects(set)) tips.push(effect);
+    showTips(tips);
+}
+
 function wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }

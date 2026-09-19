@@ -198,8 +198,9 @@ export class RunState {
         if (node.kind === "boss") {
             if (win) {
                 if (!this.completedMaps.includes(this.currentMap().id)) this.completedMaps.push(this.currentMap().id);
-                if (node.encounter === "final") {
-                    for (const id of setById("champion").pieceIds) if (!this.ownedIds.includes(id)) this.ownedIds.push(id);
+                // 第五图缝纫鸡首通即送鸡王中王套，方便穿去打坤坤；最终战再补发一次防旧档漏领。
+                if ((node.mapId === 5 && node.encounter === "official") || node.encounter === "final") {
+                    this.grantChampionSet(node.encounter === "official");
                 }
             }
             else if (node.encounter !== "final") {
@@ -347,6 +348,17 @@ export class RunState {
         if (this.equippedIds.length === 0) this.hideEquippedAppearance = false;
         this.onChanged?.();
         return true;
+    }
+
+    /** 发放鸡王中王套；缝纫鸡胜利时强制穿上，最终战只补全未拥有的部件。 */
+    private grantChampionSet(forceEquip: boolean) {
+        const pieces = setById("champion").pieceIds;
+        for (const id of pieces) if (!this.ownedIds.includes(id)) this.ownedIds.push(id);
+        if (!forceEquip) return;
+        const slots = pieces.map(id => itemById(id).slot);
+        this.equippedIds = this.equippedIds.filter(id => !slots.includes(itemById(id).slot));
+        this.equippedIds.push(...pieces);
+        this.hideEquippedAppearance = false;
     }
 
     toggleHideAppearance(): boolean {

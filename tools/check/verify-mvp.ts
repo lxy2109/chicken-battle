@@ -936,9 +936,10 @@ function run() {
         assert(migrated.routeNode === kunId() && migrated.screen === "map", "旧结局开放新增坤坤挑战");
     });
 
-    ok("挖掘鸡与鸡来按地图解锁，鸡王中王最后发放", () => {
+    ok("挖掘鸡与鸡来按地图解锁，鸡王中王在缝纫鸡后发放", () => {
         const run = new RunState(86);
         run.gold = 8000;
+        const champion = getSets().find(s => s.id === "champion")!.pieceIds;
         assert(!!getSets().find(s => s.id === "digger") && !!getSets().find(s => s.id === "coming"), "新套装已入表");
         assert(!run.buySet("digger") && !run.buySet("coming"), "未到地图不能买新套装");
         run.routeNode = mapStart(4);
@@ -948,9 +949,17 @@ function run() {
         assert(run.buySet("coming"), "第五图解锁鸡来套装");
         assert(getSets().find(s => s.id === "coming")!.pieceIds.every(id => run.equippedIds.includes(id)), "买鸡来自动穿上");
         assert(!run.buySet("champion"), "鸡王中王仍不能购买");
+        run.routeNode = mapBoss(4); run.phase = "boss"; run.screen = "battle";
+        run.settle(true);
+        assert(champion.every(id => !run.ownedIds.includes(id)), "第四图正式赛不发鸡王中王");
+        run.routeNode = mapBoss(5); run.phase = "boss"; run.screen = "battle";
+        run.settle(true);
+        assert(champion.every(id => run.ownedIds.includes(id)), "击败缝纫鸡发放鸡王中王");
+        assert(champion.every(id => run.equippedIds.includes(id)), "缝纫鸡胜利后自动穿上鸡王中王");
+        const owned = run.ownedIds.slice();
         run.routeNode = kunId(); run.phase = "boss"; run.screen = "battle";
         run.settle(true);
-        assert(getSets().find(s => s.id === "champion")!.pieceIds.every(id => run.ownedIds.includes(id)), "通关才发放鸡王中王");
+        assert(run.ownedIds.join(",") === owned.join(","), "最终战不重复发放部件");
     });
 
     ok("不同派系同一局势出招不同", () => {
