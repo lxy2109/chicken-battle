@@ -48,14 +48,31 @@ export class LayerUI extends Node {
      */
     add(uiid: Uiid, config: UIConfig, params?: UIParam): Promise<Node> {
         return new Promise<Node>(async (resolve, reject) => {
+            // 同一 prefab 已在登记表时，旧实现直接 return 且不 resolve，
+            // 调用方 await 会永久挂起（真机清档后点确定无响应就是这条路径）。
             if (this.ui_nodes.has(config.prefab)) {
-                console.warn(`路径为【${config.prefab}】的预制重复加载`);
-                return;
+                const existing = this.ui_nodes.get(config.prefab)!;
+                // 仅复用仍有效且已上舞台的界面；关闭中 / preload 残留一律清掉重开。
+                if (existing?.valid && existing.node?.isValid && existing.node.parent) {
+                    console.warn(`路径为【${config.prefab}】的预制重复加载，复用已有节点`);
+                    existing.params = params ?? existing.params ?? {};
+                    resolve(existing.node);
+                    return;
+                }
+                console.warn(`路径为【${config.prefab}】的预制登记残留，清理后重开`);
+                this.ui_nodes.delete(config.prefab);
+                if (existing?.node?.isValid && !existing.node.parent) {
+                    try { existing.node.destroy(); } catch { /* ignore */ }
+                }
             }
 
             // 检查缓存中是否存界面
             let state = this.initUIConfig(uiid, config, params);
             await this.load(state);
+            if (!state.node) {
+                reject(new Error(`路径为【${config.prefab}】的预制加载失败`));
+                return;
+            }
             resolve(state.node);
         });
     }
@@ -146,9 +163,10 @@ export class LayerUI extends Node {
         oops.gui.waitOpen();
     }
 
-    /** 窗口关闭事件 */
+    /** 窗口关闭事件：仅当登记表仍是同一 state 时删除，避免旧节点延后 destroy 误删新开的同路径界面。 */
     protected closeUi(state: UIState) {
-        this.ui_nodes.delete(state.config.prefab);
+        const current = this.ui_nodes.get(state.config.prefab);
+        if (current === state) this.ui_nodes.delete(state.config.prefab);
     }
 
     /** 打开窗口失败逻辑 */
@@ -169,11 +187,29 @@ export class LayerUI extends Node {
             // 不释放界面，缓存起来待下次使用
             if (release === false) this.ui_cache.set(state.config.prefab, state);
 
+            const node = state.node;
+            // preload 打开后尚未 show 时节点不在层上，destroy 不会触发 CHILD_REMOVED。
+            const parented = !!(node?.isValid && node.parent);
+            const wasOpen = state.valid;
+
+            // 先标记关闭中，避免同帧再次 add 时复用即将销毁的节点。
+            state.valid = false;
+
             // 界面移出舞台
-            if (state.valid) {
-                const comp = state.node.getComponent(LayerUIElement);
-                comp && comp.remove(release);
+            if (wasOpen && node?.isValid) {
+                const comp = node.getComponent(LayerUIElement);
+                if (comp) comp.remove(release);
+                else {
+                    node.destroy();
+                    this.closeUi(state);
+                }
             }
+            else {
+                this.closeUi(state);
+            }
+
+            // 未上舞台的残留必须当场摘登记，否则下次 add 会永久 await 挂起。
+            if (!parented) this.closeUi(state);
         }
     }
 

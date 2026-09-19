@@ -67,13 +67,16 @@ export async function goScreen(from: CCView<ChickenRun>, screen?: RunScreen) {
         // 准备战斗有自己的左右面板入场/退场，不套全局整页滑动。
         const useOwnAnim = target === "prebattle" || fromScreen === "prebattle";
         const newNode = await openRunView(ent, ctor, { entrance: useOwnAnim ? undefined : false });
+        if (!newNode?.isValid) throw new Error(`界面未打开: ${target}`);
         playScreenMusic(target, ent.run.currentRoute().enemyId);
-        if (!useOwnAnim && oldNode?.isValid && newNode?.isValid && oldNode !== newNode) {
+        if (!useOwnAnim && oldNode?.isValid && newNode.isValid && oldNode !== newNode) {
             await playScreenTransition(oldNode, newNode, fromScreen, target);
         }
         closeFromView(from);
     } catch (error) {
         console.error("[Nav] 界面资源加载失败，可重试", target, error);
+        // 打开失败时务必放开锁，并关掉可能残留的全屏等待遮罩，否则真机上按钮会像「没反应」。
+        try { oops.gui.waitClose(); } catch { /* ignore */ }
     } finally {
         openingViews.delete(from);
     }

@@ -62,7 +62,11 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
                 this.ent.RunModel.clearSave();
                 this.draft = defaultAppearance();
                 this.part = "head";
+                this.nameInput.string = this.ent.run.playerName;
                 setNodeActive(this, "ClearSaveModal", false);
+                // 清档后回到开始页，避免仍停在自定义页却带着旧局状态点确定。
+                setNodeActive(this, "CustomizePanel", false);
+                setNodeActive(this, "StartPanel", true);
                 setLabel(this, "BtnStartLab", gameText("CustomizeViewComp_004"));
                 setLabel(this, "LabSaveHint", gameText("CustomizeViewComp_005"));
                 void this.refresh();
@@ -70,7 +74,7 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
                 setLabel(this, "LabClearDesc", gameText("CustomizeViewComp_006"));
             }
         });
-        bindClick(this, "BtnEnter", this.onEnter.bind(this));
+        bindClick(this, "BtnEnter", () => { void this.onEnter(); });
         bindClick(this, "BtnReset", this.onReset.bind(this));
         bindClick(this, "BtnRandomSet", this.onRandomSet.bind(this));
         bindClick(this, "BtnRandomName", this.onRandomName.bind(this));
@@ -231,10 +235,21 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
         await spawnChicken(this, "ChickenSlot", this.draft, 4 / 3, true);
     }
 
+    private entering = false;
+
     private async onEnter() {
-        this.ent.run.setPlayerName(this.nameInput.string);
-        this.ent.run.confirmAppearance(this.draft);
-        await goScreen(this, "map");
+        if (this.entering || !this.ent || !this.node?.isValid) return;
+        this.entering = true;
+        try {
+            this.ent.run.setPlayerName(this.nameInput.string);
+            this.ent.run.confirmAppearance(this.draft);
+            await goScreen(this, "map");
+        } catch (error) {
+            console.error("[Customize] 进入地图失败", error);
+            setLabel(this, "LabTitle", gameText("CustomizeViewComp_007"));
+        } finally {
+            this.entering = false;
+        }
     }
 
     private onReset() {
