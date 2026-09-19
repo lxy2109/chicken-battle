@@ -6,7 +6,7 @@
 |------|------|
 | `check/` | 类型、预制体、流程、节奏、Web 脚本、verify |
 | `config/` | Excel 导入导出、schema、contract |
-| `gen/` | 生成贴图 / 预制体 / 序列帧 |
+| `gen/` | 生成贴图 / 预制体 / 序列帧提示词（`gen-strike-prompts`） |
 | `import/` | 外部美术与特效导入 |
 | `art/` | 优化、切图、UUID、Figma 清单 |
 | `prefab/` | prefab-spec.json |

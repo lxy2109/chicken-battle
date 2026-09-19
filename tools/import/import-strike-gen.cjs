@@ -2,6 +2,10 @@
  * 把生图的 4×4 或横向条整理成 1024×1024、16 帧（每格 256×256）。
  * 生图本身就是 1024 的 4×4，不再压成 64，战斗里才不会糊。
  *
+ * 提示词：node tools/gen/gen-strike-prompts.cjs
+ * 生图：refs + prompts → raw/<key>.<style>.png
+ * 导入：本脚本
+ *
  * 用法:
  *   node tools/import-strike-gen.cjs <src.png> <charKey> <style>
  *   node tools/import-strike-gen.cjs --dir temp/strike-gen/raw
@@ -11,7 +15,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const png = require("../art/png.cjs");
-const { knockWhiteViaMagenta } = require("../art/knock-alpha.cjs");
+const { knockCharacterCell } = require("../art/knock-alpha.cjs");
 
 const ROOT = path.resolve(__dirname, "../..");
 const OUT = path.join(ROOT, "assets/bundle/game/image/anim");
@@ -134,23 +138,45 @@ function emptyCell() {
     return { width: CELL, height: CELL, data: Buffer.alloc(CELL * CELL * 4) };
 }
 
+/** 脚底 Y（不透明像素最大 y），用于多帧对齐，减轻跳帧感。 */
+function footY(img) {
+    const { width: w, height: h, data } = img;
+    for (let y = h - 1; y >= 0; y--) {
+        for (let x = 0; x < w; x++) {
+            if (data[(y * w + x) * 4 + 3] >= 12) return y;
+        }
+    }
+    return h - 1;
+}
+
 function fitCell(img) {
-    const trimmed = png.trim(img, 1) || img;
+    // 抠完后再 trim，去掉格线/残边，主体尽量铺满格（幅度观感更好）。
+    const trimmed = png.trim(img, 2) || img;
     if (!trimmed.width || !trimmed.height) return emptyCell();
     const pad = PAD;
     const inner = CELL - pad * 2;
-    const scale = Math.min(inner / trimmed.width, inner / trimmed.height, 1);
+    // 允许略放大到铺满 inner，避免生图主体过小显得幅度不够
+    const scale = Math.min(inner / trimmed.width, inner / trimmed.height, 1.12);
     const w = Math.max(1, Math.round(trimmed.width * scale));
     const h = Math.max(1, Math.round(trimmed.height * scale));
     const fitted = (w === trimmed.width && h === trimmed.height) ? trimmed : png.resize(trimmed, w, h);
     const out = emptyCell();
     const ox = Math.floor((CELL - w) / 2);
-    const oy = CELL - pad - h;
+    // 脚钉在底边 pad 之上，各帧垂直对齐，减少「整只鸡上下跳」。
+    const fy = footY(fitted);
+    let oy = CELL - pad - 1 - fy;
+    if (oy > pad) oy = pad;
+    if (oy + h < CELL - pad) oy = CELL - pad - h;
+    if (oy < 0) oy = 0;
+    if (oy + h > CELL) oy = Math.max(0, CELL - h);
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             const s = (y * w + x) * 4;
-            const d = ((y + Math.max(0, oy)) * CELL + (x + ox)) * 4;
-            if (y + oy < 0 || y + oy >= CELL) continue;
+            const dy = y + oy;
+            if (dy < 0 || dy >= CELL) continue;
+            const dx = x + ox;
+            if (dx < 0 || dx >= CELL) continue;
+            const d = (dy * CELL + dx) * 4;
             fitted.data.copy(out.data, d, s, s + 4);
         }
     }
@@ -199,8 +225,8 @@ function decodeAny(file) {
 function importOne(src, key, style) {
     const img = decodeAny(src);
     const cells = cellsFrom(img);
-    // 先把每格白底涂成品红再抠，避免白羽毛 / 眼白被当成底。
-    for (const cell of cells) knockWhiteViaMagenta(cell);
+    // 黑底 + 白底保护主体 + 去脚下绿影 + 补小洞（白袍/白毛不再被掏空）。
+    for (const cell of cells) knockCharacterCell(cell);
     const sheet = compose(cells);
     const dir = path.join(OUT, key);
     fs.mkdirSync(dir, { recursive: true });
