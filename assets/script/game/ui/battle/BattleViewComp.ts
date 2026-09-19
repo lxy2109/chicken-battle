@@ -18,7 +18,9 @@ import { AmbientKind, BattleFx, strikeFxColor } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
 import { BattleSkillBar } from "./BattleSkillBar";
+import { BattleTapBoost } from "./BattleTapBoost";
 import { SIGNATURE_LABEL, STYLE_LABEL, stageMood, styleRhythm } from "../../domain/BattleStyle";
+import { resetBattlePace } from "../../domain/BattlePace";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../domain/Types";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
@@ -135,6 +137,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private screenEffects?: BattleScreenEffects;
     private fx?: BattleFx;
     private skillBar?: BattleSkillBar;
+    private tapBoost?: BattleTapBoost;
     private skillOf: Record<BattleSide, boolean> = { player: false, enemy: false };
     private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
@@ -324,6 +327,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             if (this.closed) return;
             this.skillBar.tick(this.session);
             this.skillBar.raise();
+            this.tapBoost = new BattleTapBoost(this.node);
         } finally {
             oops.gui.waitClose();
         }
@@ -335,6 +339,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.playerActor?.startRoam();
         this.enemyActor?.startRoam();
         this.session.beginCombat();
+        this.tapBoost?.mount();
+        this.skillBar?.raise();
         this.running = true;
         this.ticking = true;
         this.schedule(this.onTick, 0);
@@ -365,9 +371,13 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     private onTick = (dt: number) => {
         if (this.closed || !this.running) return;
-        for (const ev of this.session.tick(dt)) this.dispatch(ev);
+        // 圆圈用真实时间生成/收缩；战斗逻辑与血条追赶跟加速倍率走。
+        this.tapBoost?.tick(dt);
+        const pace = this.tapBoost?.speedMul() ?? 1;
+        const step = dt * pace;
+        for (const ev of this.session.tick(step)) this.dispatch(ev);
         this.skillBar?.tick(this.session);
-        this.easeBars(dt);
+        this.easeBars(step);
         if (this.playerActor && this.enemyActor && this.playerNode && this.enemyNode) {
             const front = this.playerActor.home.y < this.enemyActor.home.y ? this.playerNode : this.enemyNode;
             const back = front === this.playerNode ? this.enemyNode : this.playerNode;
@@ -579,6 +589,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private async finish(win: boolean) {
         if (!this.running) return;
         this.running = false;
+        this.tapBoost?.clear();
+        this.tapBoost = undefined;
+        resetBattlePace();
         this.danmaku?.clear();
         if (this.danmakuBtn?.isValid) this.danmakuBtn.active = false;
         playGameEffect(win ? "win" : "lose");
@@ -867,7 +880,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     }
 
     private wait(sec: number) {
-        return new Promise<void>((resolve) => this.scheduleOnce(() => resolve(), sec));
+        // 加速期间缩短局内等待，开场嘲讽等仍在 running 前调用，不受影响。
+        const pace = this.running ? (this.tapBoost?.speedMul() ?? 1) : 1;
+        return new Promise<void>((resolve) => this.scheduleOnce(() => resolve(), sec / Math.max(1, pace)));
     }
 
     private stopTick() {
@@ -879,6 +894,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     reset() {
         this.closed = true;
         oops.gui.waitClose();
+        this.tapBoost?.clear();
+        this.tapBoost = undefined;
+        resetBattlePace();
         this.skillBar?.clear();
         this.fx?.clear();
         this.screenEffects?.clear();
