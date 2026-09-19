@@ -18,13 +18,15 @@ import { AmbientKind, BattleFx, strikeFxColor } from "./BattleFx";
 import { BattleImpact } from "./BattleImpact";
 import { BattleScreenEffects } from "./BattleScreenEffects";
 import { BattleSkillBar } from "./BattleSkillBar";
+import { BattleTapBoost } from "./BattleTapBoost";
 import { SIGNATURE_LABEL, STYLE_LABEL, stageMood, styleRhythm } from "../../domain/BattleStyle";
+import { resetBattlePace } from "../../domain/BattlePace";
 import { BattleEvent, BattleSide, StrikeStyle } from "../../domain/Types";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { preloadResultSuitGif } from "../shared/SlotVideo";
 import { bindNodeClick, hexColor, setLabel } from "../shared/UiUtil";
-import { playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
+import { ensureScreenMusic, playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
 
 const { ccclass, executionOrder } = _decorator;
 
@@ -135,6 +137,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private screenEffects?: BattleScreenEffects;
     private fx?: BattleFx;
     private skillBar?: BattleSkillBar;
+    private tapBoost?: BattleTapBoost;
     private skillOf: Record<BattleSide, boolean> = { player: false, enemy: false };
     private featherColors: Record<BattleSide, string> = { player: "#fff0c0", enemy: "#fff0c0" };
 
@@ -324,6 +327,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             if (this.closed) return;
             this.skillBar.tick(this.session);
             this.skillBar.raise();
+            this.tapBoost = new BattleTapBoost(this.node);
         } finally {
             oops.gui.waitClose();
         }
@@ -335,6 +339,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.playerActor?.startRoam();
         this.enemyActor?.startRoam();
         this.session.beginCombat();
+        this.tapBoost?.mount();
+        this.skillBar?.raise();
         this.running = true;
         this.ticking = true;
         this.schedule(this.onTick, 0);
@@ -363,11 +369,17 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         this.trig("toCombat");
     }
 
+    private musicGuard = 0;
+
     private onTick = (dt: number) => {
         if (this.closed || !this.running) return;
-        for (const ev of this.session.tick(dt)) this.dispatch(ev);
+        // 圆圈用真实时间生成/收缩；战斗逻辑与血条追赶跟加速倍率走。
+        this.tapBoost?.tick(dt);
+        const pace = this.tapBoost?.speedMul() ?? 1;
+        const step = dt * pace;
+        for (const ev of this.session.tick(step)) this.dispatch(ev);
         this.skillBar?.tick(this.session);
-        this.easeBars(dt);
+        this.easeBars(step);
         if (this.playerActor && this.enemyActor && this.playerNode && this.enemyNode) {
             const front = this.playerActor.home.y < this.enemyActor.home.y ? this.playerNode : this.enemyNode;
             const back = front === this.playerNode ? this.enemyNode : this.playerNode;
@@ -377,11 +389,22 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             || this.session.hp("enemy") <= this.session.maxHp("enemy") / 2);
         if (this.danmakuReadyAt > 0) this.refreshDanmakuBtn();
         this.fx?.tickAmbient(dt);
+        // 安卓真机：连放技能/音效后 BGM 可能被静默掐掉，低频巡检续播。
+        this.musicGuard += dt;
+        if (this.musicGuard >= 0.5) {
+            this.musicGuard = 0;
+            this.guardBattleMusic();
+        }
         if (this.logLeft > 0) {
             this.logLeft -= dt;
             if (this.logLeft <= 0) setLabel(this, "LabLog", "");
         }
     };
+
+    private guardBattleMusic() {
+        const enemyId = this.ent?.run?.currentRoute?.()?.enemyId;
+        ensureScreenMusic("battle", enemyId);
+    }
 
     private dispatch(ev: BattleEvent) {
         if (this.closed) return;
@@ -520,6 +543,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             const fromRight = side === "enemy";
             playGameEffect("skill");
             playSkillAnnounce(style);
+            // 技能连放多条短音后立刻确认 BGM，避免安卓把循环曲掐死后要等巡检才恢复。
+            this.guardBattleMusic();
             this.fx?.skillCharge(self, style);
             this.screenEffects?.skillCast(side === "player" ? 1 : -1, true);
             self.pulse();
@@ -528,6 +553,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             await self.prepareSkill(style);
             if (this.closed) return;
             this.fx?.skillLaunch(self, style, fromRight);
+            this.guardBattleMusic();
         }
         else {
             this.fx?.basicWindup(self, style, side === "enemy");
@@ -551,6 +577,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             ? Math.sign(target.worldPosition.x - source.worldPosition.x) : from === "player" ? 1 : -1;
         playGameEffect(crit ? "critical" : skill ? "skill" : style === "peck" || style === "combo" ? "peck"
             : style === "dive" || style === "charge" ? "wing" : style === "leap" ? "skill" : "hit");
+        if (skill || crit) this.guardBattleMusic();
         this.actor(to)?.flinch(crit ? 1.75 : skill ? 1.55 : heavy ? 1.3 : 1, direction);
         if (target) {
             this.impact?.play(target, direction, heavy || skill, crit, this.featherColors[to], this.actor(to)?.home.y, skill);
@@ -579,6 +606,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     private async finish(win: boolean) {
         if (!this.running) return;
         this.running = false;
+        this.tapBoost?.clear();
+        this.tapBoost = undefined;
+        resetBattlePace();
         this.danmaku?.clear();
         if (this.danmakuBtn?.isValid) this.danmakuBtn.active = false;
         playGameEffect(win ? "win" : "lose");
@@ -867,7 +897,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     }
 
     private wait(sec: number) {
-        return new Promise<void>((resolve) => this.scheduleOnce(() => resolve(), sec));
+        // 加速期间缩短局内等待，开场嘲讽等仍在 running 前调用，不受影响。
+        const pace = this.running ? (this.tapBoost?.speedMul() ?? 1) : 1;
+        return new Promise<void>((resolve) => this.scheduleOnce(() => resolve(), sec / Math.max(1, pace)));
     }
 
     private stopTick() {
@@ -879,6 +911,9 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
     reset() {
         this.closed = true;
         oops.gui.waitClose();
+        this.tapBoost?.clear();
+        this.tapBoost = undefined;
+        resetBattlePace();
         this.skillBar?.clear();
         this.fx?.clear();
         this.screenEffects?.clear();

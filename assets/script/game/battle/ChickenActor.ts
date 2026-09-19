@@ -1,4 +1,5 @@
 import { Color, Node, Sprite, Tween, UIOpacity, UITransform, tween, v3, Vec3 } from "cc";
+import { battlePace } from "../domain/BattlePace";
 import { ArenaMood, StyleRhythm, styleRhythm } from "../domain/BattleStyle";
 import { FightStyle, StrikeStyle } from "../domain/Types";
 import { StrikeSheetPlayer } from "./StrikeSheetPlayer";
@@ -86,7 +87,7 @@ export class ChickenActor {
         this.skillAmp = 1.42;
         this.skillPrimed = true;
         // 绝招蓄力阶段就切序列帧 windup，出手时不再闪 idle。
-        this.sheets?.play(style, this.leadOf(style) + 0.18);
+        this.sheets?.play(style, this.leadOf(style) + this.timed(0.18));
         this.windup(style, true);
         await this.skillPose(style, tk);
         if (!this.alive(tk)) {
@@ -149,16 +150,19 @@ export class ChickenActor {
      * 真接近距离会变，打早/打晚靠 hold + impact 对齐。
      */
     private leadOf(style: StrikeStyle) {
+        let sec: number;
         switch (style) {
-            case "jump": return this.dur(0.18) * 2;
-            case "dive": return this.dur(0.14) + this.dur(0.12);
-            case "leap": return this.dur(0.2) + 0.13 + 0.15;
-            case "charge": return this.dur(0.08) * 2;
-            case "tail": return this.dur(0.09) * 2;
-            case "combo": return this.dur(0.08) * 2;
-            case "feint": return this.dur(0.09) + 0.06 + this.dur(0.24) + this.dur(0.08);
-            default: return this.dur(0.09) * 2;
+            case "jump": sec = this.dur(0.18) * 2; break;
+            case "dive": sec = this.dur(0.14) + this.dur(0.12); break;
+            case "leap": sec = this.dur(0.2) + 0.13 + 0.15; break;
+            case "charge": sec = this.dur(0.08) * 2; break;
+            case "tail": sec = this.dur(0.09) * 2; break;
+            case "combo": sec = this.dur(0.08) * 2; break;
+            case "feint": sec = this.dur(0.09) + 0.06 + this.dur(0.24) + this.dur(0.08); break;
+            default: sec = this.dur(0.09) * 2; break;
         }
+        // 序列帧 windup 与位移同一加速倍率，避免加速时贴图还在慢动作。
+        return this.timed(sec);
     }
 
     private perform(target: Node, style: StrikeStyle, tk: number, contact: (hit: boolean) => void): Promise<boolean> {
@@ -694,8 +698,14 @@ export class ChickenActor {
         return this.ghostTint();
     }
 
+    /** 招式节奏秒数（尚未套加速）；真正 tween 时由 timed 再压。 */
     private dur(sec: number) {
         return Math.max(0.05, sec * Math.min(1.05, this.rhythm.tempo));
+    }
+
+    /** 把演出秒数压成当前战斗加速下的真实时长。 */
+    private timed(sec: number) {
+        return Math.max(0.03, sec / battlePace());
     }
 
     private lift(base: number) {
@@ -1005,13 +1015,13 @@ export class ChickenActor {
 
     private moveTo(pos: Vec3, dur: number, tk: number) {
         return this.hold(tk, (fin) => {
-            tween(this.node).to(dur, { position: pos }).call(fin).start();
+            tween(this.node).to(this.timed(dur), { position: pos }).call(fin).start();
         });
     }
 
     private ease(pos: Vec3, dur: number, easing: Ease, tk: number) {
         return this.hold(tk, (fin) => {
-            tween(this.node).to(dur, { position: pos }, { easing }).call(fin).start();
+            tween(this.node).to(this.timed(dur), { position: pos }, { easing }).call(fin).start();
         });
     }
 
@@ -1101,19 +1111,20 @@ export class ChickenActor {
 
     private delay(sec: number, tk: number) {
         return this.hold(tk, (fin) => {
-            tween(this.node).delay(sec).call(fin).start();
+            tween(this.node).delay(this.timed(sec)).call(fin).start();
         });
     }
 
     private scaleTo(x: number, y: number, dur: number) {
+        const t = this.timed(dur);
         if (this.sheets?.busy) {
             // 立绘出招时只保留一部分根缩放，让跳/冲的身形仍可读。
             const mx = this.sx + (x - this.sx) * 0.4;
             const my = this.sy + (y - this.sy) * 0.4;
-            tween(this.node).to(dur, { scale: v3(mx, my, 1) }).start();
+            tween(this.node).to(t, { scale: v3(mx, my, 1) }).start();
             return;
         }
-        tween(this.node).to(dur, { scale: v3(x, y, 1) }).start();
+        tween(this.node).to(t, { scale: v3(x, y, 1) }).start();
     }
 
     private tilt(deg: number) {

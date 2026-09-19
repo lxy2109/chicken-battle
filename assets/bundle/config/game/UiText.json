@@ -254,5 +254,9 @@
     "character/BtnHideAppearance/BtnHideAppearanceLab": {
         "id": "character/BtnHideAppearance/BtnHideAppearanceLab",
         "text": "原皮出战"
+    },
+    "battle/BtnDanmaku/BtnDanmakuLab": {
+        "id": "battle/BtnDanmaku/BtnDanmakuLab",
+        "text": "发送弹幕"
     }
 }
