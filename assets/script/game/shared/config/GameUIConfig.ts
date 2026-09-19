@@ -15,6 +15,8 @@ export enum UIID {
     Confirm,
     /** 绝招解锁弹窗 */
     SkillUnlock,
+    /** 最终挑战介绍弹窗 */
+    FinalChallenge,
 }
 
 /** 打开界面方式的配置数据 */
@@ -22,4 +24,5 @@ export var UIConfigData: { [key: number]: UIConfig } = {
     [UIID.Alert]: { layer: LayerType.Dialog, prefab: "common/prefab/alert", mask: true },
     [UIID.Confirm]: { layer: LayerType.Dialog, prefab: "common/prefab/confirm", mask: true },
     [UIID.SkillUnlock]: { layer: LayerType.Dialog, prefab: "gui/skill_unlock/skill_unlock", mask: true },
+    [UIID.FinalChallenge]: { layer: LayerType.Dialog, prefab: "gui/final_challenge/final_challenge", mask: true },
 }

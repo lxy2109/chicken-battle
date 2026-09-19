@@ -13,6 +13,7 @@ import { openRunView } from "../shared/RunGui";
 import { playScreenMusic } from "../shared/GameAudio";
 import { mapTravelDir, playSlideCut } from "../shared/ScreenTransition";
 import { spawnChicken } from "../shared/ChickenBinder";
+import { showFinalChallengeModal } from "../shared/FinalChallengeModal";
 import { showSkillUnlockModal } from "../shared/SkillUnlockModal";
 import { bindClick, setLabel, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
@@ -45,7 +46,10 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
     async start() {
         this.nodeTreeInfoLite();
         await this.refreshMap();
-        if (!MapViewComp.transitioning) await this.promptSkillUnlock();
+        if (!MapViewComp.transitioning) {
+            await this.promptSkillUnlock();
+            await this.promptFinalChallenge();
+        }
     }
 
     private async refreshMap() {
@@ -86,8 +90,18 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         bindClick(this, "BtnCharacter", this.onCharacter.bind(this));
         bindClick(this, "BtnHome", () => void this.onHome());
         const skip = run.canSkipClearedBattles();
-        setLabel(this, "BtnChallengeLab", run.nextMap ? gameText("MapViewComp_002") : skip ? gameTextOr("MapViewComp_012", "一键跳过") : gameText("MapViewComp_003"));
-        bindClick(this, "BtnChallenge", () => run.nextMap ? this.onNextMap() : skip ? this.onSkipCleared() : this.onBattleNode(run.routeNode));
+        const finalReady = this.isFinalChallengeReady();
+        setLabel(this, "BtnChallengeLab",
+            run.nextMap ? gameText("MapViewComp_002")
+                : finalReady ? gameTextOr("MapViewComp_017", "最终挑战")
+                    : skip ? gameTextOr("MapViewComp_012", "一键跳过")
+                        : gameText("MapViewComp_003"));
+        bindClick(this, "BtnChallenge", () => {
+            if (run.nextMap) void this.onNextMap();
+            else if (finalReady) void this.openFinalChallenge(false);
+            else if (skip) void this.onSkipCleared();
+            else void this.onBattleNode(run.routeNode);
+        });
         const shop = this.getNode("BtnShop");
         if (shop && shop.scale.z === 0) shop.setScale(shop.scale.x, shop.scale.y, 1);
         bindClick(this, "BtnShop", this.onShop.bind(this));
@@ -113,7 +127,9 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             bindClick(this, `BtnStage${i + 1}`, () => this.onBattleNode(node.id));
         }
 
-        const boss = nodes.find(node => node.kind === "boss" && node.id >= current) || nodes.filter(node => node.kind === "boss").slice(-1)[0];
+        // 地图 boss 槽只展示本图正式赛；最终挑战走独立弹窗，不覆盖立绘和名字。
+        const mapBosses = nodes.filter(node => node.kind === "boss" && node.encounter !== "final");
+        const boss = mapBosses.find(node => node.id >= current) || mapBosses.slice(-1)[0];
         const bossView = this.getNode("BtnBoss");
         if (boss && bossView) {
             const cleared = boss.id < current || run.claimedGoldNodes.includes(boss.id);
@@ -121,8 +137,48 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             await setNodeSprite(this, "BtnBoss", TEX.mapNode(cleared ? "chest" : "boss"));
             setSpriteColor(bossView, active || cleared ? "#FFFFFF" : "#9C8A72");
             if (boss.enemyId) await this.placeEnemy("MapBossSlot", boss.enemyId, bossView, 0.32, true);
-            setLabel(this, "LabBossName", boss.encounter === "final" ? gameText("MapViewComp_004") : gameText("MapViewComp_005"));
+            setLabel(this, "LabBossName", gameText("MapViewComp_005"));
             bindClick(this, "BtnBoss", () => this.onBattleNode(boss.id));
+        }
+    }
+
+    /** 已推进到最终挑战节点且尚未通关。 */
+    private isFinalChallengeReady(): boolean {
+        const run = this.ent.run;
+        const node = run.currentRoute();
+        return node.encounter === "final" && !run.claimedGoldNodes.includes(node.id);
+    }
+
+    /** 抵达最终挑战时自动弹出介绍面板（切图动画中不抢）。 */
+    private async promptFinalChallenge() {
+        if (!this.node?.isValid || !this.ent || !this.isFinalChallengeReady()) return;
+        await this.openFinalChallenge(true);
+    }
+
+    private async openFinalChallenge(_auto = false) {
+        if (this.switchingMap || this.navigating) return;
+        const run = this.ent.run;
+        if (run.currentRoute().encounter === "final" && run.claimedGoldNodes.includes(run.routeNode)) {
+            this.navigating = true;
+            try { await goScreen(this, "ending"); }
+            finally { this.navigating = false; }
+            return;
+        }
+        if (!this.isFinalChallengeReady()) return;
+        const node = run.currentRoute();
+        const foe = run.enemyFighter();
+        this.navigating = true;
+        try {
+            const result = await showFinalChallengeModal({
+                enemyId: node.enemyId || "kun_boss",
+                name: foe.name,
+                storyId: node.storyId || "boss"
+            });
+            if (result !== "challenge" || !this.node?.isValid || !this.ent) return;
+            run.enterFight();
+            if (run.screen === "prebattle") await goScreen(this);
+        } finally {
+            this.navigating = false;
         }
     }
 
@@ -151,6 +207,11 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             this.navigating = true;
             try { await goScreen(this, "ending"); }
             finally { this.navigating = false; }
+            return;
+        }
+        // 最终挑战不点地图 boss 槽进战，走介绍弹窗。
+        if (run.currentRoute().encounter === "final" && id === run.routeNode) {
+            await this.openFinalChallenge(false);
             return;
         }
         if (id !== run.routeNode) {
@@ -260,7 +321,10 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             MapViewComp.transitioning = false;
             this.switchingMap = false;
             const arrived = newNode?.isValid ? newNode.getComponent(MapViewComp) : null;
-            if (arrived) await arrived.promptSkillUnlock();
+            if (arrived) {
+                await arrived.promptSkillUnlock();
+                await arrived.promptFinalChallenge();
+            }
         }
     }
 

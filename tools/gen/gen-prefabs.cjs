@@ -900,6 +900,56 @@ function makeSkillUnlock() {
     }
 }
 
+/**
+ * 最终挑战弹窗：Dialog 层全屏蒙版 + 奶油卡 + 坤坤立绘/名字/介绍 + 挑战按钮。
+ * 地图第五图正式赛 boss 槽位不再被最终挑战覆盖，由此面板单独展示。
+ */
+function makeFinalChallenge() {
+    const b = new Builder("final_challenge");
+    const root = b.node({ name: "final_challenge", w: 720, h: 1280 });
+    b.widget(root, 45, { w: 720, h: 1280 });
+    b.addComp(root, null, { type: "cc.BlockInputEvents" });
+    b.opacity(root, 255);
+
+    const dim = b.node({ name: "Dim", parent: root, w: 720, h: 1280 });
+    b.widget(dim, 45, { w: 720, h: 1280 });
+    b.sprite(dim, [16, 10, 6, 220], 0, WHITE);
+
+    // 比绝招弹窗更高：立绘 + 介绍 + 双按钮（全部落在卡板内）。
+    const board = card(b, root, "Card", 0, 16, 620, 900, SF.panel_cream);
+    textNode(b, board, "LabTitle", "最终挑战", 0, 380, {
+        font: 44, w: 560, h: 56, color: INK.dark, bold: true
+    });
+    // 立绘锚点：运行时 spawnChicken 挂到 PortraitSlot。
+    b.node({ name: "PortraitSlot", parent: board, x: 0, y: 140, w: 280, h: 360 });
+    textNode(b, board, "LabName", "鸡王坤坤", 0, -70, {
+        font: 36, w: 520, h: 48, color: INK.dark, bold: true
+    });
+    textNode(b, board, "LabIntro", "五图赛程已毕，鸡王坤坤在全村注视下等你。", 0, -160, {
+        font: 24, w: 520, h: 110, color: INK.mute, bold: false
+    });
+    labBtn(b, board, "BtnChallenge", "去挑战", 0, -290, 320, 100, "yellow");
+    labBtn(b, board, "BtnLater", "稍后再说", 0, -390, 280, 88, "green");
+
+    const rel = "assets/bundle/gui/final_challenge/final_challenge.prefab";
+    const full = path.join(ROOT, rel);
+    if (fs.existsSync(full)) fs.unlinkSync(full);
+    writePrefab(rel, b.finish(root));
+    writePrefabMeta(rel, "final_challenge", "a1b2c3d4-6011-4000-8000-000000000001");
+    const dirMeta = path.join(ROOT, "assets/bundle/gui/final_challenge.meta");
+    if (!fs.existsSync(dirMeta)) {
+        fs.writeFileSync(dirMeta, JSON.stringify({
+            ver: "1.2.0",
+            importer: "directory",
+            imported: true,
+            uuid: "a1b2c3d4-6011-4000-8000-000000000000",
+            files: [],
+            subMetas: {},
+            userData: {}
+        }, null, 2) + "\n");
+    }
+}
+
 function makeRewardCard() {
     const b = new Builder("reward_card");
     const root = b.node({ name: "reward_card", w: 208, h: 623.333 });
@@ -1139,6 +1189,7 @@ emit("chicken", makeChicken);
 emit("skill", makeSkillSplashes);
 emit("reward_card", makeRewardCard);
 emit("skill_unlock", makeSkillUnlock);
+emit("final_challenge", makeFinalChallenge);
 emit("taunt", makeTauntBubble);
 if (!ONLY) {
     // 战斗飘字/命中/彩带/氛围改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
