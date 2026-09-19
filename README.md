@@ -89,10 +89,10 @@ assets/
     config/game/                  # 配表 JSON
     gui/<screen>/                 # 界面预制体
     game/
-      prefab/actor|ui|fx|skill/   # 鸡、UI 卡片、特效、绝招
+      prefab/actor|ui|fx/         # 鸡、UI 卡片、粒子特效
       image/                      # 所有位图父目录
         actor|anim|bg|ui|icon|map|equip/  # 普通贴图
-        texture/common|stamp|skill/       # 仅特效贴图
+        texture/common|stamp|skill/       # 特效贴图（skill=绝招小印记）
       media/video|suit_gif/       # 结局视频、套装 GIF
       effect/                     # feather-gradient 等
       audio/ font/ animator/

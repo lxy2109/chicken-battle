@@ -146,7 +146,10 @@ const FX = [
     "particle_confetti",
     "particle_slash",
     "particle_heal",
-    "particle_smoke"
+    "particle_smoke",
+    // 绝招小特效粒子（全屏立绘退役后追加）
+    "particle_skill_spark",
+    "particle_skill_puff"
 ];
 
 const FONTS = ["skill_title"];

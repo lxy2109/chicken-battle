@@ -2,7 +2,7 @@
 
 Run after importing new art: python tools/optimize-textures.py
 Original files and a size report are kept in ignored outputs/texture-optimization/.
-Fullscreen backgrounds in game/image/bg and skill_bg_* are JPEG (quality 85); other images stay PNG.
+Fullscreen backgrounds in game/image/bg are JPEG (quality 85); other images stay PNG.
 
 Note: all rasters live under game/image/. texture/ is FX-only (common/stamp/skill).
 """
@@ -76,7 +76,7 @@ def main():
         image.thumbnail(limit, Image.Resampling.LANCZOS)
         output = io.BytesIO()
         opaque = image.getchannel("A").getextrema() == (255, 255)
-        jpeg = kind == "bg" or file.stem.startswith("skill_bg_")
+        jpeg = kind == "bg"
         if jpeg:
             image.convert("RGB").save(output, "JPEG", quality=85, optimize=True)
         else:

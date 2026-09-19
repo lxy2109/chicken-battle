@@ -10,7 +10,7 @@ import { BattleAnimator } from "../../battle/BattleAnimator";
 import { BattleBrain } from "../../battle/BattleBrain";
 import { ChickenActor } from "../../battle/ChickenActor";
 import { ChickenRun } from "../../run/ChickenRun";
-import { PREFAB_PATH } from "../../domain/Catalog";
+import { FX_TEX, PREFAB_PATH } from "../../domain/Catalog";
 import { BattleSession } from "../../domain/BattleSession";
 import { DanmakuPool } from "../../domain/Danmaku";
 import { BattleDanmaku } from "./BattleDanmaku";
@@ -266,11 +266,35 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             }));
             if (this.closed) return;
             if (arena) {
-                // 绝招不再播全屏/半屏立绘，只加载场上斩痕与氛围；招名靠飘字 + 喊招音效。
+                // 绝招：场上粒子 + 小印记图；招名靠飘字 + 喊招音效。
                 const ambientPrefabs: Partial<Record<AmbientKind, Prefab>> = {};
                 ambientKinds.forEach((kind, i) => {
                     if (ambientPrefabList[i]) ambientPrefabs[kind] = ambientPrefabList[i]!;
                 });
+                const skillStyles: StrikeStyle[] = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"];
+                const skillMarkList = await Promise.all(skillStyles.map(async style => {
+                    try {
+                        return await this.load("bundle", FX_TEX.skill(`skill_mini_${style}`), SpriteFrame);
+                    }
+                    catch {
+                        return null;
+                    }
+                }));
+                const skillMarks: Partial<Record<StrikeStyle, SpriteFrame>> = {};
+                skillStyles.forEach((style, i) => {
+                    if (skillMarkList[i]) skillMarks[style] = skillMarkList[i]!;
+                });
+                const loadCommon = async (name: string) => {
+                    try {
+                        return await this.load("bundle", FX_TEX.common(name), SpriteFrame);
+                    }
+                    catch {
+                        return null;
+                    }
+                };
+                const skillSpark = await loadCommon("particle_skill_spark");
+                const skillPuff = await loadCommon("particle_skill_puff");
+                if (this.closed) return;
                 this.fx = new BattleFx(this.node, arena, {
                     slash: fxFrames[0] || undefined,
                     star: fxFrames[1] || undefined,
@@ -280,7 +304,10 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                     crack: fxFrames[5] || undefined,
                     ink: fxFrames[6] || undefined,
                     charge: fxFrames[7] || undefined,
-                    ambientPrefabs
+                    ambientPrefabs,
+                    skillMarks,
+                    skillSpark: skillSpark || undefined,
+                    skillPuff: skillPuff || undefined
                 });
                 this.fx.paint(mood.dust);
                 // 地图底味 + BOSS/决战叠加全屏氛围（雨/灰烬），不再铺贴边黄框。

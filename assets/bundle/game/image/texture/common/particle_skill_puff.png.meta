@@ -2,16 +2,16 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "a1b2c3d4-4004-4000-8000-000000000019",
+  "uuid": "a1b2c3d4-4004-4000-8000-00000000003d",
   "files": [
-    ".jpg",
-    ".json"
+    ".json",
+    ".png"
   ],
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "a1b2c3d4-4004-4000-8000-000000000019@6c48a",
-      "displayName": "skill_bg_charge",
+      "uuid": "a1b2c3d4-4004-4000-8000-00000000003d@6c48a",
+      "displayName": "particle_skill_puff",
       "id": "6c48a",
       "name": "texture",
       "ver": "1.0.22",
@@ -26,16 +26,17 @@
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
-        "anisotropy": 0,
+        "premultiplyAlpha": false,
+        "anisotropy": 1,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000019",
+        "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-00000000003d",
         "visible": false
       }
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "a1b2c3d4-4004-4000-8000-000000000019@f9941",
-      "displayName": "skill_bg_charge",
+      "uuid": "a1b2c3d4-4004-4000-8000-00000000003d@f9941",
+      "displayName": "particle_skill_puff",
       "id": "f9941",
       "name": "spriteFrame",
       "ver": "1.0.12",
@@ -52,35 +53,35 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 720,
-        "height": 1280,
-        "rawWidth": 720,
-        "rawHeight": 1280,
+        "width": 128,
+        "height": 106,
+        "rawWidth": 128,
+        "rawHeight": 106,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
         "borderRight": 0,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-000000000019@6c48a",
+        "imageUuidOrDatabaseUri": "a1b2c3d4-4004-4000-8000-00000000003d@6c48a",
         "atlasUuid": "",
-        "packable": false,
+        "packable": true,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
         "pivotY": 0.5,
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -360,
-            -640,
+            -64,
+            -53,
             0,
-            360,
-            -640,
+            64,
+            -53,
             0,
-            -360,
-            640,
+            -64,
+            53,
             0,
-            360,
-            640,
+            64,
+            53,
             0
           ],
           "indexes": [
@@ -93,12 +94,12 @@
           ],
           "uv": [
             0,
-            1280,
-            720,
-            1280,
+            106,
+            128,
+            106,
             0,
             0,
-            720,
+            128,
             0
           ],
           "nuv": [
@@ -112,13 +113,13 @@
             1
           ],
           "minPos": [
-            -360,
-            -640,
+            -64,
+            -53,
             0
           ],
           "maxPos": [
-            360,
-            640,
+            64,
+            53,
             0
           ]
         }
@@ -128,8 +129,8 @@
   "userData": {
     "type": "sprite-frame",
     "fixAlphaTransparencyArtifacts": false,
-    "hasAlpha": false,
-    "redirect": "a1b2c3d4-4004-4000-8000-000000000019@6c48a",
+    "hasAlpha": true,
+    "redirect": "a1b2c3d4-4004-4000-8000-00000000003d@6c48a",
     "compressSettings": {
       "useCompressTexture": true,
       "presetId": "chicken-web"

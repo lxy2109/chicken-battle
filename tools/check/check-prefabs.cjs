@@ -57,23 +57,7 @@ const TARGETS = [
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_ember.prefab",
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_ash.prefab",
     "assets/bundle/game/prefab/fx/ambient/fx_ambient_mist.prefab",
-    "assets/bundle/game/prefab/ui/shop_set_item.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_peck.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_jump.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_dive.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_leap.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_charge.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_tail.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_combo.prefab",
-    "assets/bundle/game/prefab/skill/skill_full_feint.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_peck.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_jump.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_dive.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_leap.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_charge.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_tail.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_combo.prefab",
-    "assets/bundle/game/prefab/skill/skill_half_feint.prefab"
+    "assets/bundle/game/prefab/ui/shop_set_item.prefab"
 ];
 
 /** 所有合法的 spriteFrame uuid：素材表里的每张图 + 内置纯白图。 */

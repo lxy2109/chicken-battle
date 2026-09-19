@@ -1071,23 +1071,8 @@ function writePrefabMeta(rel, name, uuid) {
 }
 
 function makeSkillSplashes() {
-    const dirMeta = path.join(ROOT, "assets/bundle/game/prefab/skill.meta");
-    fs.mkdirSync(path.join(ROOT, "assets/bundle/game/prefab/skill"), { recursive: true });
-    if (!fs.existsSync(dirMeta)) {
-        fs.writeFileSync(dirMeta, JSON.stringify({
-            ver: "1.2.0",
-            importer: "directory",
-            imported: true,
-            uuid: "a1b2c3d4-6006-4000-8000-000000000000",
-            files: [],
-            subMetas: {},
-            userData: {}
-        }, null, 2) + "\n");
-    }
-    SKILL_SPLASH.forEach((skill, i) => {
-        makeSkillFull(skill, i + 1);
-        makeSkillHalf(skill, i + 9);
-    });
+    // 全屏/半屏立绘已退役，保留函数名以免旧脚本调用报错。
+    console.log("skip skill splash prefabs (retired → skill_mini marks + particles)");
 }
 
 function makeSkillFull(skill, uuidIndex) {
@@ -1199,7 +1184,7 @@ emit("reward", makeReward);
 emit("shop", makeShop);
 emit("ending", makeEnding);
 emit("chicken", makeChicken);
-emit("skill", makeSkillSplashes);
+// 全屏/半屏绝招立绘已退役：场上走粒子 + skill_mini 小印记，不再生成 skill_full/half。
 emit("reward_card", makeRewardCard);
 emit("skill_unlock", makeSkillUnlock);
 emit("final_challenge", makeFinalChallenge);

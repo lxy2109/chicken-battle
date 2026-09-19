@@ -60,8 +60,7 @@ oops.res.loadDir("bundle", "common", next);
 | `gui/<screen>/` | 仅该屏预制体 |
 | `game/prefab/actor/` | 鸡预制体 |
 | `game/prefab/ui/` | 商店条目、奖励卡、气泡等 |
-| `game/prefab/fx/` | combat / ambient / ribbon / border |
-| `game/prefab/skill/` | 绝招立绘预制体 |
+| `game/prefab/fx/` | combat / ambient / ribbon |
 | `game/image/` | **所有位图的父目录**（标识「这是图片」） |
 | `game/image/actor/` | 鸡部位与立绘（head/neck/body/…） |
 | `game/image/anim/` | 出招序列帧 `key/style` |

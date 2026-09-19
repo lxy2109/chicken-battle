@@ -20,16 +20,14 @@ export const PREFAB_PATH = {
     gameTip: "game/prefab/ui/game_tip",
     shopItem: "game/prefab/ui/shop_item",
     shopSetItem: "game/prefab/ui/shop_set_item",
-    rewardCard: "game/prefab/ui/reward_card",
-    skillFull: (style: string) => `game/prefab/skill/skill_full_${style}`,
-    skillHalf: (style: string) => `game/prefab/skill/skill_half_${style}`
+    rewardCard: "game/prefab/ui/reward_card"
 };
 
 /**
  * 特效贴图（仅 game/image/texture/）：
- * - common：粒子通用（火焰/血/光晕/雨叶等，一份多用）
+ * - common：粒子通用（火焰/血/光晕/雨叶/绝招火花等，一份多用）
  * - stamp：斩痕/裂纹等贴图戳
- * - skill：绝招立绘
+ * - skill：绝招小印记（skill_mini_*）
  */
 export const FX_TEX = {
     common: (name: string) => `game/image/texture/common/${name}/spriteFrame`,

@@ -1,0 +1,46 @@
+﻿{
+    "prompts":  [
+                    {
+                        "prompt":  "golden beak stab impact stamp",
+                        "asset":  "skill_mini_peck"
+                    },
+                    {
+                        "prompt":  "golden jump pillar stamp",
+                        "asset":  "skill_mini_jump"
+                    },
+                    {
+                        "prompt":  "cyan dive swoosh stamp",
+                        "asset":  "skill_mini_dive"
+                    },
+                    {
+                        "prompt":  "orange meteor leap stamp",
+                        "asset":  "skill_mini_leap"
+                    },
+                    {
+                        "prompt":  "iron head charge stamp",
+                        "asset":  "skill_mini_charge"
+                    },
+                    {
+                        "prompt":  "teal tail whip stamp",
+                        "asset":  "skill_mini_tail"
+                    },
+                    {
+                        "prompt":  "gold multi-peck stars stamp",
+                        "asset":  "skill_mini_combo"
+                    },
+                    {
+                        "prompt":  "purple feint afterimage stamp",
+                        "asset":  "skill_mini_feint"
+                    },
+                    {
+                        "prompt":  "gold spark shard particle",
+                        "asset":  "particle_skill_spark"
+                    },
+                    {
+                        "prompt":  "cream puff mote particle",
+                        "asset":  "particle_skill_puff"
+                    }
+                ],
+    "note":  "Skill mini marks + particle bits. Opaque cel-shaded fills, transparent bg. Match hand-drawn Chinese countryside chicken battle style.",
+    "mode":  "built-in image_gen"
+}

@@ -1,246 +1,300 @@
 /**
- * 把全屏招式宽银幕贴图拷进 bundle，并写 sprite-frame .meta。
- * 竖屏 720x1280：29–36 主体鸡覆盖 skill_*，37–44 场景底板 skill_bg_*；
- * 45–52 是敌人无底板小贴纸 skill_mini_*；
- * 9–12 是共用分层（光线 / 名条 / 光晕 / 火花）。
+ * 绝招小特效贴图导入（全屏立绘已退役）。
+ *
+ * 现网资源：
+ *   game/image/texture/skill/skill_mini_{style}.png  — 不透明漫画小印记
+ *   game/image/texture/common/particle_skill_spark.png
+ *   game/image/texture/common/particle_skill_puff.png
+ *
+ * 生图 → temp/skill-mini-gen → 强抠透明 + 灰边 choke → 缩到 ≤256 → 覆盖 bundle。
+ * 用法: node tools/import-skill-fx.cjs [genDir]
  */
-const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const png = require("../art/png.cjs");
+const { keyCheckerboard } = require("../art/key-checkerboard.cjs");
 const uuids = require("../art/art-uuids.cjs");
 
 const ROOT = path.resolve(__dirname, "../..");
-const SRC = path.join(ROOT, "temp", "fx-skill");
-const DEST = path.join(ROOT, "assets", "bundle", "game", "texture", "fx");
+const GEN = process.argv[2]
+    ? path.resolve(process.argv[2])
+    : path.join(ROOT, "temp", "skill-mini-gen");
 
-/** 生图完成顺序 → 招式文件名。第三项 true 表示带透明通道。 */
+/** 源文件名 → [资源名, 子目录, 最大边] */
 const MAP = [
-    ["9.png", "skill_layer_rays", true],
-    ["10.png", "skill_layer_banner", true],
-    ["11.png", "skill_layer_flare", true],
-    ["12.png", "skill_layer_sparks", true],
-    ["31.png", "skill_peck", true],
-    ["29.png", "skill_jump", true],
-    ["32.png", "skill_dive", true],
-    ["30.png", "skill_leap", true],
-    ["36.png", "skill_charge", true],
-    ["35.png", "skill_tail", true],
-    ["33.png", "skill_combo", true],
-    ["34.png", "skill_feint", true],
-    ["39.png", "skill_bg_peck", false],
-    ["37.png", "skill_bg_jump", false],
-    ["40.png", "skill_bg_dive", false],
-    ["38.png", "skill_bg_leap", false],
-    ["42.png", "skill_bg_charge", false],
-    ["43.png", "skill_bg_tail", false],
-    ["44.png", "skill_bg_combo", false],
-    ["41.png", "skill_bg_feint", false],
-    ["45.png", "skill_mini_peck", true],
-    ["47.png", "skill_mini_jump", true],
-    ["46.png", "skill_mini_dive", true],
-    ["48.png", "skill_mini_leap", true],
-    ["49.png", "skill_mini_charge", true],
-    ["52.png", "skill_mini_tail", true],
-    ["50.png", "skill_mini_combo", true],
-    ["51.png", "skill_mini_feint", true]
+    ["3.png", "skill_mini_peck", "skill", 256],
+    ["6.png", "skill_mini_jump", "skill", 256],
+    ["2.png", "skill_mini_dive", "skill", 256],
+    ["5.png", "skill_mini_leap", "skill", 256],
+    ["4.png", "skill_mini_charge", "skill", 256],
+    ["10.png", "skill_mini_tail", "skill", 256],
+    ["7.png", "skill_mini_combo", "skill", 256],
+    ["8.png", "skill_mini_feint", "skill", 256],
+    ["9.png", "particle_skill_spark", "common", 128],
+    ["1.png", "particle_skill_puff", "common", 128]
 ];
 
-function pngSize(file) {
-    const buf = fs.readFileSync(file);
-    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+const DIRS = [
+    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [1, 1], [1, -1], [-1, 1], [-1, -1]
+];
+
+/** 中性灰晕（排除暖奶油、偏紫填色）。 */
+function isGrayish(r, g, b) {
+    const sat = Math.max(r, g, b) - Math.min(r, g, b);
+    const avg = (r + g + b) / 3;
+    const warm = Math.max(0, r - b);
+    if (b - r > 8 || b - g > 8) return false;
+    if (warm > 12) return false;
+    return sat <= 24 && avg >= 170;
 }
 
-function writeJpeg(srcPng, destJpg) {
-    const result = spawnSync("python", [
-        "-c",
-        "from PIL import Image; import sys; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], 'JPEG', quality=85, optimize=True)",
-        srcPng,
-        destJpg
-    ], { encoding: "utf8" });
-    if (result.status !== 0) {
-        throw new Error(result.stderr || result.stdout || "jpeg convert failed");
-    }
-}
-
-function spriteMeta(uuid, name, w, h, hasAlpha) {
-    const hw = w / 2;
-    const hh = h / 2;
-    const ext = hasAlpha ? ".png" : ".jpg";
-    return {
-        ver: "1.0.27",
-        importer: "image",
-        imported: true,
-        uuid,
-        files: [".json", ext],
-        subMetas: {
-            "6c48a": {
-                importer: "texture",
-                uuid: uuid + "@6c48a",
-                displayName: name,
-                id: "6c48a",
-                name: "texture",
-                ver: "1.0.22",
-                imported: true,
-                files: [".json"],
-                subMetas: {},
-                userData: {
-                    wrapModeS: "clamp-to-edge",
-                    wrapModeT: "clamp-to-edge",
-                    minfilter: "linear",
-                    magfilter: "linear",
-                    mipfilter: "none",
-                    anisotropy: 0,
-                    isUuid: true,
-                    imageUuidOrDatabaseUri: uuid,
-                    visible: false
-                }
-            },
-            f9941: {
-                importer: "sprite-frame",
-                uuid: uuid + "@f9941",
-                displayName: name,
-                id: "f9941",
-                name: "spriteFrame",
-                ver: "1.0.12",
-                imported: true,
-                files: [".json"],
-                subMetas: {},
-                userData: {
-                    trimType: "none",
-                    trimThreshold: 1,
-                    rotated: false,
-                    offsetX: 0,
-                    offsetY: 0,
-                    trimX: 0,
-                    trimY: 0,
-                    width: w,
-                    height: h,
-                    rawWidth: w,
-                    rawHeight: h,
-                    borderTop: 0,
-                    borderBottom: 0,
-                    borderLeft: 0,
-                    borderRight: 0,
-                    isUuid: true,
-                    imageUuidOrDatabaseUri: uuid + "@6c48a",
-                    atlasUuid: "",
-                    packable: false,
-                    pixelsToUnit: 100,
-                    pivotX: 0.5,
-                    pivotY: 0.5,
-                    meshType: 0,
-                    vertices: {
-                        rawPosition: [-hw, -hh, 0, hw, -hh, 0, -hw, hh, 0, hw, hh, 0],
-                        indexes: [0, 1, 2, 2, 1, 3],
-                        uv: [0, h, w, h, 0, 0, w, 0],
-                        nuv: [0, 0, 1, 0, 0, 1, 1, 1],
-                        minPos: [-hw, -hh, 0],
-                        maxPos: [hw, hh, 0]
+/**
+ * 贴透明的灰晕 / 白边硬抠；半透明一律清掉，印记要硬边。
+ */
+function hardDespill(img, passes = 4) {
+    const { width: w, height: h, data } = img;
+    let killed = 0;
+    for (let pass = 0; pass < passes; pass++) {
+        const kill = [];
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = y * w + x;
+                const d = i * 4;
+                if (data[d + 3] === 0) continue;
+                let near0 = false;
+                let near0n = 0;
+                for (const [dx, dy] of DIRS) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= w || ny >= h || data[(ny * w + nx) * 4 + 3] === 0) {
+                        near0 = true;
+                        near0n += 1;
                     }
                 }
-            }
-        },
-        userData: {
-            type: "sprite-frame",
-            fixAlphaTransparencyArtifacts: false,
-            hasAlpha: !!hasAlpha,
-            redirect: uuid + "@6c48a",
-            compressSettings: {
-                useCompressTexture: true,
-                presetId: "chicken-web"
+                if (!near0) continue;
+                const r = data[d];
+                const g = data[d + 1];
+                const b = data[d + 2];
+                const a = data[d + 3];
+                const sat = Math.max(r, g, b) - Math.min(r, g, b);
+                const avg = (r + g + b) / 3;
+                if (a < 200) {
+                    kill.push(i);
+                    continue;
+                }
+                if (isGrayish(r, g, b)) {
+                    kill.push(i);
+                    continue;
+                }
+                if (avg >= 235 && sat <= 40) {
+                    kill.push(i);
+                    continue;
+                }
+                if (near0n >= 5 && (sat <= 50 || avg >= 220)) {
+                    kill.push(i);
+                }
             }
         }
-    };
+        for (const i of kill) {
+            data.fill(0, i * 4, i * 4 + 4);
+            killed += 1;
+        }
+    }
+    return killed;
 }
 
-function spriteFrameLib(uuid, name, w, h) {
+/** 半透明 → 清掉或拉满，避免发灰糊边。 */
+function hardenAlpha(img, thr = 180) {
+    const { data } = img;
+    let n = 0;
+    for (let i = 3; i < data.length; i += 4) {
+        const a = data[i];
+        if (a === 0) continue;
+        if (a < thr) {
+            data.fill(0, i - 3, i + 1);
+            n += 1;
+        }
+        else if (a < 255) {
+            data[i] = 255;
+        }
+    }
+    return n;
+}
+
+function rewriteMeta(metaFile, name, w, h, uuid) {
     const hw = w / 2;
     const hh = h / 2;
-    return {
-        __type__: "cc.SpriteFrame",
-        content: {
-            name,
-            atlas: "",
-            rect: { x: 0, y: 0, width: w, height: h },
-            offset: { x: 0, y: 0 },
-            originalSize: { width: w, height: h },
-            rotated: false,
-            capInsets: [0, 0, 0, 0],
-            vertices: {
-                rawPosition: [-hw, -hh, 0, hw, -hh, 0, -hw, hh, 0, hw, hh, 0],
-                indexes: [0, 1, 2, 2, 1, 3],
-                uv: [0, h, w, h, 0, 0, w, 0],
-                nuv: [0, 0, 1, 0, 0, 1, 1, 1],
-                minPos: { x: -hw, y: -hh, z: 0 },
-                maxPos: { x: hw, y: hh, z: 0 }
+    let meta;
+    if (fs.existsSync(metaFile)) {
+        meta = JSON.parse(fs.readFileSync(metaFile, "utf8"));
+    }
+    else {
+        meta = {
+            ver: "1.0.27",
+            importer: "image",
+            imported: true,
+            uuid,
+            files: [".json", ".png"],
+            subMetas: {
+                "6c48a": {
+                    importer: "texture",
+                    uuid: uuid + "@6c48a",
+                    displayName: name,
+                    id: "6c48a",
+                    name: "texture",
+                    ver: "1.0.22",
+                    imported: true,
+                    files: [".json"],
+                    subMetas: {},
+                    userData: {
+                        wrapModeS: "clamp-to-edge",
+                        wrapModeT: "clamp-to-edge",
+                        minfilter: "linear",
+                        magfilter: "linear",
+                        mipfilter: "none",
+                        premultiplyAlpha: false,
+                        anisotropy: 1,
+                        isUuid: true,
+                        imageUuidOrDatabaseUri: uuid,
+                        visible: false
+                    }
+                },
+                f9941: {
+                    importer: "sprite-frame",
+                    uuid: uuid + "@f9941",
+                    displayName: name,
+                    id: "f9941",
+                    name: "spriteFrame",
+                    ver: "1.0.12",
+                    imported: true,
+                    files: [".json"],
+                    subMetas: {},
+                    userData: {}
+                }
             },
-            texture: uuid + "@6c48a",
-            packable: false,
-            pixelsToUnit: 100,
-            pivot: { x: 0.5, y: 0.5 },
-            meshType: 0
+            userData: {
+                type: "sprite-frame",
+                fixAlphaTransparencyArtifacts: false,
+                hasAlpha: true,
+                redirect: uuid + "@6c48a",
+                compressSettings: { useCompressTexture: true, presetId: "chicken-web" }
+            }
+        };
+    }
+    const sub = meta.subMetas;
+    const frameKey = Object.keys(sub).find(k => sub[k].importer === "sprite-frame");
+    const texKey = Object.keys(sub).find(k => sub[k].importer === "texture");
+    if (texKey) sub[texKey].displayName = name;
+    if (frameKey) sub[frameKey].displayName = name;
+    const u = sub[frameKey].userData;
+    Object.assign(u, {
+        trimType: "none",
+        trimThreshold: 1,
+        rotated: false,
+        offsetX: 0,
+        offsetY: 0,
+        trimX: 0,
+        trimY: 0,
+        width: w,
+        height: h,
+        rawWidth: w,
+        rawHeight: h,
+        borderTop: 0,
+        borderBottom: 0,
+        borderLeft: 0,
+        borderRight: 0,
+        isUuid: true,
+        imageUuidOrDatabaseUri: (meta.uuid || uuid) + "@6c48a",
+        atlasUuid: "",
+        packable: true,
+        pixelsToUnit: 100,
+        pivotX: 0.5,
+        pivotY: 0.5,
+        meshType: 0,
+        vertices: {
+            rawPosition: [-hw, -hh, 0, hw, -hh, 0, -hw, hh, 0, hw, hh, 0],
+            indexes: [0, 1, 2, 2, 1, 3],
+            uv: [0, h, w, h, 0, 0, w, 0],
+            nuv: [0, 0, 1, 0, 0, 1, 1, 1],
+            minPos: [-hw, -hh, 0],
+            maxPos: [hw, hh, 0]
         }
-    };
+    });
+    meta.userData = meta.userData || {};
+    meta.userData.hasAlpha = true;
+    meta.userData.type = "sprite-frame";
+    fs.writeFileSync(metaFile, JSON.stringify(meta, null, 2) + "\n");
 }
 
-/** 编辑器预览读 library/，只写 assets 不会出现在资源库里。 */
-function syncLibrary(destName, destFile, uuid, w, h) {
-    const libRoot = path.join(ROOT, "library");
-    if (!fs.existsSync(libRoot)) return false;
-    const ext = path.extname(destFile);
-    const dir = path.join(libRoot, uuid.slice(0, 2));
-    fs.mkdirSync(dir, { recursive: true });
-    fs.copyFileSync(destFile, path.join(dir, uuid + ext));
-    fs.writeFileSync(path.join(dir, uuid + ".json"), JSON.stringify({
-        __type__: "cc.ImageAsset",
-        content: { fmt: "0", w: 0, h: 0 }
-    }, null, 2) + "\n");
-    fs.writeFileSync(path.join(dir, uuid + "@6c48a.json"), JSON.stringify({
-        __type__: "cc.Texture2D",
-        content: { base: "2,2,2,2,0,0", mipmaps: [uuid] }
-    }, null, 2) + "\n");
-    fs.writeFileSync(path.join(dir, uuid + "@f9941.json"), JSON.stringify(spriteFrameLib(uuid, destName, w, h), null, 2) + "\n");
+function processOne(srcName, name, kind, maxEdge) {
+    const src = path.join(GEN, srcName);
+    if (!fs.existsSync(src)) {
+        console.warn("skip missing", srcName);
+        return false;
+    }
+    let img = png.decode(src);
+    keyCheckerboard(img, {
+        hard: 0.32,
+        loose: 0.16,
+        interior: true,
+        holeMin: 24,
+        choke: 5,
+        chokeScore: 0.22,
+        keepTop: 1,
+        dustFloor: 80
+    });
+    hardDespill(img, 5);
+    hardenAlpha(img, 160);
+    const trimmed = png.trim(img, 1);
+    if (trimmed) img = trimmed;
+    hardDespill(img, 2);
+    hardenAlpha(img, 170);
 
-    const rel = "bundle\\game\\texture\\fx\\" + destName + ext;
-    const now = Date.now();
-    const infoPath = path.join(libRoot, ".assets-info.json");
-    if (fs.existsSync(infoPath)) {
-        const info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
-        const files = info.map || info.files || info;
-        files[rel] = { time: now, uuid };
-        files[rel + ".meta"] = { time: now };
-        fs.writeFileSync(infoPath, JSON.stringify(info, null, 2) + "\n");
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    const tw = Math.max(1, Math.round(img.width * scale));
+    const th = Math.max(1, Math.round(img.height * scale));
+    if (tw !== img.width || th !== img.height) img = png.resize(img, tw, th);
+    hardDespill(img, 3);
+    hardenAlpha(img, 200);
+
+    const dir = path.join(ROOT, "assets/bundle/game/image/texture", kind);
+    fs.mkdirSync(dir, { recursive: true });
+    const dest = path.join(dir, name + ".png");
+    png.encode(dest, img);
+    const uuid = uuids[name];
+    if (!uuid) throw new Error("missing uuid " + name);
+    rewriteMeta(dest + ".meta", name, img.width, img.height, uuid);
+
+    let softA = 0;
+    let grayE = 0;
+    const { width: w, height: h, data } = img;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const d = (y * w + x) * 4;
+            const a = data[d + 3];
+            if (a === 0) continue;
+            if (a < 250) softA += 1;
+            let near0 = false;
+            for (const [dx, dy] of DIRS) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h || data[(ny * w + nx) * 4 + 3] === 0) {
+                    near0 = true;
+                    break;
+                }
+            }
+            if (near0 && isGrayish(data[d], data[d + 1], data[d + 2])) grayE += 1;
+        }
     }
-    const dataPath = path.join(libRoot, ".assets-data.json");
-    if (fs.existsSync(dataPath)) {
-        const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
-        const url = "db://assets/bundle/game/image/texture/skill/" + destName + ext;
-        data[uuid] = { url, value: { depends: [] }, versionCode: 1 };
-        data[uuid + "@6c48a"] = { url: url + "@6c48a", value: { depends: [uuid] }, versionCode: 1 };
-        data[uuid + "@f9941"] = { url: url + "@f9941", value: { depends: [uuid + "@6c48a"] }, versionCode: 1 };
-        fs.writeFileSync(dataPath, JSON.stringify(data, null, 2) + "\n");
-    }
-    const listPath = path.join(libRoot, ".assets");
-    if (fs.existsSync(listPath)) {
-        const list = JSON.parse(fs.readFileSync(listPath, "utf8"));
-        const paths = list.data && list.data.paths;
-        if (Array.isArray(paths) && !paths.includes(rel)) paths.push(rel);
-        fs.writeFileSync(listPath, JSON.stringify(list, null, 4) + "\n");
-    }
+    console.log(
+        `${name.padEnd(24)} ${img.width}x${img.height}  softLeft=${softA} grayEdge=${grayE}`
+    );
     return true;
 }
 
-for (const [srcName, destName, hasAlpha] of MAP) {
-    const src = path.join(SRC, srcName);
-    if (!fs.existsSync(src)) throw new Error("missing " + src);
-    const ext = hasAlpha ? ".png" : ".jpg";
-    const dest = path.join(DEST, destName + ext);
-    if (hasAlpha) fs.copyFileSync(src, dest);
-    else writeJpeg(src, dest);
-    const { w, h } = pngSize(src);
-    const uuid = uuids[destName];
-    if (!uuid) throw new Error("no uuid for " + destName);
-    fs.writeFileSync(dest + ".meta", JSON.stringify(spriteMeta(uuid, destName, w, h, hasAlpha), null, 2) + "\n");
-    const lib = syncLibrary(destName, dest, uuid, w, h);
-    console.log(destName, w + "x" + h, uuid, lib ? "library" : "assets-only");
+let done = 0;
+for (const row of MAP) {
+    if (processOne(...row)) done += 1;
 }
+console.log(`imported ${done}/${MAP.length} skill mini fx (hard-key)`);

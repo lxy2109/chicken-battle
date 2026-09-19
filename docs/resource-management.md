@@ -6,20 +6,20 @@
 
 ## 图片
 
-导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图；不会改动预制体的显示尺寸。全屏不透明背景（`game/image/bg` 与 `game/image/texture/skill` 下的 `skill_bg_*`）保存为 JPEG 质量 85，其余贴图做 PNG 无损编码优化。
+导入新素材后，在项目根目录执行 `python tools/optimize-textures.py`（依赖 Pillow）。脚本保持图片比例、透明通道、文件路径及 UUID，使用 Lanczos 缩小超大图；不会改动预制体的显示尺寸。全屏不透明背景（`game/image/bg`）保存为 JPEG 质量 85，其余贴图做 PNG 无损编码优化。
 
 **目录语义：所有位图统一放在 `game/image/` 下（标识「这是图片」）。其中 `game/image/texture/` 只放特效贴图（common/stamp/skill）；角色/UI/背景等走 `actor`、`ui`、`bg` 等子目录。**
 
 | 目录 | 图片尺寸上限 | 静态图集单页上限 |
 | --- | --- | --- |
 | `game/image/bg` | 720×1280 | 不合图；JPEG |
-| `game/image/texture/skill` 中 skill_bg_* | 720×1280 | 不合图；JPEG |
+| `game/image/texture/skill`（`skill_mini_*` 小印记） | 256×256 | 512×512 |
 | `game/image/actor` / `game/image/anim` | 384×576 | 1024×1024 |
 | `game/image/icon` | 160×160 | 512×512 |
 | `game/image/map` | 256×256 | 1024×1024 |
 | `game/image/ui` | 768×1024 | 2048×2048 |
 | `game/image/equip` | 256×256 | 1024×1024 |
-| `game/image/texture`（其余 FX） | 720×1280 | 按需 |
+| `game/image/texture`（其余 FX） | 256×256 | 按需 |
 
 缩图会同步更新 SpriteFrame 裁切数据和九宫格边距。原文件备份及体积报告保存在忽略目录 `outputs/texture-optimization/`；不要把备份放回 `assets` 中，否则也会参与导入和打包。
 
