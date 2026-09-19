@@ -45,18 +45,19 @@ export class StrikeSheetPlayer extends Component {
 
     /** 循环播待机。出招占用时不会抢。 */
     async startIdle() {
-        if (!this.sheetKey || this._busy || !this.node.isValid) return;
+        if (!this.sheetKey || this._busy || !this.node?.isValid) return;
         const sprite = this.getComponent(Sprite);
         if (!sprite) return;
         this.captureStill(sprite);
         const frames = await this.framesOf(IDLE);
-        if (!frames || this._busy || !this.node.isValid) {
-            if (!frames) this.restoreStill();
+        // await 后节点可能已销毁，this.node 会为 null
+        if (!frames || this._busy || !this.node?.isValid) {
+            if (!frames && this.node?.isValid) this.restoreStill();
             return;
         }
         const clip = this.clipOf(IDLE, frames, true);
         const anim = this.ensureAnim();
-        if (!anim || this._busy) return;
+        if (!anim || this._busy || !this.node?.isValid) return;
         anim.off(Animation.EventType.FINISHED);
         anim.stop();
         this.applyCellSize();
@@ -83,14 +84,14 @@ export class StrikeSheetPlayer extends Component {
 
     private async playClip(style: StrikeStyle) {
         const sprite = this.getComponent(Sprite);
-        if (!sprite || !this.sheetKey || !this.node.isValid) {
+        if (!sprite || !this.sheetKey || !this.node?.isValid) {
             this._busy = false;
             return;
         }
         this.captureStill(sprite);
         const clipStyle = this.sheetStyle(style);
         const frames = await this.framesOf(clipStyle);
-        if (!frames || !this.node.isValid || !this._busy) {
+        if (!frames || !this.node?.isValid || !this._busy) {
             if (!frames) {
                 this._busy = false;
                 void this.startIdle();
@@ -99,7 +100,7 @@ export class StrikeSheetPlayer extends Component {
         }
         const clip = this.clipOf(clipStyle, frames, false);
         const anim = this.ensureAnim();
-        if (!anim) {
+        if (!anim || !this.node?.isValid) {
             this._busy = false;
             return;
         }
