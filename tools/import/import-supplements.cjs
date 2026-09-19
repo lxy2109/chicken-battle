@@ -100,16 +100,20 @@ enemies.kun_boss.name = '鸡王坤坤';
 enemies.kun_boss.taunt1 = '鸡你太美';
 save('Enemy', enemies);
 const maps = ['鸡鸣村', '青竹溪', '金穗田', '古祠镇', '鸡王山'];
-const warmups = [2, 2, 3, 3, 5];
+const warmups = [1, 2, 3, 3, 5];
 const route = {};
 let id = 1;
 for (let map = 1; map <= 5; map++) {
     const n = warmups[map - 1];
     for (let round = 1; round <= n + 1; round++) {
         const formal = round === n + 1;
+        // 首图唯一小怪首通金币 = 诸葛亮/直升鸡套装折后价，保证战后商店刚好能买一套。
+        const goldWin = formal
+            ? 120 + map * 20
+            : (map === 1 && round === 1 ? 168 : 30 + round * 10);
         route[id] = { id, mapId: map, kind: formal ? 'boss' : 'battle', encounter: formal ? 'official' : 'warmup',
-            name: `${maps[map - 1]} · ${formal ? names[map - 1] + '正式赛' : '热身赛' + round}`,
-            enemyId: `s${map}_${formal ? 'official' : 'warmup'}`, goldWin: formal ? 120 + map * 20 : 30 + round * 10,
+            name: `${maps[map - 1]} · ${formal ? names[map - 1] + '正式赛' : (n === 1 ? '热身赛' : '热身赛' + round)}`,
+            enemyId: `s${map}_${formal ? 'official' : 'warmup'}`, goldWin,
             goldLose: 0, shopAfter: !formal && (round === 2 || round === n) };
         id += 1;
     }

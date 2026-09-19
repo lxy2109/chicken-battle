@@ -45,7 +45,7 @@ function run() {
     loadTables();
     const fail: string[] = [];
     let total = 0;
-    const WARMUPS = [2, 2, 3, 3, 5];
+    const WARMUPS = [1, 2, 3, 3, 5];
     const nodeBy = (pred: (n: ReturnType<typeof getRoute>[number]) => boolean) => {
         const node = getRoute().find(pred);
         if (!node) throw new Error("找不到路线节点");
@@ -71,7 +71,7 @@ function run() {
     ok("配置表可读", () => {
         assert(getItems().length >= 16, "应有散件");
         assert(getSets().length >= 4, "应有套装");
-        assert(getRoute().length === 21, "五图按 2/2/3/3/5 热身加正式赛和最终挑战，共21场");
+        assert(getRoute().length === 20, "五图按 1/2/3/3/5 热身加正式赛和最终挑战，共20场");
         for (let mapId = 1; mapId <= 5; mapId++) {
             assert(getRoute().filter(n => n.mapId === mapId && n.encounter !== "final").map(n => n.kind).join(",") === mapKinds(mapId), `第${mapId}图应为${WARMUPS[mapId - 1]}轮热身加正式赛`);
         }
@@ -127,7 +127,7 @@ function run() {
             run.enterFight();
             assert(run.screen === "prebattle" && run.claimedGoldNodes.length === 0, "逛店不影响当前关卡挑战资格或首通账本");
         }
-        const warmups = [2, 2, 3, 3, 5];
+        const warmups = [1, 2, 3, 3, 5];
         for (let id = 1; id <= 5; id++) {
             const prefab = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), `assets/bundle/gui/map/map_${id}.prefab`), "utf8"));
             // 根节点名是 map_1…map_5，兼容旧名 map。
@@ -172,14 +172,13 @@ function run() {
         run.settle(true);
         run.afterResult();
         assert(run.screen === "reward", "战斗胜利先进入强化");
-        run.pickReward(run.upgrades[0].id);
-        assert(run.routeNode === 2 && run.phase === "battle", "节点1胜利进入节点2");
-        run.settle(true);
-        assert(run.routeNode === mapBoss(1) && run.phase === "boss" && run.shopPending, "第二战结算即开放正式赛并记录弹出");
-        run.afterResult();
+        assert(run.routeNode === mapBoss(1) && run.phase === "boss" && run.shopPending, "首图唯一小怪胜利即开放正式赛并记录弹出");
+        assert(run.gold === 168, "首通金币应刚好等于首图套装折后价");
         run.pickReward(run.upgrades[0].id);
         assert(run.routeNode === mapBoss(1) && run.phase === "boss", "弹出商店不占用关卡进度");
         assert(run.screen === "shop" && !run.shopPending, "商店自动弹出一次");
+        assert(run.setPrice("rookie") === run.gold && run.buySet("rookie"), "战后金币刚好够买一套诸葛亮套");
+        assert(run.gold === 0 && run.ownedIds.length === 4, "买完套装金币清零且四件入库");
         run.leaveShop();
         run.enterFight();
         assert(String(run.screen) === "prebattle" && run.routeNode === mapBoss(1), "无需购买便可挑战正式赛");
@@ -323,7 +322,7 @@ function run() {
         let guard = 0;
         while (run.screen !== "ending" && guard++ < 60) {
             const map = run.currentMap().id;
-            assert(run.route().length === mapLength(map) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图按 2/2/3/3/5 热身加正式赛，末图额外开放最终挑战");
+            assert(run.route().length === mapLength(map) && run.route().every(n => n.mapId === map && n.kind !== "shop"), "每图按 1/2/3/3/5 热身加正式赛，末图额外开放最终挑战");
             if (run.screen === "shop") {
                 run.leaveShop();
             } else if (run.nextMap) {
@@ -367,20 +366,22 @@ function run() {
     });
 
     ok("小关结束自动保存下一节点与待选强化，无需点击结算按钮", () => {
-        for (const id of [1, 2, 5]) {
+        // 3=二图热身无店，1=首图唯一热身带店，4=二图末热身带店
+        for (const id of [3, 1, 4]) {
             const run = new RunState(37);
             run.routeNode = id; run.stage = id; run.screen = "battle";
             let saved = "";
             run.onChanged = () => { saved = encodeRun(run); };
             run.settle(true);
             const restored = decodeRun(saved);
-            const next = getRoute().find(node => node.id > id && node.kind !== "shop")!.id;
+            const node = getRoute().find(n => n.id === id)!;
+            const next = getRoute().find(n => n.id > id && n.kind !== "shop")!.id;
             assert(restored.routeNode === next && restored.stage === next, "胜利回调已保存下一战斗关");
             assert(restored.screen === "result" && restored.upgrades.length === 3 && restored.claimedGoldNodes.includes(id), "结算结果与待选强化一并保留");
             restored.afterResult();
             restored.pickReward(restored.upgrades[0].id);
             assert(restored.routeNode === next, "确认强化不能再次推进");
-            assert(String(restored.screen) === (id === 1 ? "map" : "shop"), "恢复待选强化后保留商店弹出");
+            assert(String(restored.screen) === (node.shopAfter ? "shop" : "map"), "恢复待选强化后保留商店弹出");
         }
     });
 
