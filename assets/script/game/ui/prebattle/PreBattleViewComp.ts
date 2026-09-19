@@ -1,6 +1,6 @@
 import { STYLE_LABEL, inferFightStyle } from "../../domain/BattleStyle";
 import { gameText, gameTextOr } from "../../domain/GameConfig";
-import { Color, Tween, Label, Mask, Graphics, UIOpacity, UITransform, tween, v3, _decorator } from "cc";
+import { Color, Label, Mask, Graphics, Tween, UIOpacity, UITransform, tween, v3, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -65,7 +65,16 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
         await spawnChicken(this, "PlayerSlot", me.appearance, 0.24);
         await spawnChicken(this, "EnemySlot", foe.appearance, 0.24, true);
         this.animatePanels();
+        setLabel(this, "BtnLeaveLab", gameTextOr("PreBattleViewComp_019", "返回地图"));
         bindClick(this, "BtnFight", this.onFight.bind(this));
+        bindClick(this, "BtnLeave", this.onLeave.bind(this));
+    }
+
+    private async onLeave() {
+        if (this.exiting) return;
+        this.exiting = true;
+        this.ent.run.leavePrebattle();
+        await goScreen(this, "map");
     }
 
     private fillDiff(a: Stats, b: Stats) {
@@ -173,9 +182,12 @@ export class PreBattleViewComp extends GameUIBase<ChickenRun> {
             Tween.stopAllByTarget(panel);
             tween(panel).delay(0.08).to(0.28, { position: v3(side === "Player" ? -800 : 800, 0) }, { easing: "cubicIn" }).start();
         }
-        const button = this.getNode("BtnFight")!;
-        const buttonOpacity = button.getComponent(UIOpacity) || button.addComponent(UIOpacity);
-        tween(buttonOpacity).to(0.16, { opacity: 0 }).start();
+        for (const name of ["BtnFight", "BtnLeave"]) {
+            const button = this.getNode(name);
+            if (!button) continue;
+            const buttonOpacity = button.getComponent(UIOpacity) || button.addComponent(UIOpacity);
+            tween(buttonOpacity).to(0.16, { opacity: 0 }).start();
+        }
         // Node-bound completion is cancelled if the view is closed during the transition.
         tween(this.node).delay(0.38).call(() => {
             this.ent.run.startBattle();

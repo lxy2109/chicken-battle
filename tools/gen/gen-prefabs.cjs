@@ -177,7 +177,10 @@ class Builder {
                 _actualFontSize: font, _fontSize: font, _fontFamily: "Arial",
                 // SHRINK 而不是 NONE：NONE 会让节点尺寸跟着文字内容变，
                 // 金币从 8 变成 128 时左对齐的数字会左右横跳，空文本更是直接塌成 0 宽。
-                _lineHeight: Math.round(font * 1.2), _overflow: 2, _enableWrapText: opt.wrap !== false,
+                _lineHeight: Math.round(font * 1.2),
+                // 0 NONE / 1 CLAMP / 2 SHRINK / 3 RESIZE_HEIGHT
+                _overflow: opt.overflow != null ? opt.overflow : 2,
+                _enableWrapText: opt.wrap !== false,
                 _font: opt.fontUuid ? { __uuid__: opt.fontUuid, __expectedType__: "cc.TTFFont" } : null,
                 _isSystemFontUsed: !opt.fontUuid, _spacingX: 0,
                 _isItalic: false, _isBold: opt.bold !== false, _isUnderline: false, _underlineHeight: 2,
@@ -583,6 +586,8 @@ function makePrebattle() {
     const vsArt = b.node({ name: "VsArt", parent: vs, x: 1, y: 36.667, w: 715.333, h: 510.667 });
     b.sprite(vsArt, [255,255,255,255], 0, F['ui/figma_match_card']);
     placeButton(b, root, "BtnFight", "开始", 343.583, 1431, 396.833, 187.042, "red");
+    // 返回地图：开打上方，方便战前回去换套装。
+    placeButton(b, root, "BtnLeave", "返回地图", 390, 1288, 300, 100, "green");
     placeText(b, root, "LabStory", "", 100, 1730, 880, 150, { font: 22, color: INK.cream, outline: true });
     writePrefab("assets/bundle/gui/prebattle/prebattle.prefab", b.finish(root));
 }
@@ -788,10 +793,15 @@ function makeFx(name, text, col, frame = WHITE) {
 }
 
 function makeTauntBubble() {
+    // 气泡贴图九宫格边约 50×53；高度必须明显高于 106，中间才有可写字的拉伸区。
+    // 运行时还会按文案再 layoutTauntBubble；这里给默认可用的安全尺寸。
     const b = new Builder("taunt_bubble");
-    const root = b.node({ name: "taunt_bubble", w: 300, h: 110 });
+    const root = b.node({ name: "taunt_bubble", w: 340, h: 168 });
     b.sprite(root, [255, 255, 255, 255], 1, SF.bubble_taunt);
-    textNode(b, root, "LabText", "垃圾话", 0, 8, { font: 22, w: 260, h: 66, color: INK.dark });
+    // 深色字 + 换行增高；尖角在下，正文略偏上。
+    textNode(b, root, "LabText", "垃圾话", 0, 8, {
+        font: 24, w: 268, h: 96, color: INK.dark, overflow: 3, wrap: true
+    });
     writePrefab("assets/bundle/game/prefab/ui/taunt_bubble.prefab", b.finish(root));
 }
 
@@ -1125,9 +1135,9 @@ emit("chicken", makeChicken);
 emit("skill", makeSkillSplashes);
 emit("reward_card", makeRewardCard);
 emit("skill_unlock", makeSkillUnlock);
+emit("taunt", makeTauntBubble);
 if (!ONLY) {
     // 战斗飘字/命中/彩带/火焰边框改由 tools/gen-fx-particle-prefabs.cjs 生成（ParticleSystem2D）
-    makeTauntBubble();
     makeShopItem();
     makeShopSetItem();
     writeWhitePng();

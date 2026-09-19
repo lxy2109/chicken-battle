@@ -86,8 +86,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 240,
-      "height": 120
+      "width": 480,
+      "height": 200
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -218,14 +218,14 @@
       "a": 255
     },
     "duration": 0.1,
-    "emissionRate": 80,
-    "life": 0.42,
+    "emissionRate": 96,
+    "life": 0.48,
     "lifeVar": 0.12,
     "angle": 90,
     "angleVar": 180,
-    "startSize": 16,
-    "startSizeVar": 6,
-    "endSize": 7,
+    "startSize": 22,
+    "startSizeVar": 8,
+    "endSize": 9,
     "endSizeVar": 3,
     "startSpin": 0,
     "startSpinVar": 40,
@@ -238,17 +238,17 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 20,
-      "y": 12
+      "x": 36,
+      "y": 18
     },
     "emitterMode": 0,
     "gravity": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 20
+      "y": 24
     },
-    "speed": 120,
-    "speedVar": 48,
+    "speed": 140,
+    "speedVar": 52,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -268,7 +268,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000032@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 24,
+    "_totalParticles": 28,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -404,14 +404,14 @@
       "a": 255
     },
     "duration": 0.1,
-    "emissionRate": 56,
-    "life": 0.4,
+    "emissionRate": 64,
+    "life": 0.45,
     "lifeVar": 0.1,
     "angle": 90,
     "angleVar": 180,
-    "startSize": 20,
-    "startSizeVar": 8,
-    "endSize": 10,
+    "startSize": 28,
+    "startSizeVar": 10,
+    "endSize": 12,
     "endSizeVar": 4,
     "startSpin": 0,
     "startSpinVar": 40,
@@ -424,17 +424,17 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 16,
-      "y": 10
+      "x": 28,
+      "y": 14
     },
     "emitterMode": 0,
     "gravity": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 10
+      "y": 12
     },
-    "speed": 90,
-    "speedVar": 36,
+    "speed": 100,
+    "speedVar": 40,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -454,7 +454,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000037@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 14,
+    "_totalParticles": 18,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -590,14 +590,14 @@
       "a": 255
     },
     "duration": 0.1,
-    "emissionRate": 40,
-    "life": 0.55,
+    "emissionRate": 48,
+    "life": 0.6,
     "lifeVar": 0.15,
     "angle": 90,
     "angleVar": 50,
-    "startSize": 12,
-    "startSizeVar": 4,
-    "endSize": 5,
+    "startSize": 16,
+    "startSizeVar": 5,
+    "endSize": 6,
     "endSizeVar": 2,
     "startSpin": 0,
     "startSpinVar": 40,
@@ -610,17 +610,17 @@
     },
     "posVar": {
       "__type__": "cc.Vec2",
-      "x": 22,
-      "y": 10
+      "x": 32,
+      "y": 14
     },
     "emitterMode": 0,
     "gravity": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 40
+      "y": 48
     },
-    "speed": 60,
-    "speedVar": 24,
+    "speed": 70,
+    "speedVar": 28,
     "tangentialAccel": 0,
     "tangentialAccelVar": 12,
     "radialAccel": 0,
@@ -640,7 +640,7 @@
       "__uuid__": "a1b2c3d4-4004-4000-8000-000000000031@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 12,
+    "_totalParticles": 16,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -739,8 +739,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 200,
-      "height": 50
+      "width": 440,
+      "height": 120
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -777,10 +777,10 @@
     "_string": "开战！",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 28,
-    "_fontSize": 28,
+    "_actualFontSize": 84,
+    "_fontSize": 84,
     "_fontFamily": "Arial",
-    "_lineHeight": 34,
+    "_lineHeight": 101,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -799,7 +799,7 @@
       "b": 10,
       "a": 255
     },
-    "_outlineWidth": 3,
+    "_outlineWidth": 8,
     "_enableShadow": false,
     "_shadowColor": {
       "__type__": "cc.Color",

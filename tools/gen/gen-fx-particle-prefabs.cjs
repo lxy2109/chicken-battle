@@ -123,6 +123,7 @@ class Builder {
   label(nodeId, text, opt = {}) {
     const font = opt.font || 28;
     const col = opt.color || [255, 245, 220, 255];
+    const outlineW = opt.outlineWidth != null ? opt.outlineWidth : 3;
     this.addComp(nodeId, {
       type: "cc.Label",
       fields: {
@@ -149,7 +150,7 @@ class Builder {
         _cacheMode: 0,
         _enableOutline: true,
         _outlineColor: color(40, 20, 10, 255),
-        _outlineWidth: 3,
+        _outlineWidth: outlineW,
         _enableShadow: false,
         _shadowColor: color(0, 0, 0, 255),
         _shadowOffset: vec2(2, 2),
@@ -547,9 +548,14 @@ function makeFloater(name, text, tint, particleCfg, uuidTail) {
  * 多层飘字底板：根节点 + 若干单图粒子发射器 + 文字。
  * 单张 sprite 用 ParticleSystem2D 一次喷出一堆，形成漫画打击感。
  */
-function makeFloaterLayers(name, text, tint, layers, uuidTail) {
+function makeFloaterLayers(name, text, tint, layers, uuidTail, labelOpt = {}) {
+  const font = labelOpt.font || 28;
+  const rootW = labelOpt.rootW || 240;
+  const rootH = labelOpt.rootH || 120;
+  const labW = labelOpt.labW || Math.max(200, Math.round(font * 4.5));
+  const labH = labelOpt.labH || Math.max(50, Math.round(font * 1.35));
   const b = new Builder(name);
-  const root = b.node({ name, w: 240, h: 120 });
+  const root = b.node({ name, w: rootW, h: rootH });
   b.opacity(root, 255);
   layers.forEach((cfg, i) => {
     const n = b.node({ name: "Burst" + i, parent: root, w: 96, h: 96 });
@@ -560,8 +566,12 @@ function makeFloaterLayers(name, text, tint, layers, uuidTail) {
       ...cfg
     });
   });
-  const lab = b.node({ name: "LabText", parent: root, y: 8, w: 200, h: 50 });
-  b.label(lab, text, { font: 28, color: tint });
+  const lab = b.node({ name: "LabText", parent: root, y: 8, w: labW, h: labH });
+  b.label(lab, text, {
+    font,
+    color: tint,
+    outlineWidth: labelOpt.outlineWidth != null ? labelOpt.outlineWidth : 3
+  });
   writePrefab("combat", name, b.finish(root), uuidTail);
 }
 
@@ -622,27 +632,34 @@ function makeFloaters() {
     }
   ], 0x22);
 
-  // 开战：火花 + 星 + 余烬
+  // 开战：大字居中提示 + 火花/星/余烬（字号明显大于普通飘字）
   makeFloaterLayers("fx_start", "开战！", [255, 242, 170, 255], [
     {
-      frame: "particle_spark", blend: "alpha", rate: 80, total: 24, life: 0.42, lifeVar: 0.12,
-      angle: 90, angleVar: 180, startSize: 16, startSizeVar: 6, endSize: 7, endSizeVar: 3,
-      speed: 120, speedVar: 48, gx: 0, gy: 20, posVarX: 20, posVarY: 12,
+      frame: "particle_spark", blend: "alpha", rate: 96, total: 28, life: 0.48, lifeVar: 0.12,
+      angle: 90, angleVar: 180, startSize: 22, startSizeVar: 8, endSize: 9, endSizeVar: 3,
+      speed: 140, speedVar: 52, gx: 0, gy: 24, posVarX: 36, posVarY: 18,
       startColor: [255, 236, 140, 255], endColor: [255, 200, 80, 0]
     },
     {
-      frame: "particle_star", blend: "alpha", rate: 56, total: 14, life: 0.4, lifeVar: 0.1,
-      angle: 90, angleVar: 180, startSize: 20, startSizeVar: 8, endSize: 10, endSizeVar: 4,
-      speed: 90, speedVar: 36, gx: 0, gy: 10, posVarX: 16, posVarY: 10,
+      frame: "particle_star", blend: "alpha", rate: 64, total: 18, life: 0.45, lifeVar: 0.1,
+      angle: 90, angleVar: 180, startSize: 28, startSizeVar: 10, endSize: 12, endSizeVar: 4,
+      speed: 100, speedVar: 40, gx: 0, gy: 12, posVarX: 28, posVarY: 14,
       startColor: [255, 250, 200, 255], endColor: [255, 220, 120, 0]
     },
     {
-      frame: "particle_ember", blend: "alpha", rate: 40, total: 12, life: 0.55, lifeVar: 0.15,
-      angle: 90, angleVar: 50, startSize: 12, startSizeVar: 4, endSize: 5, endSizeVar: 2,
-      speed: 60, speedVar: 24, gx: 0, gy: 40, posVarX: 22, posVarY: 10,
+      frame: "particle_ember", blend: "alpha", rate: 48, total: 16, life: 0.6, lifeVar: 0.15,
+      angle: 90, angleVar: 50, startSize: 16, startSizeVar: 5, endSize: 6, endSizeVar: 2,
+      speed: 70, speedVar: 28, gx: 0, gy: 48, posVarX: 32, posVarY: 14,
       startColor: [255, 255, 255, 255], endColor: [255, 255, 255, 0]
     }
-  ], 0x23);
+  ], 0x23, {
+    font: 84,
+    rootW: 480,
+    rootH: 200,
+    labW: 440,
+    labH: 120,
+    outlineWidth: 8
+  });
 }
 
 // ─── 命中喷溅 / 对撞：单图 × 多粒子，短促不糊屏 ──────────

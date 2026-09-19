@@ -165,6 +165,13 @@ export class RunState {
         this.onChanged?.();
     }
 
+    /** 战前对比页返回地图，方便换套装后再挑战。 */
+    leavePrebattle() {
+        if (this.screen !== "prebattle") return;
+        this.screen = "map";
+        this.onChanged?.();
+    }
+
     settle(win: boolean) {
         // 结算回调重复到达时，金币和强化牌都只能产生一次。
         if (this.screen === "result" || this.screen === "reward"

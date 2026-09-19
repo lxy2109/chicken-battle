@@ -77,8 +77,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 300,
-      "height": 110
+      "width": 340,
+      "height": 168
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -88,7 +88,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "L2jAR8pGXevM3kBS9qHYfw"
+    "fileId": "hyP6nEVctK1izQ7oFWduL2"
   },
   {
     "__type__": "cc.Sprite",
@@ -132,7 +132,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "S9qHYfwN4lCTarIZgxO5mD"
+    "fileId": "oFWduL2jAR8pGXevM3kBS9"
   },
   {
     "__type__": "cc.Node",
@@ -198,8 +198,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 260,
-      "height": 66
+      "width": 268,
+      "height": 96
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -209,7 +209,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "ZgxO5mDUbsJ0hyP6nEVctK"
+    "fileId": "vM3kBS9qHYfwN4lCTarIZg"
   },
   {
     "__type__": "cc.Label",
@@ -236,11 +236,11 @@
     "_string": "垃圾话",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 22,
-    "_fontSize": 22,
+    "_actualFontSize": 24,
+    "_fontSize": 24,
     "_fontFamily": "Arial",
-    "_lineHeight": 26,
-    "_overflow": 2,
+    "_lineHeight": 29,
+    "_overflow": 3,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
@@ -276,7 +276,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "6nEVctK1izQ7oFWduL2jAR"
+    "fileId": "CTarIZgxO5mDUbsJ0hyP6n"
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -286,7 +286,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "duL2jAR8pGXevM3kBS9qHY",
+    "fileId": "J0hyP6nEVctK1izQ7oFWdu",
     "instance": null,
     "targetOverrides": null
   },
@@ -298,7 +298,7 @@
     "asset": {
       "__id__": 0
     },
-    "fileId": "kBS9qHYfwN4lCTarIZgxO5",
+    "fileId": "Q7oFWduL2jAR8pGXevM3kB",
     "instance": null,
     "targetOverrides": null
   }

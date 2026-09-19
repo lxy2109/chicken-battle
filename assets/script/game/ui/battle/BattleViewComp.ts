@@ -318,7 +318,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (this.closed) return;
         this.trig("toStart");
         playGameEffect("start");
-        await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.55, 1, "start");
+        // 开战提示：场中央大字，比普通飘字更醒目、停留更久。
+        await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.9, 1.35, "start");
         this.trig("toCombat");
     }
 
@@ -597,26 +598,69 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             return;
         }
         node.parent = layer;
+        const isTaunt = kind === "taunt";
+        const isStart = kind === "start";
         // 出手很密，飘字全落同一点会糊成一坨，左右撒开一些。
-        const jitter = (Math.random() - 0.5) * 56;
-        if (origin) {
-            node.setPosition(origin.x + jitter, origin.y + 96, 0);
+        // 挑衅气泡：往场内偏一点，少被左右裁切；抖动也更小。
+        // 开战提示：场中央，不跟某只鸡走。
+        if (isStart) {
+            node.setPosition(0, 48, 0);
         }
         else {
-            node.setPosition(jitter, side === "player" ? -160 : 160, 0);
+            const jitter = (Math.random() - 0.5) * (isTaunt ? 24 : 56);
+            const sideBias = isTaunt ? (side === "player" ? 48 : -48) : 0;
+            const lift = isTaunt ? 118 : 96;
+            if (origin) {
+                node.setPosition(origin.x + sideBias + jitter, origin.y + lift, 0);
+            }
+            else {
+                node.setPosition(sideBias + jitter, side === "player" ? -160 : 160, 0);
+            }
         }
-        if (scale !== 1) node.setScale(scale, scale, 1);
+        // 挑衅气泡不额外放大，避免宽气泡出屏；命中/开战仍可缩放。
+        if (!isTaunt && scale !== 1) node.setScale(scale, scale, 1);
         if (path === PREFAB_PATH.fxHit || path === PREFAB_PATH.fxSkill) {
             node.setScale(scale * 0.55, scale * 0.55, 1);
             tween(node).to(0.055, { scale: v3(scale * 1.25, scale * 1.25, 1) }, { easing: "quadOut" })
                 .to(0.1, { scale: v3(scale, scale, 1) }).start();
         }
-        const color = tint || FLOAT_TINT[kind];
+        else if (isStart) {
+            const punch = scale;
+            node.setScale(punch * 0.45, punch * 0.45, 1);
+            tween(node).to(0.1, { scale: v3(punch * 1.18, punch * 1.18, 1) }, { easing: "backOut" })
+                .to(0.12, { scale: v3(punch, punch, 1) }, { easing: "quadOut" }).start();
+        }
+        // 白底气泡必须用深色字；奶油色飘字叠在气泡上会几乎看不见。
+        const color = isTaunt ? new Color(52, 34, 18, 255) : (tint || FLOAT_TINT[kind]);
         const lab = node.getComponentInChildren(Label);
         if (lab) {
             lab.string = text;
             lab.color = color;
-            if (kind === "crit" || kind === "skill" || kind === "cast") {
+            if (isTaunt) {
+                this.layoutTauntBubble(node, lab, text);
+                lab.enableOutline = true;
+                lab.outlineColor = new Color(255, 252, 245, 220);
+                lab.outlineWidth = 2;
+            }
+            else if (isStart) {
+                lab.fontSize = 84;
+                lab.lineHeight = 96;
+                lab.isBold = true;
+                lab.overflow = Label.Overflow.SHRINK;
+                lab.enableWrapText = false;
+                lab.enableOutline = true;
+                lab.outlineColor = new Color(48, 18, 6, 255);
+                lab.outlineWidth = 8;
+                lab.enableShadow = true;
+                lab.shadowColor = new Color(0, 0, 0, 160);
+                lab.shadowOffset = new Vec2(0, -4);
+                lab.shadowBlur = 2;
+                const labUt = lab.node.getComponent(UITransform);
+                labUt?.setContentSize(440, 120);
+                const rootUt = node.getComponent(UITransform);
+                rootUt?.setContentSize(480, 200);
+            }
+            else if (kind === "crit" || kind === "skill" || kind === "cast") {
                 lab.enableOutline = true;
                 lab.outlineColor = new Color(40, 18, 8, 255);
                 lab.outlineWidth = kind === "crit" ? 4 : 3;
@@ -639,6 +683,11 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
                 ps.endSize *= 1.2;
                 ps.speed *= 1.15;
             }
+            else if (isStart) {
+                ps.startSize *= 1.35;
+                ps.endSize *= 1.25;
+                ps.speed *= 1.2;
+            }
             else if (kind === "heal" || kind === "revive") {
                 ps.gravity = new Vec2(ps.gravity.x, Math.max(ps.gravity.y, 40));
             }
@@ -649,11 +698,77 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             ps.resetSystem();
         }
         const op = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
-        const rise = kind === "crit" ? 92 : kind === "heal" || kind === "revive" ? 84 : 70;
+        // 挑衅气泡只轻微上浮；开战提示几乎不动，避免大字飘出视野中心。
+        const rise = isStart ? 18 : isTaunt ? 28 : kind === "crit" ? 92 : kind === "heal" || kind === "revive" ? 84 : 70;
+        // 夹紧时预留上浮空间，动画结束仍不裁切。
+        if (isTaunt || isStart) this.clampFxInLayer(node, layer, rise);
         tween(node).by(life, { position: v3(0, rise, 0) }).start();
-        tween(op).delay(life * 0.55).to(life * 0.45, { opacity: 0 }).start();
+        tween(op).delay(life * (isStart ? 0.62 : 0.55)).to(life * (isStart ? 0.38 : 0.45), { opacity: 0 }).start();
         await this.wait(life);
         if (node.isValid) node.destroy();
+    }
+
+    /**
+     * 按文案长短撑开气泡：九宫格拉伸，内边距避开描边和底部尖角，
+     * 长句换行而不是 SHRINK 缩到看不清。
+     */
+    private layoutTauntBubble(root: Node, lab: Label, text: string) {
+        const rootUt = root.getComponent(UITransform);
+        const labUt = lab.node.getComponent(UITransform);
+        if (!rootUt || !labUt) return;
+
+        const PAD_X = 36;
+        const PAD_TOP = 28;
+        const PAD_BOTTOM = 44;
+        const MAX_INNER = 300;
+        const MIN_INNER = 140;
+        const FONT = 24;
+        const LINE = 30;
+
+        lab.string = text;
+        lab.fontSize = FONT;
+        lab.lineHeight = LINE;
+        lab.overflow = Label.Overflow.RESIZE_HEIGHT;
+        lab.enableWrapText = true;
+        lab.horizontalAlign = Label.HorizontalAlign.CENTER;
+        lab.verticalAlign = Label.VerticalAlign.CENTER;
+        lab.isBold = true;
+
+        // 中文约等于字号宽；短句收窄气泡，长句封顶后换行。
+        const preferred = Math.ceil(text.length * FONT * 0.92);
+        const innerW = Math.min(MAX_INNER, Math.max(MIN_INNER, preferred));
+        labUt.setContentSize(innerW, LINE * 3);
+        lab.updateRenderData(true);
+
+        const textW = Math.max(innerW, labUt.contentSize.width);
+        const textH = Math.max(LINE, labUt.contentSize.height);
+        labUt.setContentSize(textW, textH);
+        // 九宫格边约 50px，总高需明显大于 106，中间才有可写字的拉伸区。
+        const bubbleW = Math.max(200, textW + PAD_X * 2);
+        const bubbleH = Math.max(150, textH + PAD_TOP + PAD_BOTTOM);
+        rootUt.setContentSize(bubbleW, bubbleH);
+        // 尖角在底部，正文略偏上，落在白色主体里。
+        lab.node.setPosition(0, (PAD_BOTTOM - PAD_TOP) * 0.5, 0);
+    }
+
+    /** 把特效节点夹在 FxLayer / 画布可见范围内，避免气泡被裁切。 */
+    private clampFxInLayer(node: Node, layer: Node, riseReserve = 0) {
+        const box = layer.getComponent(UITransform) || this.node.getComponent(UITransform);
+        const ut = node.getComponent(UITransform);
+        if (!box || !ut) return;
+        const margin = 12;
+        const hw = ut.width * Math.abs(node.scale.x) * 0.5;
+        const hh = ut.height * Math.abs(node.scale.y) * 0.5;
+        const halfW = box.width * 0.5;
+        const halfH = box.height * 0.5;
+        const maxX = Math.max(0, halfW - hw - margin);
+        const maxY = Math.max(0, halfH - hh - margin - Math.max(0, riseReserve));
+        const minY = -Math.max(0, halfH - hh - margin);
+        const x = Math.max(-maxX, Math.min(maxX, node.position.x));
+        const y = Math.max(minY, Math.min(maxY, node.position.y));
+        if (x !== node.position.x || y !== node.position.y) {
+            node.setPosition(x, y, node.position.z);
+        }
     }
 
     //#endregion

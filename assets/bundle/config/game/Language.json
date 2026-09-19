@@ -291,6 +291,10 @@
         "zh": "攻击",
         "en": ""
     },
+    "PreBattleViewComp_019": {
+        "zh": "返回地图",
+        "en": ""
+    },
     "ResultViewComp_001": {
         "zh": "查看总战绩",
         "en": ""
