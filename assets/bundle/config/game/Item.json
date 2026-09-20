@@ -558,37 +558,46 @@
     "champion_head": {
         "id": "champion_head",
         "name": "真空包装王冠",
-        "desc": "不是每根肠都能称王，但这只鸡可以。",
+        "desc": "攻击+6，暴击+6%",
         "slot": "head",
         "setId": "champion",
         "price": 0,
+        "atk": 6,
+        "crit": 0.06,
         "icon": "iron_head"
     },
     "champion_neck": {
         "id": "champion_neck",
         "name": "淀粉含量不详围脖",
-        "desc": "不是每根肠都能称王，但这只鸡可以。",
+        "desc": "生命+24，防御+4",
         "slot": "neck",
         "setId": "champion",
         "price": 0,
+        "maxHp": 24,
+        "def": 4,
         "icon": "stone_comb"
     },
     "champion_wing": {
         "id": "champion_wing",
         "name": "双肠护翼",
-        "desc": "不是每根肠都能称王，但这只鸡可以。",
+        "desc": "攻击+5，敏捷+3",
         "slot": "wing",
         "setId": "champion",
         "price": 0,
+        "atk": 5,
+        "spd": 3,
         "icon": "gale_wing"
     },
     "champion_leg": {
         "id": "champion_leg",
         "name": "竹签破阵靴",
-        "desc": "不是每根肠都能称王，但这只鸡可以。",
+        "desc": "生命+16，攻击+4，敏捷+4",
         "slot": "leg",
         "setId": "champion",
         "price": 0,
+        "maxHp": 16,
+        "atk": 4,
+        "spd": 4,
         "icon": "stone_leg"
     },
     "digger_head": {

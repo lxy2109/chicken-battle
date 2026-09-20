@@ -217,10 +217,22 @@
             "champion_leg"
         ],
         "discount": 0.8,
-        "desc2": "不是每根肠都能称王，但这只鸡可以。",
-        "desc4": "通关奖励：专属加冕结算效果",
+        "b2maxHp": 50,
+        "b2atk": 12,
+        "b2def": 6,
+        "b2spd": 6,
+        "b2healPerTurn": 6,
+        "b4atk": 8,
+        "b4crit": 0.15,
+        "b4healPerTurn": 8,
+        "b4revive": 1,
+        "b4lockHp": 1,
+        "desc2": "王者之气：生命+50，攻击+12，防御+6，敏捷+6，回血+6",
+        "desc4": "加冕称王：攻击+8，暴击+15%，先手一击，连击增伤10%，锁血并复活，回血+8",
         "unlockMap": 0,
-        "rewardOnly": true
+        "rewardOnly": true,
+        "b4firstStrike": 1,
+        "b4streakBonus": 0.1
     },
     "digger": {
         "id": "digger",

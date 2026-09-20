@@ -957,10 +957,29 @@ function run() {
         run.settle(true);
         assert(champion.every(id => run.ownedIds.includes(id)), "击败缝纫鸡发放鸡王中王");
         assert(champion.every(id => run.equippedIds.includes(id)), "缝纫鸡胜利后自动穿上鸡王中王");
+        const crowned = run.playerFighter().stats;
+        assert(crowned.maxHp >= 200 && crowned.atk >= 50 && crowned.def >= 14 && crowned.spd >= 20, "鸡王中王提供终局属性");
+        assert(crowned.lockHp && crowned.revive >= 1 && (crowned.firstStrike ?? 0) >= 1, "鸡王中王提供锁血、复活、先手");
+        assert((crowned.streakBonus ?? 0) >= 0.1 && crowned.healPerTurn >= 14, "鸡王中王提供连击增伤和回血");
         const owned = run.ownedIds.slice();
         run.routeNode = kunId(); run.phase = "boss"; run.screen = "battle";
         run.settle(true);
         assert(run.ownedIds.join(",") === owned.join(","), "最终战不重复发放部件");
+    });
+
+    ok("鸡王中王套装数值强于其他现役套装", () => {
+        const wear = (id: string) => {
+            const run = new RunState(11);
+            run.ownedIds = getSets().find(s => s.id === id)!.pieceIds.slice();
+            assert(run.equipSet(id), `可穿上${id}`);
+            return run.playerFighter().stats;
+        };
+        const champ = wear("champion");
+        const coming = wear("coming");
+        const digger = wear("digger");
+        assert(combatPower(champ) > combatPower(coming) && combatPower(champ) > combatPower(digger), "鸡王中王战力应高于鸡来和挖掘鸡");
+        assert(champ.atk > coming.atk && champ.maxHp > coming.maxHp, "鸡王中王攻血应高于鸡来");
+        assert(champ.lockHp && champ.revive >= 1 && (champ.firstStrike ?? 0) >= 1, "终局套应同时具备锁血、复活、先手");
     });
 
     ok("不同派系同一局势出招不同", () => {
