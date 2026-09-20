@@ -2,12 +2,13 @@ import fs from "fs";
 import path from "path";
 import { BattleBrain } from "../../assets/script/game/battle/BattleBrain";
 import { AiFighter, decideAction, decide } from "../../assets/script/game/domain/BattleAI";
-import { BattleSession } from "../../assets/script/game/domain/BattleSession";
+import { BattleSession, enemySkillsForEncounter } from "../../assets/script/game/domain/BattleSession";
 import { DanmakuPool } from "../../assets/script/game/domain/Danmaku";
 import { Rng } from "../../assets/script/game/domain/Rng";
 import { enemyCombatProfile, PLAYER_SKILLS, SKILL_UNLOCK_MAP, skillAttackValue, skillCooldownOf, skillsUnlockedAt, skillsUnlockedOnMap, stageMood, STYLE_OPENING } from "../../assets/script/game/domain/BattleStyle";
 import { getItems, getRoute, getSets } from "../../assets/script/game/domain/Catalog";
 import { bindTables } from "../../assets/script/game/domain/Config";
+import { gameNumber } from "../../assets/script/game/domain/GameConfig";
 import { buildStats, combatPower, setPrice } from "../../assets/script/game/domain/EquipMath";
 import { upgradeOf } from "../../assets/script/game/domain/PartUpgrade";
 import { rollUpgrades } from "../../assets/script/game/domain/RewardGen";
@@ -1319,11 +1320,17 @@ function run() {
         assert(battle.skillRemain("peck") === 0, "下限不能把已转好的招重新锁上");
     });
 
-    ok("小怪不能放绝招，地图 boss 与玩家同步本图技能", () => {
+    ok("小怪不能放绝招，Boss 技能池和冷却读配置", () => {
         const run = new RunState(31);
         run.confirmAppearance(defaultAppearance());
         const kit = run.unlockedSkills();
         assert(kit.includes("peck") && kit.includes("combo") && !kit.includes("leap"), "开局应只有第一图两招");
+        assert(gameNumber("battle_bossSkillMapLimit") === 0, "默认不限制 Boss 绝招地图");
+        assert(gameNumber("battle_bossSkillCooldown") < gameNumber("battle_skillCooldown"), "Boss 绝招冷却应短于通用技能冷却");
+        assert(enemySkillsForEncounter(false, kit).length === 0, "小怪技能池应为空");
+        assert(enemySkillsForEncounter(true, kit).includes("leap"), "默认 Boss 应有全部八招");
+        assert(enemySkillsForEncounter(true, kit).length === PLAYER_SKILLS.length, "默认 Boss 技能池应是全技能");
+
         const p = run.playerFighter(), e = run.enemyFighter();
         p.stats = { ...p.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 900, maxHp: 900, firstStrike: 1 };
         e.stats = { ...e.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 900, maxHp: 900, firstStrike: 1 };
@@ -1353,22 +1360,20 @@ function run() {
         const silent = new BattleSession(p, e, 32, false);
         assert(countSkills(silent, "enemy").length === 0, "不传技能池的小怪默认不能放绝招");
 
-        const boss = new BattleSession(p, e, 33, true, () => ({ kind: "skill", style: "leap" }), {
+        const open = new BattleSession(p, e, 33, true, () => ({ kind: "skill", style: "leap" }), {
+            playerManualSkills: true, playerSkills: kit
+        });
+        const openStyles = countSkills(open, "enemy");
+        assert(openStyles.length >= 3, `默认 Boss 应更勤放绝招，实际 ${openStyles.length}`);
+        assert(openStyles.includes("leap"), "默认不限制时应能放天外飞鸡");
+
+        const limited = new BattleSession(p, e, 34, true, () => ({ kind: "skill", style: "leap" }), {
             playerManualSkills: true, playerSkills: kit, enemySkills: kit
         });
-        const bossStyles = countSkills(boss, "enemy");
-        assert(bossStyles.length >= 2, `地图 boss 应能放本图绝招，实际 ${bossStyles.length}`);
-        assert(bossStyles.every(style => kit.includes(style)), `boss 绝招应落在本图技能池 ${kit.join("/")}，实际 ${[...new Set(bossStyles)].join("/")}`);
-        assert(!bossStyles.includes("leap"), "第一图 boss 不该放出未解锁的天外飞鸡");
-
-        const laterKit = skillsUnlockedAt(3);
-        const later = new BattleSession(p, e, 34, true, () => ({ kind: "skill", style: "leap" }), {
-            playerManualSkills: true, playerSkills: laterKit, enemySkills: laterKit
-        });
-        const laterStyles = countSkills(later, "enemy");
-        assert(laterStyles.length >= 2, `第三图 boss 应能放该图已解锁绝招，实际 ${laterStyles.length}`);
-        assert(laterStyles.every(style => laterKit.includes(style)), "第三图 boss 不该放出尚未解锁的招");
-        assert(!laterStyles.includes("leap") && !laterStyles.includes("dive"), "天外飞鸡与乌鸦坐飞鸡应还未解锁");
+        const limitedStyles = countSkills(limited, "enemy");
+        assert(limitedStyles.length >= 2, `显式传入本图技能池时应能放绝招，实际 ${limitedStyles.length}`);
+        assert(limitedStyles.every(style => kit.includes(style)), `限制开启时绝招应落在 ${kit.join("/")}，实际 ${[...new Set(limitedStyles)].join("/")}`);
+        assert(!limitedStyles.includes("leap"), "限制开启时第一图不该放出天外飞鸡");
     });
 
     ok("哈鸡米、新一鸡、坤坤有专属对战曲", () => {

@@ -21,10 +21,20 @@ export interface BattleSessionOpts {
     /** 本局玩家可点的绝招；不传则按全部八招（测试/旧调用）。 */
     playerSkills?: readonly StrikeStyle[];
     /**
-     * 敌人可用的绝招。小怪传空数组；地图 boss 传与玩家相同的本图解锁招。
-     * 不传时：boss 战默认跟玩家同一套，热身小怪默认不能放绝招。
+     * 敌人可用的绝招。小怪传空数组。
+     * 不传时按 GameRule 决定：小怪没有绝招；Boss 默认全技能，
+     * battle_bossSkillMapLimit>0 时才跟玩家本图解锁走。
      */
     enemySkills?: readonly StrikeStyle[];
+}
+
+/** 热身小怪不能放绝招。Boss 技能池是否跟玩家地图解锁走，读 battle_bossSkillMapLimit。 */
+export function enemySkillsForEncounter(boss: boolean, unlocked: readonly StrikeStyle[] = PLAYER_SKILLS): readonly StrikeStyle[] {
+    if (!boss) return [];
+    if (gameNumber("battle_bossSkillMapLimit") > 0) {
+        return unlocked.filter(style => isPlayerSkill(style));
+    }
+    return PLAYER_SKILLS;
 }
 
 const SIDES: BattleSide[] = ["player", "enemy"];
@@ -171,7 +181,7 @@ export class BattleSession {
             : PLAYER_SKILLS;
         this.enemySkills = opts?.enemySkills
             ? opts.enemySkills.filter(style => isPlayerSkill(style))
-            : (boss ? this.playerSkills : []);
+            : [...enemySkillsForEncounter(boss, this.playerSkills)];
         const reference = gameNumber("battle_referenceSeconds");
         this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
@@ -179,6 +189,9 @@ export class BattleSession {
         this.dmgScale = gameNumber("battle_damageScale") * (boss ? gameNumber("battle_bossDamage") : 1);
         this.player = toLive(player, this.pace, SKILL_START.player);
         this.enemy = toLive(enemy, this.pace, SKILL_START.enemy);
+        if (this.boss && this.enemySkills.length) {
+            this.enemy.skillCd = this.enemySkillCooldown() * SKILL_START.enemy;
+        }
         if (this.playerManualSkills) {
             this.player.skillCds = {};
             this.player.skillCdMax = {};
@@ -289,12 +302,15 @@ export class BattleSession {
                 this.player.skillCds[style] = Math.max(0, (this.player.skillCds[style] || 0) - dt);
             }
         }
+        // Boss 绝招冷却跟玩家一样走真实秒，不跟目标战斗时长一起被拉长。
+        const enemySkillRealtime = this.boss && this.enemySkills.length > 0;
+        if (enemySkillRealtime) this.enemy.skillCd = Math.max(0, this.enemy.skillCd - dt);
         dt /= this.durationScale;
 
         for (const side of SIDES) {
             const actor = this.live(side);
             actor.healCd = Math.max(0, actor.healCd - dt);
-            actor.skillCd = Math.max(0, actor.skillCd - dt);
+            if (!(side === "enemy" && enemySkillRealtime)) actor.skillCd = Math.max(0, actor.skillCd - dt);
             if (actor.busy) continue;
 
             if (side === "player" && this.playerManualSkills) {
@@ -475,7 +491,7 @@ export class BattleSession {
      * 出招：冷却好了本来会立刻放绝招，但对面立绘还在时改打普攻，CD 留给下一拍。
      * 同一帧双方都好了，玩家先处理，所以自己的特效优先。
      * 对战页打开手动绝招后，玩家这一支永远走普攻/回血，绝招只走 requestSkill。
-     * 小怪没有绝招；地图 boss 只从本图玩家已解锁的招里挑。
+     * 小怪没有绝招；Boss 技能池由配置决定，默认不跟玩家地图解锁走。
      */
     private chooseAction(side: BattleSide, actor: LiveFighter, foe: BattleSide): BattleDecision {
         if (side === "player" && this.playerManualSkills && !actor.counterReady) {
@@ -533,7 +549,8 @@ export class BattleSession {
                 (actor.skillCdMax || (actor.skillCdMax = {}))[style] = cd;
             }
             else {
-                actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
+                const cd = side === "enemy" ? this.enemySkillCooldown() : gameNumber("battle_skillCooldown");
+                actor.skillCd = cd * (actor.enraged ? 0.55 : 1);
             }
             if (actor.fightStyle === "tank") actor.guard = true;
             this.skillGate = SKILL_EXCLUSIVE;
@@ -556,6 +573,10 @@ export class BattleSession {
 
     private skillKit(side: BattleSide): readonly StrikeStyle[] {
         return side === "player" ? this.playerSkills : this.enemySkills;
+    }
+
+    private enemySkillCooldown(): number {
+        return this.boss ? gameNumber("battle_bossSkillCooldown") : gameNumber("battle_skillCooldown");
     }
 
     private toAi(f: LiveFighter) {

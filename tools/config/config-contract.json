@@ -93,6 +93,16 @@
       "max": null,
       "integer": false
     },
+    "battle_bossSkillCooldown": {
+      "min": 0.01,
+      "max": null,
+      "integer": false
+    },
+    "battle_bossSkillMapLimit": {
+      "min": 0,
+      "max": 1,
+      "integer": true
+    },
     "battle_hitStagger": {
       "min": 0,
       "max": null,

@@ -213,5 +213,18 @@
         "value": 6,
         "desc": "普通弹幕间隔（秒）",
         "min": 0.1
+    },
+    "battle_bossSkillCooldown": {
+        "id": "battle_bossSkillCooldown",
+        "value": 4,
+        "desc": "Boss绝招冷却（秒，不跟战斗时长缩放）",
+        "min": 0.01
+    },
+    "battle_bossSkillMapLimit": {
+        "id": "battle_bossSkillMapLimit",
+        "value": 0,
+        "desc": "Boss绝招是否受玩家地图解锁限制：0不限制（全技能），1仅本图已解锁",
+        "min": 0,
+        "max": 1
     }
 }
