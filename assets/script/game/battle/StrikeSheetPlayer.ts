@@ -1,22 +1,27 @@
-import { Animation, AnimationClip, Component, Rect, Size, Sprite, SpriteFrame, Texture2D, Tween, UITransform, _decorator, tween } from "cc";
+import { Animation, AnimationClip, Component, Rect, Size, Sprite, SpriteFrame, Texture2D, Tween, UITransform, _decorator, assetManager, tween } from "cc";
 import { oops } from "db://oops-framework/core/Oops";
-import { isMinionAnim, TEX } from "../domain/Catalog";
+import { BASIC_ATTACK_ANIM, isMinionAnim, TEX } from "../domain/Catalog";
 import { StrikeStyle } from "../domain/Types";
 
 const { ccclass } = _decorator;
 
-/** 与 import-strike-gen.cjs 一致：整张 1024×1024，4×4 格，每格 256。 */
+/** 所有序列帧（idle / 普攻 attack / 八绝招）都是 1024×1024、4×4、16 帧，每格 256。 */
 export const STRIKE_SHEET = { width: 1024, height: 1024, frames: 16, cell: 256, cols: 4, sample: 24 };
 const IDLE_SAMPLE = 10;
 const IDLE = "idle";
+/** 16 帧里没单独标定接触点时，默认打在中段。 */
+const DEFAULT_CONTACT = 8;
+const DEFAULT_WINDUP = 0.12;
+const DEFAULT_RECOVER = 0.24;
 
 const STYLES: StrikeStyle[] = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"];
 
 /**
  * 接触帧（与 gen-strike-sheets ACTIONS 关键帧对齐）。
  * 蓄力播到这一帧前停住/缓行，命中瞬间再砸接触段，招式才跟位移同拍。
+ * 未列出的 clip（如后续 attack）按 16 帧中段。
  */
-const CONTACT_FRAME: Record<StrikeStyle, number> = {
+const CONTACT_FRAME: Partial<Record<string, number>> = {
     peck: 7,
     jump: 9,
     dive: 8,
@@ -28,7 +33,7 @@ const CONTACT_FRAME: Record<StrikeStyle, number> = {
 };
 
 /** 命中后把接触帧播完再回 idle 的时长。 */
-const RECOVER_SEC: Record<StrikeStyle, number> = {
+const RECOVER_SEC: Partial<Record<string, number>> = {
     peck: 0.22,
     jump: 0.2,
     dive: 0.18,
@@ -40,7 +45,7 @@ const RECOVER_SEC: Record<StrikeStyle, number> = {
 };
 
 /** 起手段默认时长；真正接近时间更长时会在接触帧前一格顿住。 */
-const WINDUP_SEC: Record<StrikeStyle, number> = {
+const WINDUP_SEC: Partial<Record<string, number>> = {
     peck: 0.12,
     jump: 0.16,
     dive: 0.14,
@@ -57,7 +62,7 @@ const clipCache = new Map<string, AnimationClip>();
 type Phase = "idle" | "windup" | "hold" | "impact" | "recover" | "off";
 
 /**
- * 立绘鸡的序列帧。从 1024×1024 的 4×4 动作表切 16 帧。
+ * 立绘鸡的序列帧。每张动作表都是 16 帧（4×4 / 或横向条）。
  *
  * 出招分三段，避免「身体已经撞上、画面还在蓄力」：
  * 1) windup：播到接触帧前
@@ -65,6 +70,7 @@ type Phase = "idle" | "windup" | "hold" | "impact" | "recover" | "off";
  * 3) impact → recover：contact() 时砸接触段，收招回 idle
  *
  * 小怪包只有 peck 图，用不同播放速率/顿帧表现其它招式节奏。
+ * Boss/套装后续会加 16 帧的 attack 普攻图：有则普攻播它，绝招仍播对应招式。
  */
 @ccclass("StrikeSheetPlayer")
 export class StrikeSheetPlayer extends Component {
@@ -77,6 +83,7 @@ export class StrikeSheetPlayer extends Component {
     private gen = 0;
     private phase: Phase = "off";
     private style: StrikeStyle = "peck";
+    private skill = false;
     private frames: SpriteFrame[] | null = null;
     private frameIdx = 0;
     private holdCarrier: { t: number } | null = null;
@@ -84,6 +91,10 @@ export class StrikeSheetPlayer extends Component {
     private waits: Array<() => void> = [];
     /** 贴图还在加载时就已经碰到，等 frames 就绪再砸接触帧。 */
     private pendingImpact = false;
+    /** 这只鸡有没有独立的普攻序列帧（attack.png）。 */
+    private _hasAttack = false;
+    /** 该角色 anim 目录里实际有的序列帧名。 */
+    private clipSet: Set<string> | null = null;
 
     get busy() {
         return this._busy;
@@ -98,10 +109,17 @@ export class StrikeSheetPlayer extends Component {
         return this.phase === "hold";
     }
 
+    /** 有独立普攻图时，普攻位移也走 peck，避免 leap 位移配 attack 贴图。 */
+    get hasBasicAttack() {
+        return this._hasAttack || this.hasClip(BASIC_ATTACK_ANIM);
+    }
+
     async warmup() {
         if (!this.sheetKey) return;
-        const styles = isMinionAnim(this.sheetKey) ? ["peck" as StrikeStyle] : STYLES;
-        await Promise.all([this.framesOf(IDLE), ...styles.map(style => this.framesOf(style))]);
+        this._hasAttack = this.hasClip(BASIC_ATTACK_ANIM);
+        const styles: string[] = isMinionAnim(this.sheetKey) ? ["peck"] : [...STYLES];
+        if (this._hasAttack) styles.push(BASIC_ATTACK_ANIM);
+        await Promise.all([this.framesOf(IDLE), ...styles.map(clip => this.framesOf(clip))]);
         if (!this._busy) await this.startIdle();
     }
 
@@ -135,12 +153,14 @@ export class StrikeSheetPlayer extends Component {
     /**
      * 开始出招蓄力。leadSec 是期望「起手到接触」的时长，用来把 windup 节奏压到招式上。
      * 命中时务必再调 impact()，否则会一直停在 hold。
+     * skill=false 且有 attack 图时播普攻帧，否则按招式（缺图则 peck）。
      */
-    play(style: StrikeStyle, leadSec?: number) {
+    play(style: StrikeStyle, leadSec?: number, skill = false) {
         this._busy = true;
         this._idleOn = false;
         this.pendingImpact = false;
         this.style = style;
+        this.skill = skill;
         const ticket = ++this.gen;
         void this.runStrike(style, leadSec, ticket);
     }
@@ -203,7 +223,7 @@ export class StrikeSheetPlayer extends Component {
             return;
         }
         this.captureStill(sprite);
-        const clipStyle = this.actionStyle(style);
+        const clipStyle = this.actionClip(style, this.skill);
         const frames = await this.framesOf(clipStyle);
         if (ticket !== this.gen || !frames || !this.node?.isValid) {
             if (ticket === this.gen && !frames) {
@@ -218,8 +238,8 @@ export class StrikeSheetPlayer extends Component {
 
         const contact = Math.min(this.contactOf(clipStyle), frames.length - 1);
         const windEnd = Math.max(0, contact - 1);
-        // 小怪共用 peck 图：用 lead 长短拉开「这一下」的节奏差。
-        const pace = isMinionAnim(this.sheetKey) ? this.minionPace(style) : 1;
+        // 缺图共用 peck：用 lead 长短拉开「这一下」的节奏差。独立 attack 图按自身节奏。
+        const pace = this.reusedClip(clipStyle, style) ? this.minionPace(style) : 1;
         const windSec = Math.max(0.06, (leadSec != null
             ? Math.min(leadSec * 0.85, this.windupOf(clipStyle) * 1.6)
             : this.windupOf(clipStyle)) * pace);
@@ -258,10 +278,10 @@ export class StrikeSheetPlayer extends Component {
         // 掐掉 windup scrub，但不要 ++gen，本段 impact 还要用同一个 ticket。
         this.kickWaits();
         this.clearHoldOnly();
-        const clipStyle = this.actionStyle(this.style);
+        const clipStyle = this.actionClip(this.style, this.skill);
         const contact = Math.min(this.contactOf(clipStyle), frames.length - 1);
         const last = frames.length - 1;
-        const pace = isMinionAnim(this.sheetKey) ? this.minionPace(this.style) : 1;
+        const pace = this.reusedClip(clipStyle, this.style) ? this.minionPace(this.style) : 1;
         const snap = 0.05 * pace;
         const recover = this.recoverOf(clipStyle) * pace;
 
@@ -389,16 +409,16 @@ export class StrikeSheetPlayer extends Component {
         });
     }
 
-    private contactOf(style: StrikeStyle) {
-        return CONTACT_FRAME[style] ?? 8;
+    private contactOf(clip: string) {
+        return CONTACT_FRAME[clip] ?? DEFAULT_CONTACT;
     }
 
-    private windupOf(style: StrikeStyle) {
-        return WINDUP_SEC[style] ?? 0.12;
+    private windupOf(clip: string) {
+        return WINDUP_SEC[clip] ?? DEFAULT_WINDUP;
     }
 
-    private recoverOf(style: StrikeStyle) {
-        return RECOVER_SEC[style] ?? 0.24;
+    private recoverOf(clip: string) {
+        return RECOVER_SEC[clip] ?? DEFAULT_RECOVER;
     }
 
     private minionPace(style: StrikeStyle) {
@@ -434,9 +454,46 @@ export class StrikeSheetPlayer extends Component {
         return clip;
     }
 
-    /** 小怪包里只有 peck，其它招式都播这一张，靠速率区分。 */
-    private actionStyle(style: StrikeStyle): StrikeStyle {
+    /**
+     * 按磁盘上实际有的图选序列帧：
+     * 普攻优先 attack；小怪包只有 peck；Boss/套装绝招播对应招式。
+     */
+    private actionClip(style: StrikeStyle, skill: boolean): string {
+        if (!skill && this.hasBasicAttack) return BASIC_ATTACK_ANIM;
         return isMinionAnim(this.sheetKey) ? "peck" : style;
+    }
+
+    /** 逻辑招式和贴图不是同一套时，用速率拉开差异。 */
+    private reusedClip(clip: string, style: StrikeStyle) {
+        return clip !== style && clip !== BASIC_ATTACK_ANIM;
+    }
+
+    /** 不加载、不打日志，只看 bundle 里有没有这张序列帧。 */
+    private hasClip(style: string): boolean {
+        if (this.knownClips().has(style)) return true;
+        if (!this.sheetKey) return false;
+        const bundle = assetManager.getBundle("bundle");
+        if (!bundle) return false;
+        const path = `game/image/anim/${this.sheetKey}/${style}`;
+        const hit = !!(bundle.getInfoWithPath(path) || bundle.getInfoWithPath(`${path}/spriteFrame`));
+        if (hit) this.knownClips().add(style);
+        return hit;
+    }
+
+    private knownClips(): Set<string> {
+        if (this.clipSet) return this.clipSet;
+        const found = new Set<string>();
+        if (!this.sheetKey) return found;
+        const bundle = assetManager.getBundle("bundle");
+        if (!bundle) return found;
+        const dir = `game/image/anim/${this.sheetKey}`;
+        for (const info of bundle.getDirWithPath(dir) || []) {
+            const rest = (info.path || "").slice(dir.length + 1);
+            const clip = rest.split("/")[0]?.split(".")[0];
+            if (clip) found.add(clip);
+        }
+        this.clipSet = found;
+        return found;
     }
 
     private async framesOf(style: string) {

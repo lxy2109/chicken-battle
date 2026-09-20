@@ -44,13 +44,19 @@ export const TEX = {
     mapNode: (name: string) => `game/image/map/${name}/spriteFrame`,
     ui: (name: string) => `game/image/ui/${name}/spriteFrame`,
     set: (setId: string) => `game/image/equip/set_${setId}/spriteFrame`,
-    /** 立绘序列帧。小怪只打 idle+peck，精英/Boss/套装才有 8 个出招。敌人用 illustration 名，套装用 set_<id>。 */
+    /**
+     * 立绘序列帧，每张都是 16 帧。小怪只打 idle+peck；精英/Boss/套装有 8 个绝招。
+     * Boss/套装后续会加 16 帧 attack 普攻图，有则普攻播它。敌人用 illustration 名，套装用 set_<id>。
+     */
     strikeAnim: (key: string, style: string) => `game/image/anim/${key}/${style}/spriteFrame`,
     /** 结算套装胜利 GIF，文件放到 bundle/game/media/suit_gif/set_<套装id>.gif。 */
     suitGif: (setId: string) => `game/media/suit_gif/set_${setId}`,
     /** 打败坤坤鸡后的全屏结局视频。 */
     endingVideo: "game/media/video/ending"
 };
+
+/** 普攻专用序列帧文件名（同样 16 帧）。Boss/套装后续会加 `anim/<key>/attack.png`；没有时普攻仍按招式或 peck 播。 */
+export const BASIC_ATTACK_ANIM = "attack";
 
 /** 每张地图对应 `gui/map/map_${id}` 预制体，背景和落点都做在预制体上。 */
 /** 杂色鸡 / warmup 立绘：包体只带待机和啄击，其它招式播 peck。 */

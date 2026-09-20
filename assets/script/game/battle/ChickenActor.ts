@@ -87,7 +87,7 @@ export class ChickenActor {
         this.skillAmp = 1.42;
         this.skillPrimed = true;
         // 绝招蓄力阶段就切序列帧 windup，出手时不再闪 idle。
-        this.sheets?.play(style, this.leadOf(style) + this.timed(0.18));
+        this.sheets?.play(style, this.leadOf(style) + this.timed(0.18), true);
         this.windup(style, true);
         await this.skillPose(style, tk);
         if (!this.alive(tk)) {
@@ -116,9 +116,11 @@ export class ChickenActor {
         // 半路，身子可能还压着、还反着，或者某个部位歪在偏移位上，得先收回原姿态再出手。
         this.resetPose();
         this.skillAmp = skill ? 1.42 : 1;
+        // 有独立普攻图时位移走 peck，贴图才跟身体对得上；绝招仍按招式。
+        const move = !skill && this.sheets?.hasBasicAttack ? "peck" as StrikeStyle : style;
         // 先按招式摆起手，再切序列帧，避免 busy 把 lean/squash 全吃掉。
-        this.windup(style, skill);
-        if (!primed) this.sheets?.play(style, this.leadOf(style));
+        this.windup(move, skill);
+        if (!primed) this.sheets?.play(style, this.leadOf(move), skill);
         // 没预先蓄力时才现场 pose（例如测试直接 strike）；正常绝招已在 prepareSkill 演过。
         if (skill && !primed) await this.skillPose(style, tk);
         let told = false;
@@ -128,12 +130,12 @@ export class ChickenActor {
             if (hit) {
                 // 序列帧砸到接触帧，和结算同一拍。
                 this.sheets?.impact();
-                this.contactJuice(style);
+                this.contactJuice(move);
             }
             if (onContact) onContact(hit);
         };
 
-        const hit = this.alive(tk) ? await this.perform(target, style, tk, contact) : false;
+        const hit = this.alive(tk) ? await this.perform(target, move, tk, contact) : false;
         if (!told) {
             told = true;
             this.sheets?.abort();

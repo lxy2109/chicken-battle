@@ -21,6 +21,7 @@ const SHEET_H = 64;
 const FRAMES = 16;
 const CELL = 64;
 const STYLES = ["peck", "jump", "dive", "leap", "charge", "tail", "combo", "feint"];
+// 普攻 attack 不在这里生成：Boss/套装后续会单独加 anim/<key>/attack.png，运行时有图才播。
 
 const SKIP_CHICKEN = new Set([
     "eye", "figma_face_dumb", "figma_shadow",

@@ -2,6 +2,9 @@
  * 把生图的 4×4 或横向条整理成 1024×1024、16 帧（每格 256×256）。
  * 生图本身就是 1024 的 4×4，不再压成 64，战斗里才不会糊。
  *
+ * style 为 idle / peck / jump / dive / leap / charge / tail / combo / feint，
+ * 以及后续 Boss/套装普攻 attack。
+ *
  * 用法:
  *   node tools/import-strike-gen.cjs <src.png> <charKey> <style>
  *   node tools/import-strike-gen.cjs --dir temp/strike-gen/raw

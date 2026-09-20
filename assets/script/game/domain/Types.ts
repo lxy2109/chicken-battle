@@ -116,6 +116,7 @@ export type BattleActionKind = "heal" | "skill" | "attack";
  * 出招的接触方式：鸡啄米、金鸡独立、乌鸦坐飞鸡、天外飞鸡、铁头功、神龙摆尾、连珠神啄、金蝉脱壳。
  *
  * 普攻仍按 kind 结算；玩家主动绝招按招式走独立冷却和攻击倍率，按钮上标的就是该招攻击。
+ * Boss/套装后续会加 16 帧 attack 序列帧：普攻有该图就播它，绝招仍用下面八招。
  */
 export type StrikeStyle = "peck" | "jump" | "dive" | "leap" | "charge" | "tail" | "combo" | "feint";
 
