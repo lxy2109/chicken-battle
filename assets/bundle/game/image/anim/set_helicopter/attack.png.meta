@@ -1,0 +1,139 @@
+{
+    "ver": "1.0.27",
+    "importer": "image",
+    "imported": true,
+    "uuid": "fb3fa25b-16f5-4a3a-a67d-749589c79862",
+    "files": [
+        ".json",
+        ".png"
+    ],
+    "subMetas": {
+        "6c48a": {
+            "importer": "texture",
+            "uuid": "fb3fa25b-16f5-4a3a-a67d-749589c79862@6c48a",
+            "displayName": "attack",
+            "id": "6c48a",
+            "name": "texture",
+            "ver": "1.0.22",
+            "imported": true,
+            "files": [
+                ".json"
+            ],
+            "subMetas": {},
+            "userData": {
+                "wrapModeS": "clamp-to-edge",
+                "wrapModeT": "clamp-to-edge",
+                "minfilter": "linear",
+                "magfilter": "linear",
+                "mipfilter": "none",
+                "premultiplyAlpha": false,
+                "anisotropy": 1,
+                "isUuid": true,
+                "imageUuidOrDatabaseUri": "fb3fa25b-16f5-4a3a-a67d-749589c79862",
+                "visible": false
+            }
+        },
+        "f9941": {
+            "importer": "sprite-frame",
+            "uuid": "fb3fa25b-16f5-4a3a-a67d-749589c79862@f9941",
+            "displayName": "attack",
+            "id": "f9941",
+            "name": "spriteFrame",
+            "ver": "1.0.12",
+            "imported": true,
+            "files": [
+                ".json"
+            ],
+            "subMetas": {},
+            "userData": {
+                "trimType": "none",
+                "trimThreshold": 1,
+                "rotated": false,
+                "offsetX": 0,
+                "offsetY": 0,
+                "trimX": 0,
+                "trimY": 0,
+                "width": 1024,
+                "height": 1024,
+                "rawWidth": 1024,
+                "rawHeight": 1024,
+                "borderTop": 0,
+                "borderBottom": 0,
+                "borderLeft": 0,
+                "borderRight": 0,
+                "isUuid": true,
+                "imageUuidOrDatabaseUri": "fb3fa25b-16f5-4a3a-a67d-749589c79862@6c48a",
+                "atlasUuid": "",
+                "packable": false,
+                "pixelsToUnit": 100,
+                "pivotX": 0.5,
+                "pivotY": 0.5,
+                "meshType": 0,
+                "vertices": {
+                    "rawPosition": [
+                        -512.0,
+                        -512.0,
+                        0,
+                        512.0,
+                        -512.0,
+                        0,
+                        -512.0,
+                        512.0,
+                        0,
+                        512.0,
+                        512.0,
+                        0
+                    ],
+                    "indexes": [
+                        0,
+                        1,
+                        2,
+                        2,
+                        1,
+                        3
+                    ],
+                    "uv": [
+                        0,
+                        1024,
+                        1024,
+                        1024,
+                        0,
+                        0,
+                        1024,
+                        0
+                    ],
+                    "nuv": [
+                        0,
+                        0,
+                        1,
+                        0,
+                        0,
+                        1,
+                        1,
+                        1
+                    ],
+                    "minPos": [
+                        -512.0,
+                        -512.0,
+                        0
+                    ],
+                    "maxPos": [
+                        512.0,
+                        512.0,
+                        0
+                    ]
+                }
+            }
+        }
+    },
+    "userData": {
+        "type": "sprite-frame",
+        "redirect": "fb3fa25b-16f5-4a3a-a67d-749589c79862@6c48a",
+        "hasAlpha": true,
+        "fixAlphaTransparencyArtifacts": false,
+        "compressSettings": {
+            "useCompressTexture": true,
+            "presetId": "chicken-web"
+        }
+    }
+}
