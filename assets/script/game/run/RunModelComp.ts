@@ -3,6 +3,7 @@ import { ecs } from "db://oops-framework/libs/ecs/ECS";
 import { RunState } from "../domain/RunState";
 import { Game, game, sys } from "cc";
 import { RunSaveStore } from "../domain/RunSave";
+import { bindGuideRun, GUIDE_SAVE_KEY } from "../ui/guide/GuideProgress";
 
 @ecs.register("RunModel")
 export class RunModelComp extends ecs.Comp {
@@ -25,6 +26,8 @@ export class RunModelComp extends ecs.Comp {
         }
         this.cleared = false;
         this.data.onChanged = this.changed;
+        bindGuideRun(this.data);
+        dropLegacyGuideKey();
         game.off(Game.EVENT_HIDE, this.save, this);
         game.on(Game.EVENT_HIDE, this.save, this);
         if (sys.isBrowser) {
@@ -48,6 +51,8 @@ export class RunModelComp extends ecs.Comp {
         this.data = new RunState();
         this.cleared = true;
         this.data.onChanged = this.changed;
+        bindGuideRun(this.data);
+        dropLegacyGuideKey();
     }
 
     reset() {
@@ -59,5 +64,11 @@ export class RunModelComp extends ecs.Comp {
             window.removeEventListener("beforeunload", this.save);
         }
         this.data = new RunState();
+        bindGuideRun(null);
     }
+}
+
+function dropLegacyGuideKey() {
+    try { sys.localStorage.removeItem(GUIDE_SAVE_KEY); }
+    catch { /* 无本地存储时忽略 */ }
 }

@@ -25,6 +25,8 @@ export class RunState {
     completedMaps: number[] = [];
     /** 已弹出过绝招解锁提示的地图 id，避免重复打扰。 */
     skillUnlockNotified: number[] = [];
+    /** 本局已看过的引导。跟存档走，不写独立 localStorage。 */
+    guideDone: string[] = [];
     lastBattleNode = 1;
     lastFirstClear = false;
     /** 由本地存档适配层订阅；逻辑测试不依赖引擎或浏览器。 */

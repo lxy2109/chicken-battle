@@ -10,6 +10,7 @@ import { combatPower, ownedSetCount } from "../../domain/EquipMath";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { tipEquipSet } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
+import { guideText, hideGuide, playGuide } from "../guide/GuideFlow";
 import { bindClick, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -45,6 +46,7 @@ export class CharacterViewComp extends GameUIBase<ChickenRun> {
         bindClick(this, "BtnHideAppearance", () => void this.toggleHide());
         bindClick(this, "BtnHideHint", () => this.showHideHint());
         bindClick(this, "BtnCloseHideHint", () => setNodeActive(this, "HideHintModal", false));
+        await this.playCharacterGuide();
     }
 
     private refreshStats(me = this.ent.run.playerFighter()) {
@@ -249,8 +251,21 @@ export class CharacterViewComp extends GameUIBase<ChickenRun> {
         await goScreen(this, "map");
     }
 
+    private async playCharacterGuide() {
+        if (!this.node?.isValid || !this.ent) return;
+        const slot = this.getNode("Slot0");
+        if (slot?.active) {
+            await playGuide("character-equip", [slot], guideText("character-equip"), { click: false });
+        }
+        if (!this.node?.isValid || !this.ent) return;
+        if (this.ent.run.equippedIds.length > 0) {
+            await playGuide("character-hide", [this.getNode("BtnHideAppearance")], guideText("character-hide"), { click: false });
+        }
+    }
+
     reset() {
         this.refreshId++;
+        hideGuide(["character-equip", "character-hide"]);
         this.node.destroy();
     }
 }

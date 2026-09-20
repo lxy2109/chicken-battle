@@ -14,6 +14,7 @@ import { rollUpgrades } from "../../assets/script/game/domain/RewardGen";
 import { RunState } from "../../assets/script/game/domain/RunState";
 import { decodeRun, encodeRun, RUN_SAVE_KEY, RunSaveStore } from "../../assets/script/game/domain/RunSave";
 import { Appearance, defaultAppearance } from "../../assets/script/game/domain/Types";
+import { bindGuideRun, isGuideDone, markGuideDone, resetGuideProgress } from "../../assets/script/game/ui/guide/GuideProgress";
 
 /** 直接跑源码时在脚本旁边，编译到 temp 再跑时只能从工作目录找。 */
 function tableDir(): string {
@@ -1263,6 +1264,27 @@ function run() {
             assert(!!getRoute().find(n => n.enemyId === id && n.kind === "boss"), `${id} 应是 boss 节点`);
             assert(fs.existsSync(path.join(audio, file)), `缺少 ${file}`);
         }
+    });
+
+    ok("引导进度跟存档走，清档后重来", () => {
+        const run = new RunState(1);
+        bindGuideRun(run);
+        resetGuideProgress();
+        assert(!isGuideDone("map-battle") && !isGuideDone("shop-buy") && !isGuideDone("reward-pick") && !isGuideDone("map-skip"), "新进度未完成");
+        markGuideDone("map-battle");
+        markGuideDone("map-battle");
+        assert(isGuideDone("map-battle") && !isGuideDone("shop-buy"), "只标记点过的步骤");
+        const restored = decodeRun(encodeRun(run));
+        bindGuideRun(restored);
+        assert(isGuideDone("map-battle") && !isGuideDone("reward-pick"), "读档后仍是本局已看过");
+        const raw = JSON.parse(encodeRun(new RunState(2)));
+        delete raw.permanent.guideDone;
+        bindGuideRun(decodeRun(JSON.stringify(raw)));
+        assert(!isGuideDone("map-battle") && !isGuideDone("reward-pick"), "旧档没有引导字段则本局视为未看过");
+        bindGuideRun(new RunState(3));
+        assert(!isGuideDone("map-battle"), "另一局存档不继承引导");
+        resetGuideProgress();
+        bindGuideRun(null);
     });
 
     if (fail.length) {

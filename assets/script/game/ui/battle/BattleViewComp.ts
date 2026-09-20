@@ -25,6 +25,7 @@ import { BattleEvent, BattleSide, StrikeStyle } from "../../domain/Types";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { preloadResultSuitGif } from "../shared/SlotVideo";
+import { guideText, hideGuide, isGuideDone, playGuide } from "../guide/GuideFlow";
 import { bindNodeClick, hexColor, setLabel } from "../shared/UiUtil";
 import { ensureScreenMusic, playGameEffect, playSkillAnnounce } from "../shared/GameAudio";
 
@@ -334,6 +335,8 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         if (this.closed) return;
         await this.playIntro();
         if (this.closed) return;
+        await this.playBattleGuide();
+        if (this.closed) return;
         this.playerActor?.stance();
         this.enemyActor?.stance();
         this.playerActor?.startRoam();
@@ -367,6 +370,24 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
         // 开战提示：场中央大字，比普通飘字更醒目、停留更久。
         await this.spawnFx(PREFAB_PATH.fxStart, "player", gameText("BattleViewComp_010"), 0.9, 1.35, "start");
         this.trig("toCombat");
+    }
+
+    /** 开打前教技能、弹幕和加速圈，避免开战后被演出打断。 */
+    private async playBattleGuide() {
+        if (this.ent.run.claimedGoldNodes.length > 0) return;
+        await playGuide("battle-skill", [this.skillBar?.barNode()], guideText("battle-skill"));
+        if (this.closed) return;
+        await playGuide("battle-danmaku", [this.danmakuBtn], guideText("battle-danmaku"));
+        if (this.closed || !this.tapBoost || isGuideDone("battle-tap")) return;
+        this.tapBoost.mount();
+        this.tapBoost.holdAutoSpawn(true);
+        try {
+            const circle = this.tapBoost.spawnGuideAt(0, 48);
+            await playGuide("battle-tap", [circle], guideText("battle-tap"));
+        }
+        finally {
+            if (!this.closed) this.tapBoost.holdAutoSpawn(false);
+        }
     }
 
     private musicGuard = 0;
@@ -910,6 +931,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
 
     reset() {
         this.closed = true;
+        hideGuide(["battle-skill", "battle-danmaku", "battle-tap"]);
         oops.gui.waitClose();
         this.tapBoost?.clear();
         this.tapBoost = undefined;

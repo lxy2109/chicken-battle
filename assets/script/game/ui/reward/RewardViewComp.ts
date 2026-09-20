@@ -1,5 +1,5 @@
 import { gameText } from "../../domain/GameConfig";
-import { Button, Label, Sprite, UITransform, Widget, _decorator } from "cc";
+import { Button, Label, Layout, Sprite, UITransform, Widget, _decorator } from "cc";
 import { gui } from "db://oops-framework/core/gui/Gui";
 import { LayerType } from "db://oops-framework/core/gui/layer/LayerEnum";
 import { ecs } from "db://oops-framework/libs/ecs/ECS";
@@ -11,6 +11,7 @@ import { PART_TEXT, RewardOption } from "../../domain/Types";
 import { tipGain } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { bindClick, bindNodeClick, clearChildren, setLabel, setNodeActive, setSpriteColor } from "../shared/UiUtil";
+import { guideText, hideGuide, playGuide } from "../guide/GuideFlow";
 
 const { ccclass, executionOrder } = _decorator;
 
@@ -99,6 +100,16 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
         }
         this.fitCardSlot();
         this.ready = true;
+        void this.playRewardGuide();
+    }
+
+    private async playRewardGuide() {
+        if (!this.node?.isValid) return;
+        const slot = this.getNode("CardSlot");
+        slot?.getComponent(Layout)?.updateLayout();
+        const cards = slot?.children.filter(node => node.activeInHierarchy) ?? [];
+        if (!cards.length) return;
+        await playGuide("reward-pick", cards, guideText("reward-pick"));
     }
 
     /** 三张强化牌按父节点宽度等比缩小并水平居中，窄屏不再偏到一侧被裁。 */
@@ -133,6 +144,7 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
         const confirm = this.getNode("BtnConfirm")?.getComponent(Button);
         if (confirm) confirm.interactable = true;
         setLabel(this, "BtnConfirmLab", gameText("RewardViewComp_006"));
+        void playGuide("reward-confirm", [this.getNode("BtnConfirm")], guideText("reward-confirm"));
     }
 
     private async onConfirm() {
@@ -154,6 +166,7 @@ export class RewardViewComp extends GameUIBase<ChickenRun> {
     }
 
     reset() {
+        hideGuide(["reward-pick", "reward-confirm"]);
         this.node.destroy();
     }
 }

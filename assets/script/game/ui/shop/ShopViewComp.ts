@@ -9,6 +9,7 @@ import { PREFAB_PATH, TEX, compareSets, getSets } from "../../domain/Catalog";
 import { combatPower, ownedSetCount } from "../../domain/EquipMath";
 import { tipBoughtSet } from "../shared/GameTip";
 import { goScreen, registerScreen } from "../shared/Nav";
+import { guideText, hideGuide, isGuideDone, playGuide } from "../guide/GuideFlow";
 import { revealUI, bindClick, bindNodeClick, clearChildren, hexColor, setLabel, setNodeActive, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -57,6 +58,7 @@ export class ShopViewComp extends GameUIBase<ChickenRun> {
         bindClick(this, "BtnLeave", this.onLeave.bind(this));
         await this.ensurePager();
         await this.refresh();
+        await this.playShopBuyGuide();
     }
 
     /** 关掉自动网格，改按背景货架格子摆商品。 */
@@ -225,6 +227,9 @@ export class ShopViewComp extends GameUIBase<ChickenRun> {
         setSpriteColor(this.getNode("BtnConfirmBuy"), view.affordable ? "#FFFFFF" : "#9A9A9A");
         void this.setPurchaseIcon(view.icon);
         setNodeActive(this, "PurchaseModal", true);
+        if (this.ent.run.ownedIds.length === 0) {
+            void playGuide("shop-confirm", [this.getNode("BtnConfirmBuy")], guideText("shop-confirm"));
+        }
     }
 
     /** 套装立绘是竖图，按原比例放进预览框，避免压成方块。 */
@@ -253,6 +258,9 @@ export class ShopViewComp extends GameUIBase<ChickenRun> {
         if (!this.ent.run.buySet(id)) return;
         tipBoughtSet(id);
         await this.refresh();
+        if (isGuideDone("shop-buy") || isGuideDone("shop-confirm")) {
+            await playGuide("shop-leave", [this.getNode("BtnLeave") || this.getNode("BtnBack")], guideText("shop-leave"));
+        }
     }
 
     private async onLeave() {
@@ -260,7 +268,16 @@ export class ShopViewComp extends GameUIBase<ChickenRun> {
         await goScreen(this, "map");
     }
 
+    private async playShopBuyGuide() {
+        if (this.ent.run.ownedIds.length > 0) return;
+        const slot = this.getNode("ItemSlot");
+        const cards = slot?.children.filter(node => node.activeInHierarchy) ?? [];
+        if (!cards.length) return;
+        await playGuide("shop-buy", cards, guideText("shop-buy"));
+    }
+
     reset() {
+        hideGuide(["shop-buy", "shop-confirm", "shop-leave"]);
         this.node.destroy();
     }
 }

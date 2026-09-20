@@ -107,6 +107,14 @@ export class BattleSkillBar {
         bar.setSiblingIndex(bar.parent.children.length - 1);
     }
 
+    barNode(): Node | null {
+        return this.bar?.isValid ? this.bar : null;
+    }
+
+    slotNodes(): Node[] {
+        return this.slots.map(slot => slot.node).filter(node => node?.isValid);
+    }
+
     clear() {
         this.closed = true;
         this.slots = [];

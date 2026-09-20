@@ -11,6 +11,7 @@ import { Appearance, FaceId, PART_TEXT, PARTS, PartId, defaultAppearance } from 
 import { spawnChicken } from "../shared/ChickenBinder";
 import { goScreen, registerScreen } from "../shared/Nav";
 import { playScreenMusic } from "../shared/GameAudio";
+import { guideText, hideGuide, playGuide, resetGuideProgress } from "../guide/GuideFlow";
 import { bindClick, bindNodeClick, hexColor, setLabel, setNodeActive, setSpriteColor } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -52,6 +53,7 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
             }
             setNodeActive(this, "StartPanel", false);
             setNodeActive(this, "CustomizePanel", true);
+            void this.playCustomizeGuide();
         });
         setLabel(this, "BtnStartLab", this.ent.run.screen === "customize" ? gameText("CustomizeViewComp_001") : gameText("CustomizeViewComp_002"));
         setLabel(this, "LabSaveHint", this.ent.RunModel.loadError || gameText("CustomizeViewComp_003"));
@@ -60,6 +62,7 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
         bindClick(this, "BtnConfirmClear", () => {
             try {
                 this.ent.RunModel.clearSave();
+                resetGuideProgress();
                 this.draft = defaultAppearance();
                 this.part = "head";
                 this.nameInput.string = this.ent.run.playerName;
@@ -274,7 +277,26 @@ export class CustomizeViewComp extends GameUIBase<ChickenRun> {
         this.nameInput.string = this.ent.run.playerName;
     }
 
+    private async playCustomizeGuide() {
+        if (!this.node?.isValid) return;
+        const parts = CUSTOMIZE_PARTS.map(part =>
+            this.getNode("BtnPart" + part.charAt(0).toUpperCase() + part.slice(1)));
+        const partKey = (this.part === "face" ? "head" : this.part);
+        const suffix = partKey.charAt(0).toUpperCase() + partKey.slice(1);
+        const chips = this.part === "face"
+            ? [0, 1, 2, 3, 4, 5].map(i => this.getNode(`BtnFace${i}`))
+            : COLOR_INDEXES.map((_, i) => this.getNode(`BtnColor${suffix}${i}`));
+        await playGuide("customize-color",
+            [...parts, ...chips, this.getNode("BtnRandomSet")],
+            guideText("customize-color"));
+        if (!this.node?.isValid) return;
+        await playGuide("customize-name",
+            [this.nameInput?.node, this.getNode("BtnRandomName")],
+            guideText("customize-name"));
+    }
+
     reset() {
+        hideGuide(["customize-color", "customize-name"]);
         this.node.destroy();
     }
 }

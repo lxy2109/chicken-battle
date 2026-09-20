@@ -10,6 +10,7 @@ export interface RunSaveData {
         equippedIds?: string[];
         hideEquippedAppearance?: boolean;
         skillUnlockNotified?: number[];
+        guideDone?: string[];
     };
     progress: Pick<RunState, "routeNode" | "screen" | "lastWin" | "lastGoldGain" | "lastBattleNode" | "lastFirstClear" | "upgrades" | "rewards" | "rewardRolls" | "seed" | "shopLoadedAt"> & { shopItemIds: string[]; shopPending?: boolean };
 }
@@ -23,6 +24,7 @@ export function encodeRun(run: RunState): string {
             appearance: run.appearance, playerName: run.playerName, ownedIds: run.ownedIds,
             equippedIds: run.equippedIds, hideEquippedAppearance: run.hideEquippedAppearance,
             skillUnlockNotified: run.skillUnlockNotified,
+            guideDone: run.guideDone,
             bonus: run.bonus, partLevels: run.partLevels
         },
         progress: {
@@ -95,6 +97,7 @@ export function decodeRun(raw: string): RunState {
     run.equippedIds = p.equippedIds ?? run.ownedIds.filter((id, index, ids) =>
         !ids.slice(index + 1).some(other => itemById(other).slot === itemById(id).slot));
     run.hideEquippedAppearance = p.hideEquippedAppearance === true && run.equippedIds.length > 0;
+    run.guideDone = Array.isArray(p.guideDone) ? p.guideDone.filter(id => typeof id === "string") : [];
     if (data.version < 3) {
         // Figma robes/accessories moved to body/neck. Keep ownership and the
         // last equipped item when two formerly different slots now coincide.

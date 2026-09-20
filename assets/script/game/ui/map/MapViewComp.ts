@@ -15,6 +15,7 @@ import { mapTravelDir, playSlideCut } from "../shared/ScreenTransition";
 import { spawnChicken } from "../shared/ChickenBinder";
 import { showFinalChallengeModal } from "../shared/FinalChallengeModal";
 import { showSkillUnlockModal } from "../shared/SkillUnlockModal";
+import { guideText, hideGuide, playGuide } from "../guide/GuideFlow";
 import { bindClick, setLabel, setNodeSprite, setSpriteColor } from "../shared/UiUtil";
 
 const { ccclass, executionOrder } = _decorator;
@@ -49,6 +50,7 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         if (!MapViewComp.transitioning) {
             await this.promptSkillUnlock();
             await this.promptFinalChallenge();
+            await this.playMapGuide();
         }
     }
 
@@ -324,6 +326,7 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
             if (arrived) {
                 await arrived.promptSkillUnlock();
                 await arrived.promptFinalChallenge();
+                await arrived.playMapGuide();
             }
         }
     }
@@ -345,7 +348,43 @@ export class MapViewComp extends GameUIBase<ChickenRun> {
         else node.destroy();
     }
 
+    /** 切屏滑完、Widget 归位后再挖空，避免头像还在屏外。 */
+    private async waitOnScreen() {
+        const started = Date.now();
+        while (this.node?.isValid && Date.now() - started < 2200) {
+            const pos = this.node.position;
+            if (Math.abs(pos.x) < 28 && Math.abs(pos.y) < 28) return;
+            await new Promise<void>(resolve => setTimeout(resolve, 40));
+        }
+    }
+
+    /** 进图后的首次指引：头像穿脱 / 开战 / 通关前往新地图 / 失败后一键跳过。 */
+    private async playMapGuide() {
+        if (!this.node?.isValid || !this.ent) return;
+        await this.waitOnScreen();
+        if (!this.node?.isValid || !this.ent) return;
+        const run = this.ent.run;
+        if (run.ownedIds.length > 0) {
+            await playGuide("map-avatar", [this.getNode("BtnCharacter")], guideText("map-avatar"));
+            if (!this.node?.isValid) return;
+        }
+        if (run.nextMap && run.completedMaps.length === 1 && run.completedMaps[0] === 1) {
+            await playGuide("map-next", [this.getNode("BtnChallenge")], guideText("map-next"));
+            return;
+        }
+        if (run.claimedGoldNodes.length === 0) {
+            await playGuide("map-battle",
+                [this.getNode("BtnStage1"), this.getNode("BtnChallenge")],
+                guideText("map-battle"));
+            if (!this.node?.isValid) return;
+        }
+        if (run.canSkipClearedBattles()) {
+            await playGuide("map-skip", [this.getNode("BtnChallenge")], guideText("map-skip"));
+        }
+    }
+
     reset() {
+        hideGuide(["map-battle", "map-avatar", "map-next", "map-skip"]);
         this.node.destroy();
     }
 }

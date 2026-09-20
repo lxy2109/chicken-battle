@@ -49,6 +49,7 @@ export class BattleTapBoost {
     private boostLeft = 0;
     private closed = false;
     private active = false;
+    private holdSpawn = false;
     private paceLab: Label | null = null;
 
     constructor(private host: Node) {}
@@ -103,10 +104,20 @@ export class BattleTapBoost {
         this.circles = this.circles.filter(c => !c.done && c.node.isValid);
 
         this.spawnIn -= dt;
-        if (this.spawnIn <= 0 && this.circles.length < MAX_LIVE) {
+        if (!this.holdSpawn && this.spawnIn <= 0 && this.circles.length < MAX_LIVE) {
             this.spawn();
             this.spawnIn = SPAWN_MIN + Math.random() * (SPAWN_MAX - SPAWN_MIN);
         }
+    }
+
+    /** 引导期间先别刷新圈，只保留手动生成的那一个。 */
+    holdAutoSpawn(hold: boolean) {
+        this.holdSpawn = hold;
+    }
+
+    /** 在固定位置生成一个已进入判定窗的加速圈，方便引导点击。 */
+    spawnGuideAt(x: number, y: number): Node | null {
+        return this.spawn(x, y, true);
     }
 
     clear() {
@@ -125,15 +136,15 @@ export class BattleTapBoost {
         this.paceLab = null;
     }
 
-    private spawn() {
+    private spawn(x?: number, y?: number, guide = false): Node | null {
         const layer = this.layer;
-        if (!layer?.isValid) return;
+        if (!layer?.isValid) return null;
         const node = new Node("TapCircle");
         node.layer = layer.layer;
         layer.addChild(node);
-        const x = AREA.x0 + Math.random() * (AREA.x1 - AREA.x0);
-        const y = AREA.y0 + Math.random() * (AREA.y1 - AREA.y0);
-        node.setPosition(x, y, 0);
+        const px = x ?? (AREA.x0 + Math.random() * (AREA.x1 - AREA.x0));
+        const py = y ?? (AREA.y0 + Math.random() * (AREA.y1 - AREA.y0));
+        node.setPosition(px, py, 0);
         const size = HIT_R * START * 2 + 16;
         (node.addComponent(UITransform)).setContentSize(size, size);
         const ink = node.addComponent(Graphics);
@@ -161,12 +172,13 @@ export class BattleTapBoost {
         title.useSystemFont = true;
         title.fontFamily = "Arial";
 
+        const life = APPROACH * (0.92 + Math.random() * 0.16);
         const circle: TapCircle = {
             node,
             ink,
             title,
-            age: 0,
-            life: APPROACH * (0.92 + Math.random() * 0.16),
+            age: guide ? life : 0,
+            life,
             done: false
         };
         // 透明可点区域，不走缩放过渡以免干扰画环。
@@ -175,6 +187,7 @@ export class BattleTapBoost {
         node.on(Button.EventType.CLICK, () => this.onTap(circle), this);
         this.paint(circle);
         this.circles.push(circle);
+        return node;
     }
 
     private onTap(c: TapCircle) {
