@@ -1005,6 +1005,12 @@ function run() {
         assert(trick.kind === "skill" && trick.style === "feint", "诡道型冷却好了就假动作");
         assert(brawler.style === "charge" || brawler.style === "peck", "莽撞型贴身撞");
         assert(aerial.style !== trick.style && trick.style !== tank.style, "飞扑/诡道/铁壁开场招应能一眼分开");
+        const map1 = ["peck", "combo"] as const;
+        const limited = decide({ ...base, style: "brawler", skillCd: 0, spd: 8, skills: map1 }, foe);
+        assert(limited.kind === "skill" && limited.style === "combo", "技能池缩小后莽撞型应直接放连珠神啄");
+        assert(limited.style !== "leap" && limited.style !== "charge", "禁用招不该再被降级成别的绝招");
+        const aerialLimited = decide({ ...base, style: "aerial", skillCd: 0, spd: 8, skills: map1 }, foe);
+        assert(aerialLimited.kind === "skill" && map1.includes(aerialLimited.style as typeof map1[number]), "路数池与本图无交集时直接改用本图技能池");
     });
 
     ok("相邻场次路数不同，开场招跟路数走", () => {
@@ -1320,16 +1326,16 @@ function run() {
         assert(battle.skillRemain("peck") === 0, "下限不能把已转好的招重新锁上");
     });
 
-    ok("小怪不能放绝招，Boss 技能池和冷却读配置", () => {
+    ok("小怪不能放绝招，Boss 与玩家共用本图技能池且不降级禁用招", () => {
         const run = new RunState(31);
         run.confirmAppearance(defaultAppearance());
         const kit = run.unlockedSkills();
         assert(kit.includes("peck") && kit.includes("combo") && !kit.includes("leap"), "开局应只有第一图两招");
-        assert(gameNumber("battle_bossSkillMapLimit") === 0, "默认不限制 Boss 绝招地图");
+        assert(gameNumber("battle_bossSkillMapLimit") === 1, "Boss 应跟玩家本图解锁走");
         assert(gameNumber("battle_bossSkillCooldown") < gameNumber("battle_skillCooldown"), "Boss 绝招冷却应短于通用技能冷却");
         assert(enemySkillsForEncounter(false, kit).length === 0, "小怪技能池应为空");
-        assert(enemySkillsForEncounter(true, kit).includes("leap"), "默认 Boss 应有全部八招");
-        assert(enemySkillsForEncounter(true, kit).length === PLAYER_SKILLS.length, "默认 Boss 技能池应是全技能");
+        assert(enemySkillsForEncounter(true, kit).join() === kit.join(), "Boss 技能池应直接等于本图已解锁");
+        assert(!enemySkillsForEncounter(true, kit).includes("leap"), "第一图 Boss 技能池不应含天外飞鸡");
 
         const p = run.playerFighter(), e = run.enemyFighter();
         p.stats = { ...p.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 900, maxHp: 900, firstStrike: 1 };
@@ -1360,20 +1366,18 @@ function run() {
         const silent = new BattleSession(p, e, 32, false);
         assert(countSkills(silent, "enemy").length === 0, "不传技能池的小怪默认不能放绝招");
 
-        const open = new BattleSession(p, e, 33, true, () => ({ kind: "skill", style: "leap" }), {
+        const natural = new BattleSession(p, e, 33, true, undefined, {
             playerManualSkills: true, playerSkills: kit
         });
-        const openStyles = countSkills(open, "enemy");
-        assert(openStyles.length >= 3, `默认 Boss 应更勤放绝招，实际 ${openStyles.length}`);
-        assert(openStyles.includes("leap"), "默认不限制时应能放天外飞鸡");
+        const naturalStyles = countSkills(natural, "enemy");
+        assert(naturalStyles.length >= 2, `Boss 应从缩小后的本图技能池放绝招，实际 ${naturalStyles.length}`);
+        assert(naturalStyles.every(style => kit.includes(style)), `Boss 绝招应落在 ${kit.join("/")}，实际 ${[...new Set(naturalStyles)].join("/")}`);
+        assert(!naturalStyles.includes("leap"), "第一图 Boss 不该放出天外飞鸡");
 
-        const limited = new BattleSession(p, e, 34, true, () => ({ kind: "skill", style: "leap" }), {
+        const forced = new BattleSession(p, e, 34, true, () => ({ kind: "skill", style: "leap" }), {
             playerManualSkills: true, playerSkills: kit, enemySkills: kit
         });
-        const limitedStyles = countSkills(limited, "enemy");
-        assert(limitedStyles.length >= 2, `显式传入本图技能池时应能放绝招，实际 ${limitedStyles.length}`);
-        assert(limitedStyles.every(style => kit.includes(style)), `限制开启时绝招应落在 ${kit.join("/")}，实际 ${[...new Set(limitedStyles)].join("/")}`);
-        assert(!limitedStyles.includes("leap"), "限制开启时第一图不该放出天外飞鸡");
+        assert(countSkills(forced, "enemy").length === 0, "未允许的招不能降级成别的绝招");
     });
 
     ok("哈鸡米、新一鸡、坤坤有专属对战曲", () => {

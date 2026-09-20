@@ -220,7 +220,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             await Promise.all([this.playerActor?.warmupSheets(), this.enemyActor?.warmupSheets()].filter(Boolean));
 
             // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
-            // 小怪没有绝招；Boss 技能池读 battle_bossSkillMapLimit，默认不跟玩家地图解锁走。
+            // 小怪没有绝招；Boss 技能池读 battle_bossSkillMapLimit，默认跟玩家本图解锁走。
             const brain = new BattleBrain();
             const unlocked = run.unlockedSkills();
             const isBoss = run.phase === "boss";

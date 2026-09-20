@@ -17,6 +17,8 @@ export interface AiFighter {
     /** 格斗派系。缺省走原来的通用动作池，验证用例才能保持确定结论。 */
     style?: FightStyle;
     signature?: SignatureId;
+    /** 本局可用绝招。有值时技能池直接缩小到这份名单，不会把禁用招降级成别的绝招。 */
+    skills?: readonly StrikeStyle[];
 }
 
 export type { StylePool };
@@ -48,7 +50,7 @@ export const AI_RULE = {
     /** 血过三成半且回血技能好了；回春型更早低头理毛 */
     needHeal: (s, _f) => ratio(s.hp, s.maxHp) <= (s.style === "medic" ? Math.max(0.5, gameNumber("ai_healRatio")) : gameNumber("ai_healRatio"))
         && s.healPerTurn > 0 && s.healCd <= 0,
-    skillReady: (s, _f) => s.skillCd <= 0,
+    skillReady: (s, _f) => s.skillCd <= 0 && (s.skills == null || s.skills.length > 0),
     /** 对面残了，该收割 */
     foeDying: (_s, f) => ratio(f.hp, f.maxHp) <= gameNumber("ai_finishRatio"),
     /** 自己血厚，放技能不亏 */
@@ -93,14 +95,19 @@ const STYLE_POOL = {
 } satisfies Record<string, StrikeStyle[]>;
 
 /** 在局势对应的动作池里按出手序号取一个，同一局势连着触发也不会重样。 */
-export function pickStyle(pool: StylePool, beat: number, style?: FightStyle): StrikeStyle {
-    const list = (style && ARCHETYPE_POOLS[style][pool]) || STYLE_POOL[pool];
+export function pickStyle(pool: StylePool, beat: number, style?: FightStyle, skills?: readonly StrikeStyle[]): StrikeStyle {
+    let list: readonly StrikeStyle[] = (style && ARCHETYPE_POOLS[style][pool]) || STYLE_POOL[pool];
+    if (pool === "skill" && skills) {
+        const shrunk = list.filter(item => skills.includes(item));
+        list = shrunk.length ? shrunk : skills;
+    }
+    if (!list.length) return STYLE_POOL.hold[0];
     return list[Math.abs(Math.floor(beat)) % list.length];
 }
 
 /** 定下这一支的结论：出什么招由 kind 决定，摆什么动作由局势和出手序号决定。 */
 export function act(kind: BattleActionKind, pool: StylePool, self: AiFighter): BattleDecision {
-    return { kind, style: pickStyle(pool, n(self.beat), self.style) };
+    return { kind, style: pickStyle(pool, n(self.beat), self.style, self.skills) };
 }
 
 /**

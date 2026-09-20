@@ -1,5 +1,5 @@
 import {
-    ARCHETYPE_POOLS, dodgeChance, inferFightStyle, PLAYER_SKILLS, STYLE_OPENING,
+    dodgeChance, inferFightStyle, PLAYER_SKILLS, STYLE_OPENING,
     isPlayerSkill, skillAttackValue, skillCooldownOf, skillPowerMul,
     styleDamageMul, stylePierce, styleStagger
 } from "./BattleStyle";
@@ -22,8 +22,7 @@ export interface BattleSessionOpts {
     playerSkills?: readonly StrikeStyle[];
     /**
      * 敌人可用的绝招。小怪传空数组。
-     * 不传时按 GameRule 决定：小怪没有绝招；Boss 默认全技能，
-     * battle_bossSkillMapLimit>0 时才跟玩家本图解锁走。
+     * 不传时按 GameRule 决定：小怪没有绝招；Boss 是否跟玩家本图解锁走读 battle_bossSkillMapLimit。
      */
     enemySkills?: readonly StrikeStyle[];
 }
@@ -491,20 +490,23 @@ export class BattleSession {
      * 出招：冷却好了本来会立刻放绝招，但对面立绘还在时改打普攻，CD 留给下一拍。
      * 同一帧双方都好了，玩家先处理，所以自己的特效优先。
      * 对战页打开手动绝招后，玩家这一支永远走普攻/回血，绝招只走 requestSkill。
-     * 小怪没有绝招；Boss 技能池由配置决定，默认不跟玩家地图解锁走。
+     * 小怪没有绝招；Boss 技能池在决策时直接缩小到本局名单，禁用招不会降级成别的绝招。
      */
     private chooseAction(side: BattleSide, actor: LiveFighter, foe: BattleSide): BattleDecision {
         if (side === "player" && this.playerManualSkills && !actor.counterReady) {
             return this.fallbackAttack(actor, foe, "peck");
         }
         const kit = this.skillKit(side);
-        let d = actor.counterReady
-            ? { kind: "skill" as const, style: pickCounterStyle(actor, kit) }
-            : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
-        if (d.kind === "skill") {
-            if (!kit.length) d = this.fallbackAttack(actor, foe, d.style);
-            else if (actor.skillCd > 0 && !actor.counterReady) d = this.fallbackAttack(actor, foe, d.style);
-            else d = { kind: "skill", style: pickKitStyle(kit, d.style, actor.beats, actor.fightStyle) };
+        let d: BattleDecision;
+        if (actor.counterReady) {
+            const counter = pickCounterStyle(actor, kit);
+            d = counter ? { kind: "skill", style: counter } : this.fallbackAttack(actor, foe, "peck");
+        }
+        else {
+            d = this.decider(this.toAi(actor), this.toAi(this.live(foe)));
+        }
+        if (d.kind === "skill" && (!kit.length || !kit.includes(d.style) || (actor.skillCd > 0 && !actor.counterReady))) {
+            d = this.fallbackAttack(actor, foe, "peck");
         }
         if (d.kind !== "skill" || !this.skillOccupied(side, foe)) return d;
         if (actor.counterReady) return { kind: "attack", style: d.style };
@@ -580,7 +582,8 @@ export class BattleSession {
     }
 
     private toAi(f: LiveFighter) {
-        const noSkill = f === this.enemy && this.enemySkills.length === 0;
+        const kit = f === this.player ? this.playerSkills : this.enemySkills;
+        const noSkill = f === this.enemy && kit.length === 0;
         return {
             hp: f.stats.hp,
             maxHp: f.stats.maxHp,
@@ -593,7 +596,8 @@ export class BattleSession {
             skillCd: noSkill || (f === this.player && this.playerManualSkills) ? 1 : f.skillCd,
             beat: f.beats,
             style: f.fightStyle,
-            signature: f.signature
+            signature: f.signature,
+            skills: kit
         };
     }
 
@@ -602,18 +606,10 @@ export class BattleSession {
     }
 }
 
-function pickCounterStyle(actor: LiveFighter, kit: readonly StrikeStyle[]): StrikeStyle {
+function pickCounterStyle(actor: LiveFighter, kit: readonly StrikeStyle[]): StrikeStyle | null {
     const pool = actor.fightStyle === "tank" ? ["tail", "charge", "leap"] as StrikeStyle[]
         : ["charge", "combo", "leap"] as StrikeStyle[];
     const available = pool.filter(style => kit.includes(style));
-    const use = available.length ? available : (kit.length ? kit : pool);
-    return use[actor.beats % use.length];
-}
-
-/** 绝招动作必须落在本局技能池里：先尽量用 AI 给的招，否则走路数池，再不行就轮换已解锁招。 */
-function pickKitStyle(kit: readonly StrikeStyle[], preferred: StrikeStyle, beat: number, fightStyle: FightStyle): StrikeStyle {
-    if (kit.includes(preferred)) return preferred;
-    const pooled = ARCHETYPE_POOLS[fightStyle].skill.filter(style => kit.includes(style));
-    const use = pooled.length ? pooled : kit;
-    return use[Math.abs(Math.floor(beat)) % use.length];
+    if (!available.length) return null;
+    return available[actor.beats % available.length];
 }
