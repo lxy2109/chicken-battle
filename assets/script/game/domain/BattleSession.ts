@@ -1,5 +1,5 @@
 import {
-    dodgeChance, inferFightStyle, PLAYER_SKILLS, STYLE_OPENING,
+    ARCHETYPE_POOLS, dodgeChance, inferFightStyle, PLAYER_SKILLS, STYLE_OPENING,
     isPlayerSkill, skillAttackValue, skillCooldownOf, skillPowerMul,
     styleDamageMul, stylePierce, styleStagger
 } from "./BattleStyle";
@@ -20,6 +20,11 @@ export interface BattleSessionOpts {
     playerManualSkills?: boolean;
     /** 本局玩家可点的绝招；不传则按全部八招（测试/旧调用）。 */
     playerSkills?: readonly StrikeStyle[];
+    /**
+     * 敌人可用的绝招。小怪传空数组；地图 boss 传与玩家相同的本图解锁招。
+     * 不传时：boss 战默认跟玩家同一套，热身小怪默认不能放绝招。
+     */
+    enemySkills?: readonly StrikeStyle[];
 }
 
 const SIDES: BattleSide[] = ["player", "enemy"];
@@ -30,6 +35,8 @@ const SIDES: BattleSide[] = ["player", "enemy"];
 const SKILL_EXCLUSIVE = 1.35;
 /** 开场绝招错开：玩家先亮相，敌人晚半拍，避免第一波一起放。 */
 const SKILL_START: Record<BattleSide, number> = { player: 0.4, enemy: 0.72 };
+/** 点击减 CD 至少保留本轮满冷却的这一成，避免叠到没 CD。 */
+const TAP_CD_KEEP = 0.2;
 
 type Phase = "intro" | "combat" | "over";
 
@@ -42,6 +49,8 @@ interface LiveFighter {
     skillCd: number;
     /** 玩家主动绝招的独立冷却，按真实秒走，不跟战斗时长缩放。 */
     skillCds?: Partial<Record<StrikeStyle, number>>;
+    /** 本轮冷却开始时的满值，点击减 CD 最多减到它的 TAP_CD_KEEP。 */
+    skillCdMax?: Partial<Record<StrikeStyle, number>>;
     lockUsed: boolean;
     /** 演出层正在播这一方的动作，期间不再出新招 */
     busy: boolean;
@@ -145,6 +154,7 @@ export class BattleSession {
     private skillSide: BattleSide | null = null;
     private playerManualSkills = false;
     private playerSkills: readonly StrikeStyle[] = PLAYER_SKILLS;
+    private enemySkills: readonly StrikeStyle[] = [];
     private queuedSkill: StrikeStyle | null = null;
 
     /**
@@ -159,6 +169,9 @@ export class BattleSession {
         this.playerSkills = opts?.playerSkills?.length
             ? opts.playerSkills.filter(style => isPlayerSkill(style))
             : PLAYER_SKILLS;
+        this.enemySkills = opts?.enemySkills
+            ? opts.enemySkills.filter(style => isPlayerSkill(style))
+            : (boss ? this.playerSkills : []);
         const reference = gameNumber("battle_referenceSeconds");
         this.durationScale = (enemy.targetBattleSeconds ?? reference) / reference;
         if (!Number.isFinite(this.durationScale) || this.durationScale <= 0) throw new Error("Invalid targetBattleSeconds");
@@ -168,7 +181,11 @@ export class BattleSession {
         this.enemy = toLive(enemy, this.pace, SKILL_START.enemy);
         if (this.playerManualSkills) {
             this.player.skillCds = {};
-            for (const style of this.playerSkills) this.player.skillCds[style] = 0;
+            this.player.skillCdMax = {};
+            for (const style of this.playerSkills) {
+                this.player.skillCds[style] = 0;
+                this.player.skillCdMax[style] = 0;
+            }
         }
         this.rng = new Rng(seed);
         this.events.push({ type: "taunt", side: "player", text: this.rng.pick(player.taunts.length ? player.taunts : [gameText("BattleSession_001")]) });
@@ -210,6 +227,25 @@ export class BattleSession {
     /** 玩家主动绝招剩余冷却，单位真实秒。 */
     skillRemain(style: StrikeStyle): number {
         return Math.max(0, this.player.skillCds?.[style] ?? 0);
+    }
+
+    /**
+     * 点击圈命中：按剩余冷却叠乘削减，普通 20%、完美 40%。
+     * 可叠加，但至少保留本轮满冷却的 TAP_CD_KEEP，不能点到没 CD。
+     */
+    shaveSkillCds(ratio: number): void {
+        if (!this.playerManualSkills || !this.player.skillCds) return;
+        if (!Number.isFinite(ratio) || ratio <= 0) return;
+        const keep = Math.max(0, 1 - Math.min(1, ratio));
+        const maxMap = this.player.skillCdMax || (this.player.skillCdMax = {});
+        for (const style of this.playerSkills) {
+            const remain = this.player.skillCds[style] || 0;
+            if (remain <= 0) continue;
+            const full = maxMap[style] || remain;
+            const floor = full * TAP_CD_KEEP;
+            const next = remain * keep;
+            this.player.skillCds[style] = Math.max(next, Math.min(remain, floor));
+        }
     }
 
     skillReady(style: StrikeStyle): boolean {
@@ -439,16 +475,20 @@ export class BattleSession {
      * 出招：冷却好了本来会立刻放绝招，但对面立绘还在时改打普攻，CD 留给下一拍。
      * 同一帧双方都好了，玩家先处理，所以自己的特效优先。
      * 对战页打开手动绝招后，玩家这一支永远走普攻/回血，绝招只走 requestSkill。
+     * 小怪没有绝招；地图 boss 只从本图玩家已解锁的招里挑。
      */
     private chooseAction(side: BattleSide, actor: LiveFighter, foe: BattleSide): BattleDecision {
         if (side === "player" && this.playerManualSkills && !actor.counterReady) {
             return this.fallbackAttack(actor, foe, "peck");
         }
+        const kit = this.skillKit(side);
         let d = actor.counterReady
-            ? { kind: "skill" as const, style: pickCounterStyle(actor) }
+            ? { kind: "skill" as const, style: pickCounterStyle(actor, kit) }
             : this.decider(this.toAi(actor), this.toAi(this.live(foe)));
-        if (d.kind === "skill" && actor.skillCd > 0 && !actor.counterReady) {
-            d = this.fallbackAttack(actor, foe, d.style);
+        if (d.kind === "skill") {
+            if (!kit.length) d = this.fallbackAttack(actor, foe, d.style);
+            else if (actor.skillCd > 0 && !actor.counterReady) d = this.fallbackAttack(actor, foe, d.style);
+            else d = { kind: "skill", style: pickKitStyle(kit, d.style, actor.beats, actor.fightStyle) };
         }
         if (d.kind !== "skill" || !this.skillOccupied(side, foe)) return d;
         if (actor.counterReady) return { kind: "attack", style: d.style };
@@ -488,7 +528,9 @@ export class BattleSession {
         }
         if (d.kind === "skill") {
             if (side === "player" && this.playerManualSkills && actor.skillCds) {
-                actor.skillCds[style] = skillCooldownOf(style) * (actor.enraged ? 0.55 : 1);
+                const cd = skillCooldownOf(style) * (actor.enraged ? 0.55 : 1);
+                actor.skillCds[style] = cd;
+                (actor.skillCdMax || (actor.skillCdMax = {}))[style] = cd;
             }
             else {
                 actor.skillCd = gameNumber("battle_skillCooldown") * (actor.enraged ? 0.55 : 1);
@@ -512,7 +554,12 @@ export class BattleSession {
         return this.skillGate > 0 && this.skillSide !== side;
     }
 
+    private skillKit(side: BattleSide): readonly StrikeStyle[] {
+        return side === "player" ? this.playerSkills : this.enemySkills;
+    }
+
     private toAi(f: LiveFighter) {
+        const noSkill = f === this.enemy && this.enemySkills.length === 0;
         return {
             hp: f.stats.hp,
             maxHp: f.stats.maxHp,
@@ -522,7 +569,7 @@ export class BattleSession {
             crit: f.stats.crit,
             healPerTurn: f.stats.healPerTurn,
             healCd: f.healCd,
-            skillCd: f === this.player && this.playerManualSkills ? 1 : f.skillCd,
+            skillCd: noSkill || (f === this.player && this.playerManualSkills) ? 1 : f.skillCd,
             beat: f.beats,
             style: f.fightStyle,
             signature: f.signature
@@ -534,8 +581,18 @@ export class BattleSession {
     }
 }
 
-function pickCounterStyle(actor: LiveFighter): StrikeStyle {
+function pickCounterStyle(actor: LiveFighter, kit: readonly StrikeStyle[]): StrikeStyle {
     const pool = actor.fightStyle === "tank" ? ["tail", "charge", "leap"] as StrikeStyle[]
         : ["charge", "combo", "leap"] as StrikeStyle[];
-    return pool[actor.beats % pool.length];
+    const available = pool.filter(style => kit.includes(style));
+    const use = available.length ? available : (kit.length ? kit : pool);
+    return use[actor.beats % use.length];
+}
+
+/** 绝招动作必须落在本局技能池里：先尽量用 AI 给的招，否则走路数池，再不行就轮换已解锁招。 */
+function pickKitStyle(kit: readonly StrikeStyle[], preferred: StrikeStyle, beat: number, fightStyle: FightStyle): StrikeStyle {
+    if (kit.includes(preferred)) return preferred;
+    const pooled = ARCHETYPE_POOLS[fightStyle].skill.filter(style => kit.includes(style));
+    const use = pooled.length ? pooled : kit;
+    return use[Math.abs(Math.floor(beat)) % use.length];
 }

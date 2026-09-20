@@ -24,6 +24,9 @@ const BOOST_GREAT = 2.4;
 const BOOST_GOOD = 1.5;
 const BOOST_MUL = 2;
 const BOOST_CAP = 5.2;
+/** 命中额外削减玩家绝招剩余冷却。普通 20%，完美 40%。 */
+const CD_CUT_GOOD = 0.2;
+const CD_CUT_GREAT = 0.4;
 /**
  * 生成范围（相对宿主本地坐标）。
  * 避开顶栏名牌与底部绝招条，落在对战场地一带。
@@ -40,7 +43,8 @@ interface TapCircle {
 }
 
 /**
- * 音游式点击圈：在场地范围内生成，外环收进内圈时点中可加速战斗。
+ * 音游式点击圈：在场地范围内生成，外环收进内圈时点中可加速战斗，
+ * 并按判定等级削减玩家绝招剩余冷却。
  */
 export class BattleTapBoost {
     private layer: Node | null = null;
@@ -52,7 +56,7 @@ export class BattleTapBoost {
     private holdSpawn = false;
     private paceLab: Label | null = null;
 
-    constructor(private host: Node) {}
+    constructor(private host: Node, private onCdCut?: (ratio: number) => void) {}
 
     /** 开战时挂层；结束 / 关界面时 clear。 */
     mount() {
@@ -212,8 +216,10 @@ export class BattleTapBoost {
     private hit(c: TapCircle, great: boolean) {
         c.done = true;
         const add = great ? BOOST_GREAT : BOOST_GOOD;
+        const cut = great ? CD_CUT_GREAT : CD_CUT_GOOD;
         this.boostLeft = Math.min(BOOST_CAP, this.boostLeft + add);
         setBattlePace(BOOST_MUL);
+        this.onCdCut?.(cut);
         this.refreshPaceHud();
         playGameEffect(great ? "critical" : "click");
 
@@ -234,7 +240,7 @@ export class BattleTapBoost {
         g.circle(0, 0, HIT_R * 1.4);
         g.stroke();
 
-        const lab = this.floatWord(c.node, great ? "加速!" : "好!", great);
+        const lab = this.floatWord(c.node, `${great ? "完美" : "好"} -${Math.round(cut * 100)}%CD`, great);
         const op = c.node.getComponent(UIOpacity) || c.node.addComponent(UIOpacity);
         tween(c.node).to(0.22, { scale: v3(1.35, 1.35, 1) }, { easing: "quadOut" }).start();
         tween(op).delay(0.06).to(0.2, { opacity: 0 }).call(() => {
@@ -332,7 +338,7 @@ export class BattleTapBoost {
         node.layer = parent.layer;
         parent.addChild(node);
         node.setPosition(0, HIT_R + 18, 0);
-        (node.addComponent(UITransform)).setContentSize(120, 36);
+        (node.addComponent(UITransform)).setContentSize(168, 36);
         const lab = node.addComponent(Label);
         lab.string = text;
         lab.fontSize = great ? 28 : 24;

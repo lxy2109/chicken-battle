@@ -220,12 +220,14 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             await Promise.all([this.playerActor?.warmupSheets(), this.enemyActor?.warmupSheets()].filter(Boolean));
 
             // 出招交给行为树来判，双方共用一棵：它每次都从根重跑，不存跨次状态。
+            // 地图 boss 与玩家同步本图已解锁绝招；热身小怪没有绝招。
             const brain = new BattleBrain();
             const unlocked = run.unlockedSkills();
+            const isBoss = run.phase === "boss";
             this.session = new BattleSession(
-                me, foe, run.rng().int(1, 999999), run.phase === "boss",
+                me, foe, run.rng().int(1, 999999), isBoss,
                 (self, opponent) => brain.think(self, opponent),
-                { playerManualSkills: true, playerSkills: unlocked }
+                { playerManualSkills: true, playerSkills: unlocked, enemySkills: isBoss ? unlocked : [] }
             );
             this.anim = this.node.getComponent(BattleAnimator) || this.node.addComponent(BattleAnimator);
             const json = await this.load("bundle", "game/animator/chicken_battle", JsonAsset);
@@ -328,7 +330,7 @@ export class BattleViewComp extends GameUIBase<ChickenRun> {
             if (this.closed) return;
             this.skillBar.tick(this.session);
             this.skillBar.raise();
-            this.tapBoost = new BattleTapBoost(this.node);
+            this.tapBoost = new BattleTapBoost(this.node, ratio => this.session.shaveSkillCds(ratio));
         } finally {
             oops.gui.waitClose();
         }

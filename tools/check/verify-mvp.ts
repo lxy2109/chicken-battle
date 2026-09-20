@@ -13,7 +13,7 @@ import { upgradeOf } from "../../assets/script/game/domain/PartUpgrade";
 import { rollUpgrades } from "../../assets/script/game/domain/RewardGen";
 import { RunState } from "../../assets/script/game/domain/RunState";
 import { decodeRun, encodeRun, RUN_SAVE_KEY, RunSaveStore } from "../../assets/script/game/domain/RunSave";
-import { Appearance, defaultAppearance } from "../../assets/script/game/domain/Types";
+import { Appearance, defaultAppearance, StrikeStyle } from "../../assets/script/game/domain/Types";
 import { bindGuideRun, isGuideDone, markGuideDone, resetGuideProgress } from "../../assets/script/game/ui/guide/GuideProgress";
 
 /** 直接跑源码时在脚本旁边，编译到 temp 再跑时只能从工作目录找。 */
@@ -1060,7 +1060,9 @@ function run() {
         e.stats = { ...e.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 800, maxHp: 800, firstStrike: 1 };
         p.fightStyle = "brawler";
         e.fightStyle = "brawler";
-        const battle = new BattleSession(p, e, 44, false, () => ({ kind: "skill", style: "leap" }));
+        const battle = new BattleSession(p, e, 44, false, () => ({ kind: "skill", style: "leap" }), {
+            enemySkills: PLAYER_SKILLS
+        });
         battle.beginCombat();
         const last: Record<"player" | "enemy", number> = { player: -99, enemy: -99 };
         const skills: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
@@ -1274,6 +1276,99 @@ function run() {
         assert(battle.skillRemain("leap") > 0, "天外飞鸡此时还应在冷却");
         const again = battle.requestSkill("combo");
         assert(again.some(ev => ev.type === "action" && ev.style === "combo"), "短冷却转好后应能再放");
+    });
+
+    ok("点击圈普通减20%技能冷却，完美减40%", () => {
+        const run = new RunState(22);
+        run.confirmAppearance(defaultAppearance());
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 20, def: 0, spd: 8, crit: 0, hp: 900, maxHp: 900 };
+        e.stats = { ...e.stats, atk: 8, def: 0, spd: 4, crit: 0, hp: 900, maxHp: 900 };
+        const battle = new BattleSession(p, e, 22, false, () => ({ kind: "attack", style: "peck" }), {
+            playerManualSkills: true, playerSkills: PLAYER_SKILLS
+        });
+        battle.beginCombat();
+        const drain = () => {
+            if (battle.striking("player")) battle.resolveStrike("player", true);
+            if (battle.striking("enemy")) battle.resolveStrike("enemy", true);
+        };
+        assert(battle.requestSkill("combo").some(ev => ev.type === "action" && ev.style === "combo"), "先放一招进入冷却");
+        drain();
+        assert(battle.requestSkill("leap").some(ev => ev.type === "action" && ev.style === "leap"), "再放一招进入冷却");
+        drain();
+        const comboFull = battle.skillRemain("combo");
+        const leapFull = battle.skillRemain("leap");
+        assert(comboFull > 0 && leapFull > 0, "两招都应在冷却");
+        battle.shaveSkillCds(0);
+        assert(battle.skillRemain("combo") === comboFull, "0 比例不应改冷却");
+        battle.shaveSkillCds(0.2);
+        assert(Math.abs(battle.skillRemain("combo") - comboFull * 0.8) < 1e-6, "普通点击应减 20% 剩余冷却");
+        assert(Math.abs(battle.skillRemain("leap") - leapFull * 0.8) < 1e-6, "普通点击应对所有绝招生效");
+        assert(battle.skillRemain("peck") === 0, "已转好的招不应被点出冷却");
+        const comboAfterGood = battle.skillRemain("combo");
+        battle.shaveSkillCds(0.2);
+        assert(Math.abs(battle.skillRemain("combo") - comboAfterGood * 0.8) < 1e-6, "再次普通点击应继续叠乘");
+        battle.shaveSkillCds(0.4);
+        assert(Math.abs(battle.skillRemain("combo") - comboAfterGood * 0.8 * 0.6) < 1e-6, "完美点击应再叠 40%");
+        for (let i = 0; i < 8; i++) battle.shaveSkillCds(0.4);
+        const comboFloor = battle.skillRemain("combo");
+        assert(comboFloor > 0, "叠加后仍应有冷却");
+        assert(Math.abs(comboFloor - comboFull * 0.2) < 1e-6, "点击最多减到满冷却的 20%");
+        battle.shaveSkillCds(0.4);
+        assert(battle.skillRemain("combo") === comboFloor, "触及下限后不应再减");
+        assert(battle.skillRemain("peck") === 0, "下限不能把已转好的招重新锁上");
+    });
+
+    ok("小怪不能放绝招，地图 boss 与玩家同步本图技能", () => {
+        const run = new RunState(31);
+        run.confirmAppearance(defaultAppearance());
+        const kit = run.unlockedSkills();
+        assert(kit.includes("peck") && kit.includes("combo") && !kit.includes("leap"), "开局应只有第一图两招");
+        const p = run.playerFighter(), e = run.enemyFighter();
+        p.stats = { ...p.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 900, maxHp: 900, firstStrike: 1 };
+        e.stats = { ...e.stats, atk: 20, def: 0, spd: 12, crit: 0, hp: 900, maxHp: 900, firstStrike: 1 };
+        p.fightStyle = "brawler";
+        e.fightStyle = "brawler";
+
+        const countSkills = (session: BattleSession, side: "player" | "enemy") => {
+            const styles: StrikeStyle[] = [];
+            session.beginCombat();
+            let guard = 0;
+            while (!session.done && guard++ < 8000) {
+                for (const ev of session.tick(0.05)) {
+                    if (ev.type === "action" && ev.kind === "skill" && ev.side === side) styles.push(ev.style);
+                }
+                for (const who of ["player", "enemy"] as const) {
+                    if (session.striking(who)) session.resolveStrike(who, true);
+                }
+            }
+            return styles;
+        };
+
+        const minion = new BattleSession(p, e, 31, false, () => ({ kind: "skill", style: "leap" }), {
+            playerManualSkills: true, playerSkills: kit, enemySkills: []
+        });
+        assert(countSkills(minion, "enemy").length === 0, "热身小怪即使决策要放绝招也不能放");
+
+        const silent = new BattleSession(p, e, 32, false);
+        assert(countSkills(silent, "enemy").length === 0, "不传技能池的小怪默认不能放绝招");
+
+        const boss = new BattleSession(p, e, 33, true, () => ({ kind: "skill", style: "leap" }), {
+            playerManualSkills: true, playerSkills: kit, enemySkills: kit
+        });
+        const bossStyles = countSkills(boss, "enemy");
+        assert(bossStyles.length >= 2, `地图 boss 应能放本图绝招，实际 ${bossStyles.length}`);
+        assert(bossStyles.every(style => kit.includes(style)), `boss 绝招应落在本图技能池 ${kit.join("/")}，实际 ${[...new Set(bossStyles)].join("/")}`);
+        assert(!bossStyles.includes("leap"), "第一图 boss 不该放出未解锁的天外飞鸡");
+
+        const laterKit = skillsUnlockedAt(3);
+        const later = new BattleSession(p, e, 34, true, () => ({ kind: "skill", style: "leap" }), {
+            playerManualSkills: true, playerSkills: laterKit, enemySkills: laterKit
+        });
+        const laterStyles = countSkills(later, "enemy");
+        assert(laterStyles.length >= 2, `第三图 boss 应能放该图已解锁绝招，实际 ${laterStyles.length}`);
+        assert(laterStyles.every(style => laterKit.includes(style)), "第三图 boss 不该放出尚未解锁的招");
+        assert(!laterStyles.includes("leap") && !laterStyles.includes("dive"), "天外飞鸡与乌鸦坐飞鸡应还未解锁");
     });
 
     ok("哈鸡米、新一鸡、坤坤有专属对战曲", () => {

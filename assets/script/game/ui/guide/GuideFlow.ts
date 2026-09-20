@@ -76,7 +76,7 @@ export function guideText(id: GuideId): string {
         case "battle-danmaku":
             return gameTextOr("Guide_005", "点这里发送弹幕，给比赛加油");
         case "battle-tap":
-            return gameTextOr("Guide_006", "点场上的「加速」圈，可以加快战斗");
+            return gameTextOr("Guide_006", "点场上的「加速」圈，可以加快战斗并缩短绝招冷却");
         case "shop-buy":
             return gameTextOr("Guide_007", "点货架上的套装，先看看再买");
         case "shop-confirm":
